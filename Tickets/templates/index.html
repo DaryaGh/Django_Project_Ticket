@@ -6,54 +6,105 @@
 {% endblock %}
 
 {% block content %}
-    <div class="card shadow">
-    <div class="card-body">
-        <table class="table table-striped text-center align-middle">
-            <thead class="table-secondary">
-            <tr>
-                <th>Id</th>
-                <th>Subject</th>
-                <th>Tracking Code</th>
-                <th>Category</th>
-                <th>Tags</th>
-                <th>Max Replay Code</th>
-                <th>Priority</th>
-                <th>Created By</th>
-                <th>Created At</th>
-                <th>Action</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for ticket in tickets %}
-                <tr>
-                <td>{{ ticket.id}}</td>
-                    <td class="text-start"><a href="#" class="btn-link text-decoration-none">{{ ticket.subject }}</a></td>
-                    <td>{{ ticket.tracking_code }}</td>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>All Tickets</h2>
+            <a href="{% url 'tickets-create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>
+                New Ticket
+            </a>
+        </div>
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="table-responsive-xl">
+                    <table class="table table-striped text-center align-middle table-hover table-bordered">
+                        <thead class="table-secondary">
+                        <tr>
+                            <th scope="col">Id</th>
+                            <th scope="col">Subject</th>
+                            <th scope="col">Tracking Code</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Tags</th>
+                            <th scope="col">Max Replay Code</th>
+                            <th scope="col">Priority</th>
+                            <th scope="col">Created By</th>
+                            <th scope="col">Created At</th>
+                            <th scope="col">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody class="table-group-divider">
+                        {% for ticket in tickets %}
+                            <tr>
+                                <td>{{ ticket.id }}</td>
+                                <td class="text-start">
+                                    <a href="{% url 'tickets-details' ticket.pk %}"
+                                       class="btn-link text-decoration-none">{{ ticket.subject }}</a>
+                                </td>
+                                <td>{{ ticket.tracking_code }}</td>
 
-                    <td>{{ ticket.category }}</td>
-{#                    <td>{{ ticket.tags }}</td>#}
-                    <td>
-                    <span class="badge bg-warning">{{ ticket.tags.all|length }}</span>
-                        {% for tag in ticket.tags.all|slice:"2" %}
+                                <td>
+                                    {% if ticket.category %}
+                                        {{ ticket.category.name }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
 
-                            <span class="badge bg-secondary">{{ tag.name }}</span>
-                            {% empty %}
-                            <span class="text-muted">-</span>
+                                <td>
+                                    {% if ticket.tags.all|length > 0 %}
+                                        <span class="badge bg-warning">{{ ticket.tags.all|length }}</span>
+                                    {% endif %}
+
+                                    {% for tag in ticket.tags.all|slice:"2" %}
+                                        <span class="badge bg-secondary">{{ tag.name }}</span>
+                                    {% empty %}
+                                        <span class="text-muted">-</span>
+                                    {% endfor %}
+                                </td>
+
+                                {#                    <td>#}
+                                {#    {% with tags=ticket.tags.all %}#}
+                                {#        {% if tags %}#}
+                                {#            <span class="badge bg-warning">{{ tags|length }}</span>#}
+                                {##}
+                                {#            {% for tag in tags|slice:"2" %}#}
+                                {#                <span class="badge bg-secondary">{{ tag.name }}</span>#}
+                                {#            {% endfor %}#}
+                                {##}
+                                {#            {% if tags|length > 2 %}#}
+                                {#                <span class="badge bg-light text-dark">+{{ tags|length|add:"-2" }}</span>#}
+                                {#            {% endif %}#}
+                                {#        {% else %}#}
+                                {#            <span class="text-muted">-</span>#}
+                                {#        {% endif %}#}
+                                {#    {% endwith %}#}
+                                {#</td>#}
+                                <td>{{ ticket.max_replay_date|date:"Y/m/d" }}</td>
+                                <td><span class="badge text-white"
+                                          style="background-color: {{ ticket.get_priority_color }}">{{ ticket.priority }}</span>
+                                </td>
+                                <td>{{ ticket.created_by.username }}</td>
+                                <td>{{ ticket.created_at|date:"Y/m/d H:i" }}</td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="#" class="btn btn-sm btn-primary">Edit</a>
+                                        <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                                    </div>
+
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="10" class="text-center">No Tickets Found!!!</td>
+                            </tr>
                         {% endfor %}
-                    </td>
-                    <td>{{ ticket.max_replay_date|date:"Y/m/d" }}</td>
-                    <td><span class="badge" style="background-color: {{ ticket.get_priority_color }}" >{{ ticket.priority }}</span></td>
-                    <td>{{ ticket.created_by }}</td>
-                    <td>{{ ticket.created_at|date:"Y/m/d H:i" }}</td>
-                <td>
-                    <a href="#" class="btn btn-sm btn-primary">Edit</a>
-                    <a href="#" class="btn btn-sm btn-danger">Delete</a>
-                </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-            <tfoot></tfoot>
-        </table>
+                        </tbody>
+                        <tfoot></tfoot>
+                    </table>
+                </div>
+
+            </div>
+        </div>
     </div>
-    </div>
+
 {% endblock %}
