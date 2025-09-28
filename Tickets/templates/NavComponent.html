@@ -1,0 +1,25 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a href="{% url 'dashboard' %}" class="navbar-brand"><i class="bi bi-house-door"></i> Ticketing</a>
+        {#        <a href="{% url 'dashboard' %}" class="navbar-brand">#}
+        {#            <i class="bi bi-house-door"></i>#}
+        {#        </a>#}
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                {% if request.resolver_match.url_name != 'tickets' %}
+                    <li class="nav-item">
+                        <a href="{% url 'tickets' %}" class="nav-link">Tickets</a>
+                    </li>
+                {% endif %}
+                {% if request.resolver_match.url_name != 'tickets' and request.resolver_match.url_name != 'tickets-create' %}
+                    <li class="nav-item">
+                        <a href="{% url 'tickets-create' %}" class="nav-link">New Ticket</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
