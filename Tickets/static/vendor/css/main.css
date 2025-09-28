@@ -1,0 +1,39 @@
+.icon-hover:hover {
+    transform: scale(1.2);
+    transition: all 0.3s ease;
+    color: #ff0000 !important;
+}
+
+.icon-hover-p:hover {
+    transform: scale(1.2);
+    transition: all 0.3s ease;
+    color: blue !important;
+}
+
+.table th {
+    vertical-align: middle !important;
+    white-space: nowrap;
+}
+
+.table-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+@media (max-width: 768px) {
+    .table-header-content {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .table-header-content i {
+        font-size: 0.9rem;
+    }
+
+    .table-header-content span {
+        font-size: 0.8rem;
+    }
+}
