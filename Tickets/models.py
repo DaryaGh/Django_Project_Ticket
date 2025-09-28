@@ -63,7 +63,7 @@ class Ticket(TimestampedModel):
     subject = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     tags = models.ManyToManyField(Tag, related_name='tickets', blank=True)
-    max_replay_date = models.DateField(help_text="The maximum replay date the ticket will replay")
+    max_replay_date = models.DateTimeField(help_text="The maximum replay date the ticket will reply")
     closed_at = models.DateTimeField(null=True, blank=True)
     tracking_code = models.CharField(max_length=100, null=True, blank=True,unique=True)
 
