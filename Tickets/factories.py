@@ -7,7 +7,6 @@ from factory.django import DjangoModelFactory
 from .models import *
 from .Choices import PRIORITY_CHOICES,STATUS_CHOICES,EMAIL_CHOICES
 
-
 class UserFactory(DjangoModelFactory):
     class Meta:
         model = User
@@ -17,8 +16,7 @@ class UserFactory(DjangoModelFactory):
     # email = factory.faker.Faker('email')
     # email = factory.LazyAttribute(lambda obj:f'{obj.username}@example.com')
     email = factory.LazyAttribute(
-        lambda obj: f"{obj.username}@{random.choice([choice[0] for choice in EMAIL_CHOICES])}"
-    )
+        lambda obj: f"{obj.username}@{random.choice([choice[0] for choice in EMAIL_CHOICES])}")
     password = factory.PostGenerationMethodCall('set_password', "password123")
     last_login = factory.Faker('date_time_this_decade', tzinfo=timezone.get_current_timezone())
     is_active = factory.Faker('boolean')
@@ -40,7 +38,6 @@ class CategoryFactory(DjangoModelFactory):
 class TagFactory(DjangoModelFactory):
     class Meta:
         model = Tag
-
 
     # name = factory.Faker('word', locale='fa')
     name = factory.Faker('name', locale='fa')
