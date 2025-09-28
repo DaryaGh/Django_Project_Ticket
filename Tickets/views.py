@@ -5,6 +5,7 @@ from Tickets.forms import TicketForm
 from Tickets.models import Ticket
 
 def dashboard(request):
+
     return HttpResponse("Dashboard")
 
 def index(request):
@@ -59,3 +60,14 @@ def ticket_delete(request,id):
     messages.success(request, 'Ticket Deleted Successfully !!!')
     return redirect ('tickets')
     # return HttpResponse('ticket_delete')
+
+def change_mode(request):
+    # GET
+    mode = request.GET.get('mode')
+
+    if mode in ['dark', 'light']:
+        response = redirect(request.META.get('HTTP_REFERER', 'tickets'))
+        response.set_cookie('theme_mode', mode, max_age=365 * 24 * 60 * 60)  # 1 year
+        return response
+
+    return redirect('tickets')
