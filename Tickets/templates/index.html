@@ -142,6 +142,7 @@
 {#                                            add:'-2' = > فیلتر add: یک عدد به مقدار قبلی اضافه یا کم میکنه ، #}
 {# ،"2" → اضافه کردن ۲//"-2" → کم کردن ۲#}
 
+
                                             <span class="badge bg-light text-dark"
                                                 title="{% for tag in ticket.tags.all|slice:'2:' %}{{ forloop.counter }}. {{ tag.name }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
                                                  +{{ ticket.tags.all|length|add:"-2" }}
