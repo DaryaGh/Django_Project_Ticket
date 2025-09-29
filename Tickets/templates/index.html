@@ -128,21 +128,29 @@
                                 </td>
 
                                 <td class="d-none d-lg-table-cell">
-                                    {% with tags=ticket.tags.all %}
-                                        {% if tags %}
-                                            <span class="badge bg-warning">{{ tags|length }}</span>
+                                    {% if ticket.tags.all %}
+                                        <span class="badge bg-warning">{{ ticket.tags.all|length }}</span>
 
-                                            {% for tag in tags|slice:"2" %}
-                                                <span class="badge bg-secondary">{{ tag.name }}</span>
-                                            {% endfor %}
+                                        {% for tag in ticket.tags.all|slice:"2" %}
+                                            <span class="badge bg-secondary">{{ tag.name }}</span>
+                                        {% endfor %}
 
-                                            {% if tags|length > 2 %}
-                                                <span class="badge bg-light text-dark">+{{ tags|length|add:"-2" }}</span>
-                                            {% endif %}
-                                        {% else %}
-                                            <span class="text-muted">-</span>
+                                        {% if ticket.tags.all|length > 2 %}
+                                                                                                 {# از Title  برای == > توضیح مختصر نمایش میده وقتی موس رو روی element نگه میداری#}
+                                                    {#                  گذاشتن : بعد از عدد 2 اینجا به ما میگوید از ایندکس 2 به بعد را نمایش بده#}
+                                                    {#            forloop.last = > وقتی به آخرین تگ در حلقه می‌رسیم True میشه #}
+{#                                            add:'-2' = > فیلتر add: یک عدد به مقدار قبلی اضافه یا کم میکنه ، #}
+{# ،"2" → اضافه کردن ۲//"-2" → کم کردن ۲#}
+
+                                            <span class="badge bg-light text-dark"
+                                                title="{% for tag in ticket.tags.all|slice:'2:' %}{{ forloop.counter }}. {{ tag.name }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
+                                                 +{{ ticket.tags.all|length|add:"-2" }}
+                                            </span>
+
                                         {% endif %}
-                                    {% endwith %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
                                 </td>
 
                                 <td class="d-none d-xl-table-cell">{{ ticket.max_replay_date|date:"Y/m/d" }}</td>
