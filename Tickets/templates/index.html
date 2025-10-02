@@ -106,7 +106,12 @@
 
                                 <td class="text-start">
                                     <a href="{% url 'tickets-details' ticket.pk %}"
-                                       class="btn-link text-decoration-none">{{ ticket.subject }}</a>
+                                       class="btn-link text-decoration-none"
+                                       data-bs-toggle="tooltip"
+                                       data-bs-title="{{ ticket.subject }}"
+                                       data-bs-placement="top">
+                                        {{ ticket.subject|truncatewords:5 }}
+                                    </a>
                                 </td>
 
                                 <td>{{ ticket.created_by.username }}</td>
@@ -142,9 +147,7 @@
                                             {#                                            add:'-2' = > فیلتر add: یک عدد به مقدار قبلی اضافه یا کم میکنه ، #}
                                             {# ،"2" → اضافه کردن ۲//"-2" → کم کردن ۲#}
                                             <span class="badge bg-light text-dark"
-                                                  title="
-                                                          {% for tag in ticket.tags.all|slice:'2:' %}{{ forloop.counter }}.
-                                                              {{ tag.name }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
+                                                  title="{% for tag in ticket.tags.all|slice:'2:' %}{{ forloop.counter }}.{{ tag.name }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
                                                  +{{ ticket.tags.all|length|add:"-2" }}
                                             </span>
                                         {% endif %}
@@ -183,5 +186,7 @@
     <script>
         {% include 'alert.js' %}
         {% include 'delete(confirm).js' %}
+        {% include 'TooltipSubject.js' %}
     </script>
+
 {% endblock %}
