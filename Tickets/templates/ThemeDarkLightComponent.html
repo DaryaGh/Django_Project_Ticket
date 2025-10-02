@@ -1,0 +1,37 @@
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const themeToggle = document.getElementById('themeToggle');
+        const moonIcon = themeToggle.querySelector('.bi-moon-fill');
+        const sunIcon = themeToggle.querySelector('.bi-sun-fill');
+        const body = document.body;
+        // بررسی حالت ذخیره شده در localStorage
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // تعیین حالت اولیه
+        let currentTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+        // اعمال حالت
+        function applyTheme(theme) {
+            body.setAttribute('data-bs-theme', theme);
+            document.documentElement.setAttribute('data-bs-theme', theme);
+
+            if (theme === 'dark') {
+                moonIcon.classList.add('d-none');
+                sunIcon.classList.remove('d-none');
+                themeToggle.innerHTML = '<i class="bi bi-sun-fill"></i> Light Mode';
+            } else {
+                sunIcon.classList.add('d-none');
+                moonIcon.classList.remove('d-none');
+                themeToggle.innerHTML = '<i class="bi bi-moon-fill"></i> Dark Mode';
+            }
+            // ذخیره در localStorage
+            localStorage.setItem('theme', theme);
+        }
+        // اعمال حالت اولیه
+        applyTheme(currentTheme);
+        // مدیریت کلیک روی دکمه
+        themeToggle.addEventListener('click', function() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(currentTheme);
+        });
+    });
+</script>
