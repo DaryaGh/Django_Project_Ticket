@@ -49,3 +49,134 @@
 .card {
     transition: all 0.3s ease;
 }
+
+.selected-for-delete {
+    background-color: #fff3cd !important;
+    border: 2px solid #fff3b0;
+    position: relative;
+}
+
+.selected-for-delete::after {
+    content: "✓ Selected for deletion";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #fff3b0;
+    color: #000;
+    font-size: 12px;
+    padding: 4px 8px;
+    font-weight: bold;
+    z-index: 10;
+    text-align: center;
+}
+
+.selected-forlete-delayed {
+    background-color: #fff3cd !important;
+    border: 2px solid #fff3b0;
+    position: relative;
+}
+
+.selected-for-delete-delayed::after {
+    content: "Selected for deletion (Row " attr(data-row-number) ")";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #fff3b0;
+    color: #000;
+    font-size: 12px;
+    padding: 4px 8px;
+    font-weight: bold;
+    z-index: 10;
+    text-align: center;
+}
+
+/* اضافه کردن padding به ردیف برای فضا دادن به پیام */
+.selected-for-delete td,
+.selected-for-delete-delayed td {
+    padding-top: 30px !important;
+}
+
+/*------------*/
+
+
+:root {
+    --primary-color: #4361ee;
+    --danger-color: #e63946;
+    --warning-color: #f18701;
+    --success-color: #43aa8b;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+}
+
+.modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border: none;
+}
+
+.modal-header {
+    background-color: var(--danger-color);
+    color: white;
+    border-bottom: none;
+    padding: 1.2rem 1.5rem;
+}
+
+.modal-body {
+    padding: 2rem 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #e9ecef;
+    padding: 1.2rem 1.5rem;
+    justify-content: flex-start
+}
+
+.step-1-icon {
+    color: var(--warning-color);
+}
+
+.step-2-icon {
+    color: var(--danger-color);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    transition: all 0.3s ease;
+}
+
+.ticket-number {
+    background-color: #f8f9fa;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-family: monospace;
+    font-weight: bold;
+}
+
+.warning-text {
+    background-color: rgba(244, 162, 97, 0.1);
+    border-left: 4px solid var(--warning-color);
+    padding: 0.75rem 1rem;
+    border-radius: 0 6px 6px 0;
+}
+
+.danger-text {
+    background-color: rgba(230, 57, 70, 0.1);
+    border-left: 4px solid var(--danger-color);
+    padding: 0.75rem 1rem;
+    border-radius: 0 6px 6px 0;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

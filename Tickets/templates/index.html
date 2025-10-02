@@ -136,34 +136,33 @@
                                         {% endfor %}
 
                                         {% if ticket.tags.all|length > 2 %}
-                                                                                                 {# از Title  برای == > توضیح مختصر نمایش میده وقتی موس رو روی element نگه میداری#}
-                                                    {#                  گذاشتن : بعد از عدد 2 اینجا به ما میگوید از ایندکس 2 به بعد را نمایش بده#}
-                                                    {#            forloop.last = > وقتی به آخرین تگ در حلقه می‌رسیم True میشه #}
-{#                                            add:'-2' = > فیلتر add: یک عدد به مقدار قبلی اضافه یا کم میکنه ، #}
-{# ،"2" → اضافه کردن ۲//"-2" → کم کردن ۲#}
-
-
+                                            {# از Title  برای == > توضیح مختصر نمایش میده وقتی موس رو روی element نگه میداری#}
+                                            {#                  گذاشتن : بعد از عدد 2 اینجا به ما میگوید از ایندکس 2 به بعد را نمایش بده#}
+                                            {#            forloop.last = > وقتی به آخرین تگ در حلقه می‌رسیم True میشه #}
+                                            {#                                            add:'-2' = > فیلتر add: یک عدد به مقدار قبلی اضافه یا کم میکنه ، #}
+                                            {# ،"2" → اضافه کردن ۲//"-2" → کم کردن ۲#}
                                             <span class="badge bg-light text-dark"
-                                                title="{% for tag in ticket.tags.all|slice:'2:' %}{{ forloop.counter }}. {{ tag.name }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
+                                                  title="
+                                                          {% for tag in ticket.tags.all|slice:'2:' %}{{ forloop.counter }}.
+                                                              {{ tag.name }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
                                                  +{{ ticket.tags.all|length|add:"-2" }}
                                             </span>
-
                                         {% endif %}
                                     {% else %}
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
-
                                 <td class="d-none d-xl-table-cell">{{ ticket.max_replay_date|date:"Y/m/d" }}</td>
-
                                 <td class="d-none d-md-table-cell">{{ ticket.created_at|date:"Y/m/d H:i" }}</td>
-
-                                <td>
+                                <td class="action-cell" id="action-{{ ticket.id }}">
                                     <a href="{% url 'tickets-update' ticket.id %}" class="text-decoration-none">
                                         <i class="bi-pencil-square fs-5 icon-hover-p"></i>
                                     </a>
                                     <a href="{% url 'tickets-destroy' ticket.id %}"
-                                       class="text-decoration-none text-danger">
+                                       class="text-decoration-none text-danger delete-btn"
+                                       data-ticket-id="{{ ticket.id }}"
+                                       data-ticket-number="{{ ticket.id }}"
+                                       data-ticket-title="{{ ticket.subject }}">
                                         <i class="bi-trash3 fs-5 icon-hover"></i>
                                     </a>
                                 </td>
@@ -177,7 +176,52 @@
                         <tfoot></tfoot>
                     </table>
                 </div>
-
+            </div>
+        </div>
+    </div>
+    <!-- Modal Delete Confirmation -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Delete Ticket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="step1" class="step-transition">
+                        <p class="d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle fs-4 step-1-icon me-2"></i>
+                            Do you want to delete ticket
+                            <strong class="text-danger" id="ticketNumberSpan"></strong> ??
+                        </p>
+                    </div>
+                    <div id="step2" style="display: none;" class="step-transition text-center">
+                        <h5 class="text-danger mb-3 fw-bold align-items-center">
+                            <i class="bi bi-exclamation-octagon fs-4 step-2-icon"></i>
+                            Are you sure ?
+                        </h5>
+                        <div class="danger-text text-start mb-3">
+                            <p class="mb-0"><strong>This action cannot be undone !</strong></p>
+                        </div>
+                        <p class="mb-2">Ticket number:</p>
+                        <div class="ticket-number mb-4" id="ticketNumberSpanStep2"></div>
+                        <p class="text-muted small">By clicking <strong class="text-danger">"Yes, I'm sure"</strong>this
+                            ticket will be permanently deleted.</p>
+                    </div>
+                    <div id="step2" style="display: none;">
+                        <p><strong class="text-danger"><i class="bi bi-exclamation-square fs-6"></i> Are you
+                            sure?</strong> This action cannot be undone!</p>
+                        <p class="text-muted">Ticket number: <strong id="ticketNumberSpanStep2"></strong></p>
+                    </div>
+                </div>
+                <div class="modal-footer ">
+                    <button type="button" class="btn btn-danger" id="confirmStep1">Yes</button>
+                    <button type="button" class="btn btn-danger" id="confirmStep2" style="display: none;">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Yes, I'm sure
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn">No</button>
+                </div>
             </div>
         </div>
     </div>
@@ -193,7 +237,88 @@
                     }
                 }, 5000);
             });
+            //DELETE MODEL
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            let selectedTicketId = null;
+            let selectedRow = null;
+            let highlightTimeout = null;
+
+            // Click on delete button
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    selectedTicketId = this.getAttribute('data-ticket-id');
+                    const ticketTitle = this.getAttribute('data-ticket-title');
+                    const ticketNumber = this.getAttribute('data-ticket-number');
+
+                    // Find the related row
+                    selectedRow = this.closest('tr');
+
+                    // Highlight the row
+                    document.querySelectorAll('tr').forEach(row => {
+                        row.classList.remove('table-warning', 'selected-for-delete', 'selected-for-delete-delayed');
+                    });
+                    selectedRow.classList.add('table-warning', 'selected-for-delete');
+
+                    // Add row number as data attribute for display
+                    const rowIndex = Array.from(selectedRow.parentNode.children).indexOf(selectedRow) + 1;
+                    selectedRow.setAttribute('data-row-number', rowIndex);
+
+                    // Set Modal text with ticket number
+                    document.getElementById('deleteModalLabel').textContent = `Delete Ticket Number ${ticketNumber}`;
+                    document.getElementById('ticketNumberSpan').textContent = ticketNumber;
+                    document.getElementById('ticketNumberSpanStep2').textContent = ticketNumber;
+
+                    // Reset Modal to first step
+                    document.getElementById('step1').style.display = 'block';
+                    document.getElementById('step2').style.display = 'none';
+                    document.getElementById('confirmStep1').style.display = 'inline-block';
+                    document.getElementById('confirmStep2').style.display = 'none';
+                    document.getElementById('cancelBtn').textContent = 'No';
+
+                    deleteModal.show();
+                });
+            });
+
+            // First confirmation step
+            document.getElementById('confirmStep1').addEventListener('click', function () {
+                document.getElementById('step1').style.display = 'none';
+                document.getElementById('step2').style.display = 'block';
+                document.getElementById('confirmStep1').style.display = 'none';
+                document.getElementById('confirmStep2').style.display = 'inline-block';
+                document.getElementById('cancelBtn').textContent = 'Cancel';
+            });
+
+            // Final confirmation step
+            document.getElementById('confirmStep2').addEventListener('click', function () {
+                if (selectedTicketId) {
+                    window.location.href = `{% url 'tickets-destroy' 0 %}`.replace('0', selectedTicketId);
+                }
+            });
+
+            // When Modal closes
+            document.getElementById('deleteModal').addEventListener('hidden.bs.modal', function () {
+                // Clear previous timeout if exists
+                if (highlightTimeout) {
+                    clearTimeout(highlightTimeout);
+                }
+
+                // Keep highlight for 1 seconds
+                if (selectedRow) {
+                    selectedRow.classList.remove('selected-for-delete');
+                    selectedRow.classList.add('selected-for-delete-delayed');
+
+                    // Display row number in console for debug
+                    const rowNumber = selectedRow.getAttribute('data-row-number');
+                    console.log(`Row number ${rowNumber} was selected for deletion`);
+
+                    highlightTimeout = setTimeout(() => {
+                        selectedRow.classList.remove('selected-for-delete-delayed', 'table-warning');
+                        selectedRow.removeAttribute('data-row-number');
+                    }, 1000); // 1 seconds
+                }
+                selectedTicketId = null;
+            });
         });
     </script>
-
 {% endblock %}
