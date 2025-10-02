@@ -33,10 +33,16 @@
                     <table class="table table-striped text-center align-middle table-hover table-bordered">
                         <thead class="table-secondary">
                         <tr>
+                            {#                            <th scope="col" class="d-none d-md-table-cell">#}
+                            {#                                <div class="table-header-content">#}
+                            {#                                    <i class="bi bi-sort-down"></i>#}
+                            {#                                    <span>ID</span>#}
+                            {#                                </div>#}
+                            {#                            </th>#}
                             <th scope="col" class="d-none d-md-table-cell">
                                 <div class="table-header-content">
                                     <i class="bi bi-sort-down"></i>
-                                    <span>ID</span>
+                                    <span>Row</span>
                                 </div>
                             </th>
                             <th scope="col">
@@ -95,12 +101,12 @@
                             </th>
                         </tr>
                         </thead>
-
                         <tbody class="table-group-divider">
 
                         {% for ticket in tickets %}
                             <tr>
-                                <td class="d-none d-md-table-cell">{{ ticket.id }}</td>
+                                {#                                <td class="d-none d-md-table-cell">{{ ticket.id }}</td>#}
+                                <td class="d-none d-md-table-cell">{{ forloop.counter }}</td>
 
                                 <td>{{ ticket.tracking_code }}</td>
 
@@ -188,5 +194,4 @@
         {% include 'delete(confirm).js' %}
         {% include 'TooltipSubject.js' %}
     </script>
-
 {% endblock %}
