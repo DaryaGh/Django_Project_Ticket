@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block  title %}
+    {{ ticket.subject }}
+{% endblock %}
+
+{% block content %}
+    <div class="container-lg mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8">
+                <div class="card shadow-lg border-success">
+                    <div class="card-header bg-success text-white border-success">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0">
+                                <i class="bi bi-ticket-detailed-fill me-2"></i>
+                                Ticket Details
+                            </h4>
+                            <span class="badge bg-light text-dark fs-6">#{{ ticket.tracking_code }}</span>
+                        </div>
+                    </div>
+
+                    <div class="card-body border-success">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <strong class="text-muted">Row:</strong>
+                                    <p class="fs-5 fw-semibold mt-1">{{ row_number }}</p>
+                                </div>
+                                <div class="mb-3">
+                                    <strong class="text-muted">Subject:</strong>
+                                    <p class="fs-5 fw-semibold mt-1">{{ ticket.subject }}</p>
+                                </div>
+                                <div class="mb-3">
+                                    <strong class="text-muted">Created By:</strong>
+                                    <p class="mt-1">{{ ticket.created_by.username }}</p>
+                                </div>
+                                <div class="mb-3">
+                                    <strong class="text-muted">Priority:</strong>
+                                    <span class="badge text-white mt-1"
+                                          style="background-color: {{ ticket.get_priority_color }}">
+                                    {{ ticket.priority }}
+                                </span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong class="text-muted">Category:</strong>
+                                    <p class="mt-1">
+                                        {% if ticket.category %}
+                                            {{ ticket.category.name }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <strong class="text-muted">Created At:</strong>
+                                    <p class="mt-1">{{ ticket.created_at|date:"Y/m/d H:i" }}</p>
+                                </div>
+
+                                <div class="mb-3">
+                                    <strong class="text-muted">Max Reply Date:</strong>
+                                    <p class="mt-1">{{ ticket.max_replay_date|date:"Y/m/d" }}</p>
+                                </div>
+                                <div class="mb-3">
+                                    <strong class="text-muted">Tags:</strong>
+                                    <div class="mt-1">
+                                        {% if ticket.tags.all %}
+                                            {% for tag in ticket.tags.all %}
+                                                <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <strong class="text-muted">Ticket ID:</strong>
+                                    <p class="mt-1">{{ ticket.id }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% if ticket.description %}
+                            <div class="mt-4 pt-3 border-top">
+                                <strong class="text-muted">Description:</strong>
+                                <div class="mt-2 p-3 rounded">
+                                    {{ ticket.description|linebreaks }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer border-success">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'tickets' %}" class="btn btn-success">
+                                <i class="bi bi-arrow-left me-1"></i> Back to Ticket
+                            </a>
+                            <div>
+                                <a href="{% url 'tickets-update' ticket.id %}" class="btn btn-warning me-2">
+                                    <i class="bi bi-pencil-square me-1"></i> Edit
+                                </a>
+                                <button type="button"
+                                        class="btn btn-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal">
+                                    <i class="bi bi-trash3 me-1"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Delete Ticket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete ticket <strong>"{{ ticket.id }}"</strong>?</p>
+
+                    <figure>
+                        <figcaption class="blockquote-footer mt-3">
+                            This action cannot be undone.
+                        </figcaption>
+                    </figure>
+
+                </div>
+                <div class="modal-footer">
+                    <a href="{% url 'tickets-destroy' ticket.id %}" class="btn btn-danger">Yes, Delete</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

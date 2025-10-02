@@ -12,9 +12,6 @@ def index(request):
     tickets = Ticket.objects.prefetch_related('tags').all()
     print(tickets[0].tags,tickets[0].id)
     return render(request,template_name='index.html',context={'tickets':tickets})
-    # return HttpResponse("Hello, world. You're at the polls index.",{
-    #     'tickets': tickets
-    # })
 
 def ticket_create(request):
     if request.method == 'POST':
@@ -33,10 +30,16 @@ def ticket_create(request):
         form = TicketForm()
 
     return render(request,'ticket_create.html',{'form':form})
-    # return HttpResponse('ticket_create')
 
 def ticket_details(request,id):
-    return HttpResponse('ticket_details')
+    ticket = get_object_or_404(Ticket, id=id)
+    all_tickets = Ticket.objects.all().order_by('-created_at')
+    row_number = 0
+    for i , t in enumerate(all_tickets, start=1):
+        if t.id == ticket.id:
+            row_number = i
+            break
+    return render(request, 'ticket-details.html', {'ticket': ticket, 'row_number':row_number})
 
 def ticket_update(request,id):
     ticket = get_object_or_404(Ticket, id=id)
@@ -51,7 +54,6 @@ def ticket_update(request,id):
         # instance برای نمایش دوباره مقداری که میخواهیم ویرایش کنیم است
 
     return render(request,'ticket_create.html',{'form':form,'ticket':ticket})
-    # return HttpResponse('ticket_update')
 
 def ticket_delete(request,id):
     ticket_remove = get_object_or_404(Ticket, id=id)
@@ -59,12 +61,10 @@ def ticket_delete(request,id):
     ticket_remove.delete()
     messages.success(request, 'Ticket Deleted Successfully !!!')
     return redirect ('tickets')
-    # return HttpResponse('ticket_delete')
 
 def change_mode(request):
     # GET
     mode = request.GET.get('mode')
-
     if mode in ['dark', 'light']:
         response = redirect(request.META.get('HTTP_REFERER', 'tickets'))
         response.set_cookie('theme_mode', mode, max_age=365 * 24 * 60 * 60)  # 1 year
