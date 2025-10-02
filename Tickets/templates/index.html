@@ -179,52 +179,7 @@
             </div>
         </div>
     </div>
-    <!-- Modal Delete Confirmation -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalLabel">Delete Ticket</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="step1" class="step-transition">
-                        <p class="d-flex align-items-center">
-                            <i class="bi bi-exclamation-triangle fs-4 step-1-icon me-2"></i>
-                            Do you want to delete ticket
-                            <strong class="text-danger" id="ticketNumberSpan"></strong> ??
-                        </p>
-                    </div>
-                    <div id="step2" style="display: none;" class="step-transition text-center">
-                        <h5 class="text-danger mb-3 fw-bold align-items-center">
-                            <i class="bi bi-exclamation-octagon fs-4 step-2-icon"></i>
-                            Are you sure ?
-                        </h5>
-                        <div class="danger-text text-start mb-3">
-                            <p class="mb-0"><strong>This action cannot be undone !</strong></p>
-                        </div>
-                        <p class="mb-2">Ticket number:</p>
-                        <div class="ticket-number mb-4" id="ticketNumberSpanStep2"></div>
-                        <p class="text-muted small">By clicking <strong class="text-danger">"Yes, I'm sure"</strong>this
-                            ticket will be permanently deleted.</p>
-                    </div>
-                    <div id="step2" style="display: none;">
-                        <p><strong class="text-danger"><i class="bi bi-exclamation-square fs-6"></i> Are you
-                            sure?</strong> This action cannot be undone!</p>
-                        <p class="text-muted">Ticket number: <strong id="ticketNumberSpanStep2"></strong></p>
-                    </div>
-                </div>
-                <div class="modal-footer ">
-                    <button type="button" class="btn btn-danger" id="confirmStep1">Yes</button>
-                    <button type="button" class="btn btn-danger" id="confirmStep2" style="display: none;">
-                        <i class="bi bi-check-circle me-1"></i>
-                        Yes, I'm sure
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn">No</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'ModelDeleteConformation.html' %}
     <script>
         {% include 'alert.js' %}
         {% include 'delete(confirm).js' %}
