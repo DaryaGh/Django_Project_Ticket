@@ -37,9 +37,9 @@
                                 </div>
                                 <div class="mb-3">
                                     <strong class="text-muted">Priority:</strong>
-                                    <span class="badge text-white mt-1"
+                                    <span class="badge text-{{ ticket.priority|lower }} mt-1"
                                           style="background-color: {{ ticket.get_priority_color }}">
-                                    {{ ticket.priority }}
+                                    {{ ticket.priority|upper }}
                                 </span>
                                 </div>
                                 <div class="mb-3">
@@ -56,8 +56,13 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <strong class="text-muted">Created At:</strong>
-                                    <p class="mt-1">{{ ticket.created_at|date:"Y/m/d H:i" }}</p>
+                                    <p class="mt-1">{{ ticket.created_at|date:"F j, Y g:i A" }}</p>
                                 </div>
+
+                            <div class="mb-3">
+                                <strong class="text-muted">Updated At:</strong>
+                                <p class="mt-1">{{ ticket.updated_at|timesince }} ago</p>
+                            </div>
 
                                 <div class="mb-3">
                                     <strong class="text-muted">Max Reply Date:</strong>
@@ -85,7 +90,7 @@
                             <div class="mt-4 pt-3 border-top">
                                 <strong class="text-muted">Description:</strong>
                                 <div class="mt-2 p-3 rounded">
-                                    {{ ticket.description|linebreaks }}
+                                    {{ ticket.description|linebreaks|safe }}
                                 </div>
                             </div>
                         {% endif %}
