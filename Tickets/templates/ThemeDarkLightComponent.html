@@ -17,11 +17,11 @@
             if (theme === 'dark') {
                 moonIcon.classList.add('d-none');
                 sunIcon.classList.remove('d-none');
-                themeToggle.innerHTML = '<i class="bi bi-sun-fill"></i> Light Mode';
+                themeToggle.innerHTML = '<i class="bi bi-sun-fill"></i>';
             } else {
                 sunIcon.classList.add('d-none');
                 moonIcon.classList.remove('d-none');
-                themeToggle.innerHTML = '<i class="bi bi-moon-fill"></i> Dark Mode';
+                themeToggle.innerHTML = '<i class="bi bi-moon-fill"></i>';
             }
             // ذخیره در localStorage
             localStorage.setItem('theme', theme);
