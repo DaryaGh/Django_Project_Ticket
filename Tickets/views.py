@@ -3,10 +3,11 @@ from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from Tickets.forms import TicketForm
 from Tickets.models import Ticket
+from django.core.exceptions import PermissionDenied
 
 def dashboard(request):
-
-    return HttpResponse("Dashboard")
+    return render(request,'dashboard.html',{'dashboard':dashboard})
+    # return HttpResponse("Dashboard")
 
 def index(request):
     tickets = Ticket.objects.prefetch_related('tags').all()
@@ -55,12 +56,32 @@ def ticket_update(request,id):
 
     return render(request,'ticket_create.html',{'form':form,'ticket':ticket})
 
-def ticket_delete(request,id):
-    ticket_remove = get_object_or_404(Ticket, id=id)
-    # print(f'Ticket:{ticket_remove}')
-    ticket_remove.delete()
-    messages.success(request, 'Ticket Deleted Successfully !!!')
-    return redirect ('tickets')
+# def ticket_delete(request,id):
+#     ticket_remove = get_object_or_404(Ticket, id=id)
+#     # print(f'Ticket:{ticket_remove}')
+#     ticket_remove.delete()
+#     messages.success(request, 'Ticket Deleted Successfully !!!')
+#     return redirect ('tickets')
+
+def ticket_delete(request, id):
+    try:
+        ticket = Ticket.objects.get(id=id)
+
+        if ticket.priority.upper() == 'HIGH' or ticket.priority.lower() == 'high':
+            messages.error(request, 'Cannot delete tickets with HIGH priority')
+            return redirect('tickets')
+
+        ticket.delete()
+        messages.success(request, 'Ticket Deleted successfully')
+        return redirect('tickets')
+
+    except PermissionDenied:
+        # اگر مدل اجازه نده
+        messages.error(request, 'Cannot delete tickets with HIGH priority')
+        return redirect('tickets')
+    except Ticket.DoesNotExist:
+        messages.error(request, 'Ticket not found')
+        return redirect('tickets')
 
 def change_mode(request):
     # GET

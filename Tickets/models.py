@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.utils.text import slugify, capfirst
 from django.utils.timezone import now
@@ -91,6 +92,12 @@ class Ticket(TimestampedModel):
 
     def get_priority_color(self):
         return PRIORITY_COLORS.get(self.priority, '#6c757d')
+
+    def delete(self, *args, **kwargs):
+        #  جلوگیری از پاک شدن در سطح مدل
+        if self.priority == 'high':
+            raise PermissionDenied("Cannot delete tickets with HIGH priority")
+        super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"#{self.tracking_code} {self.subject[:30]}..."
