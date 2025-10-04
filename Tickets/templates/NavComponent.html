@@ -1,31 +1,55 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
     <div class="container">
-        <a href="{% url 'dashboard' %}" class="navbar-brand"><i class="bi bi-house-door"></i> Ticketing</a>
-        {#        <a href="{% url 'dashboard' %}" class="navbar-brand">#}
-        {#            <i class="bi bi-house-door"></i>#}
-        {#        </a>#}
+        <a href="{% url 'dashboard' %}" class="navbar-brand d-flex align-items-center fw-bold">
+            <i class="bi bi-ticket-perforated me-2 fs-4"></i>
+            <span>Ticketing</span>
+        </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav ms-auto d-flex align-items-center">
                 {% if request.resolver_match.url_name != 'tickets' %}
-                    <li class="nav-item">
-                        <a href="{% url 'tickets' %}" class="nav-link">Tickets</a>
-                    </li>
+                <li class="nav-item mx-2">
+                    <a href="{% url 'tickets' %}" class="nav-link d-flex align-items-center">
+                        <i class="bi bi-list-task me-1"></i>
+                        Tickets
+                    </a>
+                </li>
                 {% endif %}
                 {% if request.resolver_match.url_name != 'tickets' and request.resolver_match.url_name != 'tickets-create' %}
-                    <li class="nav-item">
-                        <a href="{% url 'tickets-create' %}" class="nav-link">New Ticket</a>
-                    </li>
+                <li class="nav-item mx-2">
+                    <a href="{% url 'tickets-create' %}" class="nav-link d-flex align-items-center">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        New Ticket
+                    </a>
+                </li>
                 {% endif %}
-            <li class="nav-item">
-                    <button id="themeToggle" class="btn btn-outline-info ms-2">
-                        <i class="bi bi-moon-fill d-none"></i>
-                        <i class="bi bi-sun-fill d-none"></i>
+                <li class="nav-item mx-2">
+                    <a href="#" class="text-decoration-none position-relative">
+                        <i class="bi bi-bell fs-4 text-white"></i>
+                    </a>
+                </li>
+                <li class="nav-item mx-2">
+                    <a href="#" class="text-decoration-none">
+                        <i class="bi bi-person-circle fs-4 text-white"></i>
+                    </a>
+                </li>
+                <li class="nav-item mx-2">
+                    <button id="themeToggle" class="text-warning text-decoration-none p-0 border-0 bg-transparent fs-4">
+                        <i class="bi bi-moon-fill"></i>
+                        <i class="bi bi-sun-fill "></i>
                     </button>
+                </li>
+                <li class="nav-item ms-2">
+                    <a href="{% url 'dashboard' %}" data-bs-toggle="offcanvas" data-bs-target="#sidebar"
+                       class="text-decoration-none text-white" title="Open Sidebar">
+                        <i class="bi bi-layout-sidebar-inset fs-4"></i>
+                    </a>
                 </li>
             </ul>
         </div>
     </div>
 </nav>
+
+{% include 'OffcanvassComponent.html' %}
