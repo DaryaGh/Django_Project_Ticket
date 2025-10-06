@@ -1,0 +1,24 @@
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Ticket {{ ticket.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete ticket <strong>"{{ ticket.id }}"</strong>?</p>
+
+                <figure>
+                    <figcaption class="blockquote-footer mt-3">
+                        This action cannot be undone.
+                    </figcaption>
+                </figure>
+
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'tickets-destroy' ticket.id %}" class="btn btn-danger">Yes, Delete</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
