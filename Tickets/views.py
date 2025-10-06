@@ -4,6 +4,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from Tickets.forms import TicketForm
 from Tickets.models import Ticket
 from django.core.exceptions import PermissionDenied
+from Tickets.validators import validate
 
 def dashboard(request):
     return render(request,'dashboard.html',{'dashboard':dashboard})
@@ -17,7 +18,26 @@ def index(request):
 def ticket_create(request):
     if request.method == 'POST':
         form = TicketForm(request.POST) #user filled the form
-        if form.is_valid():
+
+        # برای پاک کردن فیلدهای اجباری در خود جنگو است
+        form.errors.clear()
+        rules = {
+            "category" : ["required"],
+            "priority" : ["required","in:low,medium,high"],
+            "subject" : ["required","min:5","max:200"],
+            "description" : ["required","min:5","max:200"],
+            "max_replay_date" : ["required","future_date"],
+            "tags" : ["min_items:1","max_items:5"],
+        }
+
+        errors = validate(request.POST,rules)
+
+        if errors:
+            for field, errors in errors.items():
+                form.add_error(field, errors)
+
+
+        elif form.is_valid():
             new_ticket = form.save(commit=False) #false Ram
             # new_ticket.created_by = request.user # todo => Use Auth
             new_ticket.created_by_id = 104
