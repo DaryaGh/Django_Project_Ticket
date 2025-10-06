@@ -16,7 +16,11 @@
 
 {% include 'MessageToastComponent.html' %}
 
-{% include 'ThemeDarkLightComponent.html' %}
+<script>
+    {% include 'Js/ThemeDarkLightComponent.js' %}
+</script>
+
+{% block js %} {% endblock %}
 
 </body>
 </html>
