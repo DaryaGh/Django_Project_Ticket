@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', function (e) {
             e.preventDefault();
             selectedTicketId = this.getAttribute('data-ticket-id');
-            const ticketTitle = this.getAttribute('data-ticket-title');
+            // const ticketTitle = this.getAttribute('data-ticket-title');
             const ticketNumber = this.getAttribute('data-ticket-number');
 
             // Find the related row
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {
             highlightTimeout = setTimeout(() => {
                 selectedRow.classList.remove('selected-for-delete-delayed', 'table-warning');
                 selectedRow.removeAttribute('data-row-number');
-            }, 1000); // 1 seconds
+            }, 2000); // 1 seconds
         }
 
         selectedTicketId = null;
