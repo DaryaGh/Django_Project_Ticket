@@ -1,7 +1,18 @@
 PRIORITY_CHOICES = [
+    ("", "Select Priority"),
     ("low", 'Low'),
     ("middle", 'Middle'),
     ("high", 'High'),
+    ('secret', 'Secret')
+]
+
+DEPARTMENT_CHOICES = [
+    ("", "Select Department"),
+    ('developer', 'Developer'),
+    ('fullstack', 'Full Stack'),
+    ("python", 'Python'),
+    ("django", 'Django'),
+    ('react', 'React'),
 ]
 
 PRIORITY_COLORS = {
@@ -25,7 +36,7 @@ STATUS_COLORS = {
 }
 
 EMAIL_CHOICES = [
-    ("yahoo.com","Yahoo.com"),
-    ("gmail.com","Gmail.com"),
-    ("hotmail.com","Hotmail.com"),
+    ("yahoo.com", "Yahoo.com"),
+    ("gmail.com", "Gmail.com"),
+    ("hotmail.com", "Hotmail.com"),
 ]
