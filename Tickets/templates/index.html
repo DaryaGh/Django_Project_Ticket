@@ -30,7 +30,8 @@
         <div class="card shadow">
             <div class="card-body">
                 <div class="table-responsive-xl">
-                    <table class="table table-striped text-center align-middle table-hover table-bordered">
+                    <table class="table table-striped text-center align-middle table-hover">
+{#                     خطوط عمودی =< table-bordered#}
                         <thead class="table-secondary">
                         <tr>
                             {#                            <th scope="col" class="d-none d-md-table-cell">#}
@@ -40,8 +41,8 @@
                             {#                                </div>#}
                             {#                            </th>#}
                             <th scope="col" class="d-none d-md-table-cell">
-                                <div class="table-header-content">
-                                    <i class="bi bi-sort-down"></i>
+                                <div class="table-header-content" onclick="toggleSort('row')" style="cursor: pointer;">
+                                    <i class="bi bi-sort-down" id="row-sort-icon"></i>
                                     <span>Row</span>
                                 </div>
                             </th>
@@ -120,7 +121,7 @@
                                     <a href="{% url 'tickets-details' ticket.pk %}"
                                        class="btn-link text-decoration-none"
                                        data-bs-toggle="tooltip"
-                                       data-bs-title="{{ ticket.subject }}"
+{#                                       data-bs-title="{{ ticket.subject }}"#}
                                        data-bs-placement="top">
                                         {{ ticket.subject|truncatewords:5 }}
                                     </a>
@@ -213,5 +214,6 @@
 {#        {% include 'Js/deleteConfirm.js' %}#}
         {% include 'Js/TooltipSubject.js' %}
 {#        {% include 'Js/EditConfirm.js' %}#}
+        {% include 'Js/RowAscDesc.js' %}
     </script>
 {% endblock %}
