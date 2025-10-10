@@ -57,6 +57,51 @@ class Tag(NameSlugModel):
     # def __str__(self):
     #     return capfirst(self.name)
 
+# class Ticket(TimestampedModel):
+#     category = models.ForeignKey(Category,related_name='tickets',on_delete=models.SET_NULL,null=True,blank=True)
+#     created_by = models.ForeignKey(settings.AUTH_USER_MODEL,related_name='tickets',on_delete=models.PROTECT,default=None,blank=True)
+#     priority = models.CharField(max_length=100, default="Low", choices=PRIORITY_CHOICES)
+#     subject = models.CharField(max_length=200)
+#     description = models.TextField(blank=True)
+#     tags = models.ManyToManyField(Tag, related_name='tickets', blank=True)
+#     max_replay_date = models.DateTimeField(help_text="The maximum replay date the ticket will reply")
+#     closed_at = models.DateTimeField(null=True, blank=True)
+#     tracking_code = models.CharField(max_length=100, null=True, blank=True,unique=True)
+#
+#     class Meta:
+#         verbose_name = 'Ticket'
+#         verbose_name_plural = 'Tickets'
+#
+#         db_table = 'Tickets-Ticket'
+#
+#         indexes = [
+#             models.Index(fields=['category']),
+#             models.Index(fields=['priority']),
+#         ]
+#
+#         ordering = ['-created_at']
+#
+#     def save(self, *args, **kwargs):
+#         is_new = self.pk is None
+#         super().save(*args, **kwargs) #save first to  get primary key
+#         if is_new and not self.tracking_code:
+#             self.tracking_code = f"TCK-{now().strftime('%Y%m%d')}-{self.pk:05d}"
+#             # Example :TCK-20250913-00001
+#             super().save(update_fields=['tracking_code'])
+#
+#
+#     def get_priority_color(self):
+#         return PRIORITY_COLORS.get(self.priority, '#6c757d')
+#
+#     def delete(self, *args, **kwargs):
+#         #  جلوگیری از پاک شدن در سطح مدل
+#         if self.priority == 'high':
+#             raise PermissionDenied("Cannot delete tickets with HIGH priority")
+#         super().delete(*args, **kwargs)
+#
+#     def __str__(self):
+#         return f"#{self.tracking_code} {self.subject[:30]}..."
+
 class Ticket(TimestampedModel):
     category = models.ForeignKey(Category,related_name='tickets',on_delete=models.SET_NULL,null=True,blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL,related_name='tickets',on_delete=models.PROTECT,default=None,blank=True)
@@ -66,12 +111,17 @@ class Ticket(TimestampedModel):
     tags = models.ManyToManyField(Tag, related_name='tickets', blank=True)
     max_replay_date = models.DateTimeField(help_text="The maximum replay date the ticket will reply")
     closed_at = models.DateTimeField(null=True, blank=True)
-    tracking_code = models.CharField(max_length=100, null=True, blank=True,unique=True)
+    tracking_code = models.CharField(max_length=100, null=True, blank=True, unique=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
+    contact_name = models.CharField(max_length=100, null=True, blank=True)
+    contact_email = models.EmailField(null=True, blank=True)
+    contact_phone = models.CharField(max_length=15, blank=True)
+    department = models.CharField(max_length=100, default="Django", choices=DEPARTMENT_CHOICES)
+    due_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Ticket'
         verbose_name_plural = 'Tickets'
-
         db_table = 'Tickets-Ticket'
 
         indexes = [
@@ -83,18 +133,15 @@ class Ticket(TimestampedModel):
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
-        super().save(*args, **kwargs) #save first to  get primary key
+        super().save(*args, **kwargs)
         if is_new and not self.tracking_code:
             self.tracking_code = f"TCK-{now().strftime('%Y%m%d')}-{self.pk:05d}"
-            # Example :TCK-20250913-00001
             super().save(update_fields=['tracking_code'])
-
 
     def get_priority_color(self):
         return PRIORITY_COLORS.get(self.priority, '#6c757d')
 
     def delete(self, *args, **kwargs):
-        #  جلوگیری از پاک شدن در سطح مدل
         if self.priority == 'high':
             raise PermissionDenied("Cannot delete tickets with HIGH priority")
         super().delete(*args, **kwargs)
@@ -137,3 +184,14 @@ class Assignment(TimestampedModel):
     def __str__(self):
         # بهترین گزینه - استفاده از username
         return f"#{self.assigned_ticket.subject} assigned to {self.assignee.username}"
+
+class TicketAttachment(TimestampedModel):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE)
+    file = models.FileField(upload_to='ticket_attachments/')
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    description = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        verbose_name = 'Attachment'
+        verbose_name_plural = 'Attachments'
+        db_table = 'Tickets-Attachments'
