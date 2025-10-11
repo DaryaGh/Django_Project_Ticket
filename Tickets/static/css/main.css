@@ -215,3 +215,29 @@
 .ticket-priority-low {
     border-right: 4px solid #28a745;
 }
+
+.nav-link {
+    transition: none !important;
+}
+.nav-link:hover,
+.nav-link:focus,
+.nav-link:active {
+    background-color: transparent !important;
+    color: inherit !important;
+    transform: none !important;
+    text-decoration: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.nav-link.active:hover,
+.nav-link.active:focus {
+    background-color: var(--bs-primary) !important;
+    color: white !important;
+}
+
+.nav-link.text-warning:hover,
+.nav-link.text-warning:focus {
+    color: var(--bs-warning) !important;
+    background-color: transparent !important;
+}
