@@ -7,5 +7,5 @@ urlpatterns = [
     path('Tickets/<int:id>/details',ticket_details,name='tickets-details'),
     path('Tickets/<int:id>/edit',ticket_update,name='tickets-update'),
     path('Tickets/delete/<int:id>',ticket_delete,name='tickets-destroy'),
-    path('Change/mode',change_mode,name='change-mode'),
+    # path('Change/mode',change_mode,name='change-mode'),
 ]

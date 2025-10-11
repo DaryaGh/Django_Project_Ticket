@@ -122,12 +122,13 @@ def ticket_delete(request, id):
         messages.error(request, 'Ticket not found')
         return redirect('tickets')
 
-def change_mode(request):
-    # GET
-    mode = request.GET.get('mode')
-    if mode in ['dark', 'light']:
-        response = redirect(request.META.get('HTTP_REFERER', 'tickets'))
-        response.set_cookie('theme_mode', mode, max_age=365 * 24 * 60 * 60)  # 1 year
-        return response
+# def change_mode(request):
+#     # GET
+#     mode = request.GET.get('mode')
+#     if mode in ['dark', 'light']:
+#         response = redirect(request.META.get('HTTP_REFERER', 'tickets'))
+#         response.set_cookie('theme_mode', mode, max_age=365 * 24 * 60 * 60)  # 1 year
+#         return response
+#
+#     return redirect('tickets')
 
-    return redirect('tickets')
