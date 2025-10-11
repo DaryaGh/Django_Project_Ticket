@@ -1,51 +1,56 @@
 <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebar">
-    <div class="offcanvas-header">
-        <h5 class="offcanvas-title">Ticket Management Panel</h5>
-        <button type="button" class="btn-close btn-close-secondary" data-bs-dismiss="offcanvas"></button>
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title">
+            <i class="bi bi-ticket-perforated text-primary me-2"></i>
+            Ticket Management Panel
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <div class="offcanvas-body">
+    <div class="offcanvas-body p-0">
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link active" href="{% url 'dashboard' %}">
+                <a class="nav-link active py-3 px-3 " href="{% url 'dashboard' %}">
                     <i class="bi bi-speedometer2 me-2"></i>
                     Dashboard
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'tickets' %}">
-                    <i class="bi bi-ticket-perforated me-2"></i>
-                    All Tickets
-                    <span class="badge bg-primary float-end">45</span>
+                <a class="nav-link py-3 px-3 d-flex justify-content-between align-items-center" href="{% url 'tickets' %}">
+                    <span>
+                        <i class="bi bi-ticket-perforated me-2"></i>
+                        All Tickets
+                    </span>
+                    <span class="badge bg-primary rounded-pill">45</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'tickets-create' %}">
+                <a class="nav-link py-3 px-3 " href="{% url 'tickets-create' %}">
                     <i class="bi bi-plus-circle me-2"></i>
                     New Ticket
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link py-3 px-3 " href="#">
                     <i class="bi bi-people me-2"></i>
                     User Management
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link py-3 px-3 " href="#">
                     <i class="bi bi-graph-up me-2"></i>
                     Reports
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link py-3 px-3 " href="#">
                     <i class="bi bi-gear me-2"></i>
                     Settings
                 </a>
             </li>
-            <li class="nav-item mt-3">
-                <a class="nav-link text-warning" href="#">
+            <li class="nav-item mt-auto">
+                <a class="nav-link py-3 px-3  text-warning" href="#">
                     <i class="bi bi-box-arrow-left me-2"></i>
-                   Logout
+                    Logout
                 </a>
             </li>
         </ul>
