@@ -1,5 +1,4 @@
 PRIORITY_CHOICES = [
-    ("", "Select Priority"),
     ("low", 'Low'),
     ("middle", 'Middle'),
     ("high", 'High'),
@@ -7,7 +6,6 @@ PRIORITY_CHOICES = [
 ]
 
 DEPARTMENT_CHOICES = [
-    ("", "Select Department"),
     ('developer', 'Developer'),
     ('fullstack', 'Full Stack'),
     ("python", 'Python'),
