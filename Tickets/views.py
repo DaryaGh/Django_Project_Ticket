@@ -1,5 +1,8 @@
+from multiprocessing import Value
+
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Subquery, OuterRef
+from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404, redirect
 from unicodedata import category
 
@@ -15,14 +18,11 @@ def dashboard(request):
 
 def index(request):
     search_query = request.GET.get('q',"").strip()
-    print("Search_Query : ",search_query)
     category_id = request.GET.get('category')
     priority = request.GET.get('priority')
-    sort = request.GET.get('sort','created_at')
-    direction = request.GET.get('direction','desc')
-    # tickets = Ticket.objects.prefetch_related('tags').all()
-    # print(tickets[0].tags, tickets[0].id)
-    # tickets = Ticket.objects.prefetch_related('tags')
+    sort = request.GET.get('sort','created_at')  # پیش‌فرض
+    direction = request.GET.get('dir','desc')
+
     tickets = Ticket.objects.select_related('category',"created_by").prefetch_related('tags')
 
     if search_query:
@@ -39,37 +39,42 @@ def index(request):
     if priority and priority not in ["","None"]:
         tickets = tickets.filter(priority=priority)
 
-    if direction == 'desc':
-        tickets = tickets.order_by(f"-{sort}")
-    else:
-        tickets = tickets.order_by({sort})
-
-    categories = Category.objects.filter(is_active=True )
-    print("Categories : ",categories)
-
+    categories = Category.objects.filter(is_active=True)
     priorities = Ticket._meta.get_field('priority').choices
-    print("priorities : ",priorities)
+
+    if sort == 'row':
+        sort = 'id'
+
+    if direction == 'desc':
+        tickets = tickets.order_by('-' + sort)
+    else:
+        tickets = tickets.order_by(sort)
 
     columns = [
+        ('row', 'Row'),
         ('tracking_code', 'Tracking Code'),
         ('subject', 'Subject'),
-        ('category__name', 'Category'),
+        ('created_by', 'Created By'),
         ('priority', 'Priority'),
+        ('category__name', 'Category'),
+        ('tags', 'Tags'),
+        ('max_replay_date', 'Max Replay Date'),
         ('created_at', 'Created At'),
     ]
 
     context = {
         'tickets': tickets,
         'search_query': search_query,
+        'selected_category': category_id if category_id not in ["","None"] else "",
+        'selected_priority': priority if priority not in ["","None"] else "",
         'categories': categories,
         'priorities': priorities,
-        'selected_category': category_id if category_id not in ["","None"] else"",
-        'selected_priority': priority if priority not in ["","None"] else"",
         'direction': direction,
         'sort': sort,
         'columns': columns,
     }
     return render(request, template_name='index.html', context=context)
+
 
 def ticket_create(request):
     if request.method == 'POST':
