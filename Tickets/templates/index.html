@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
+
 {% load static %}
+
+{% load highlight %}
 
 {% block  title %}
     Index
@@ -9,7 +12,7 @@
     <div class="container-lg">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>All Tickets</h2>
-            <a href="{% url 'tickets-create' %}" class="btn btn-primary">
+            <a href="{% url 'tickets-create' %}" class="btn btn-success">
                 <i class="fas fa-plus me-1"></i>
                 New Ticket
             </a>
@@ -26,6 +29,8 @@
                 {% endfor %}
             </div>
         {% endif %}
+
+    {% include 'ticket-search.html' %}
 
         <div class="card shadow">
             <div class="card-body">
@@ -115,7 +120,7 @@
                                 {#                                <td class="d-none d-md-table-cell">{{ ticket.id }}</td>#}
                                 <td class="d-none d-md-table-cell">{{ forloop.counter }}</td>
 
-                                <td>{{ ticket.tracking_code }}</td>
+                                <td>{{ ticket.tracking_code|highlight:search_query }}</td>
 
                                 <td class="text-start">
                                     <a href="{% url 'tickets-details' ticket.pk %}"
@@ -123,7 +128,7 @@
                                        data-bs-toggle="tooltip"
 {#                                       data-bs-title="{{ ticket.subject }}"#}
                                        data-bs-placement="top">
-                                        {{ ticket.subject|truncatewords:5 }}
+                                        {{ ticket.subject|truncatewords:5|highlight:search_query }}
                                     </a>
                                 </td>
 

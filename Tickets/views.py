@@ -1,5 +1,8 @@
 from django.contrib import messages
+from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
+from unicodedata import category
+
 from Tickets.forms import TicketForm
 from Tickets.models import *
 from django.core.exceptions import PermissionDenied
@@ -11,19 +14,71 @@ def dashboard(request):
     # return HttpResponse("Dashboard")
 
 def index(request):
-    tickets = Ticket.objects.prefetch_related('tags').all()
-    print(tickets[0].tags, tickets[0].id)
-    return render(request, template_name='index.html', context={'tickets': tickets})
+    search_query = request.GET.get('q',"").strip()
+    print("Search_Query : ",search_query)
+    category_id = request.GET.get('category')
+    priority = request.GET.get('priority')
+    sort = request.GET.get('sort','created_at')
+    direction = request.GET.get('direction','desc')
+    # tickets = Ticket.objects.prefetch_related('tags').all()
+    # print(tickets[0].tags, tickets[0].id)
+    # tickets = Ticket.objects.prefetch_related('tags')
+    tickets = Ticket.objects.select_related('category',"created_by").prefetch_related('tags')
+
+    if search_query:
+       tickets = tickets.filter(
+            Q(subject__icontains=search_query)
+            | Q(description__icontains=search_query)
+            | Q(tracking_code__icontains=search_query)
+            | Q(category__name__icontains=search_query)
+            )
+
+    if category_id and category_id not in ["","None"]:
+        tickets = tickets.filter(category_id=category_id)
+
+    if priority and priority not in ["","None"]:
+        tickets = tickets.filter(priority=priority)
+
+    if direction == 'desc':
+        tickets = tickets.order_by(f"-{sort}")
+    else:
+        tickets = tickets.order_by({sort})
+
+    categories = Category.objects.filter(is_active=True )
+    print("Categories : ",categories)
+
+    priorities = Ticket._meta.get_field('priority').choices
+    print("priorities : ",priorities)
+
+    columns = [
+        ('tracking_code', 'Tracking Code'),
+        ('subject', 'Subject'),
+        ('category__name', 'Category'),
+        ('priority', 'Priority'),
+        ('created_at', 'Created At'),
+    ]
+
+    context = {
+        'tickets': tickets,
+        'search_query': search_query,
+        'categories': categories,
+        'priorities': priorities,
+        'selected_category': category_id if category_id not in ["","None"] else"",
+        'selected_priority': priority if priority not in ["","None"] else"",
+        'direction': direction,
+        'sort': sort,
+        'columns': columns,
+    }
+    return render(request, template_name='index.html', context=context)
 
 def ticket_create(request):
     if request.method == 'POST':
-        form = TicketForm(request.POST, request.FILES)
+        form = TicketForm(request.POST)
         # برای پاک کردن فیلدهای اجباری در جنگو است
         form.errors.clear()
 
         priority_values = ",".join([choice[0] for choice in PRIORITY_CHOICES])
         department_values = ",".join([choice[0] for choice in DEPARTMENT_CHOICES])
-        # قوانین اعتبارسنجی - توجه به فیلد contact_phone
         rules = {
             "category": ["required"],
             "priority": ["required", f"in:{priority_values}"],
@@ -34,15 +89,11 @@ def ticket_create(request):
             "tags": ["min_items:1", "max_items:5"],
             "contact_email": ["required", "email"],
             "contact_name": ["required", "min:2", "max:100"],
-            "contact_phone": ["phone"],  # فقط قانون phone
+            "contact_phone": ["phone"],
             "due_date": ["required", "due_date"],
         }
 
         errors = validate(request.POST, rules)
-
-        # if request.FILES:
-        #     file_errors = validate_files(request.FILES, {"attachments": ["max_files:5", "max_file_size:10MB"]})
-        #     errors.update(file_errors)
 
         if errors:
             for field, error in errors.items():
@@ -65,7 +116,7 @@ def ticket_create(request):
                     )
 
             messages.success(request, 'Your ticket has been created successfully!')
-            return redirect('ticket_detail', ticket_id=new_ticket.id)
+            return redirect('ticket_details', ticket_id=new_ticket.id)
 
     else:
         form = TicketForm(initial={'priority': ''})
