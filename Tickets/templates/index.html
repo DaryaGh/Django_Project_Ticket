@@ -163,6 +163,7 @@
                                             {% endif %}
                                 ">
                                     <div class="table-header-content">
+
                                         {% if col == 'row' %}<i class="bi bi-list-ol"></i>
                                         {% elif col == 'id' %}<i class="bi bi-sort-down"></i>
                                         {% elif col == 'tracking_code' %}<i class="bi bi-hash"></i>
@@ -176,7 +177,7 @@
                                         {% endif %}
 
                                         {% if col == 'row' %}
-                                            <span class="text-dark">{{ label }}</span>
+                                            <span class="text-dark " onclick="toggleSort('row')" >{{ label }}</span>
                                         {% else %}
                                             <a href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&sort={{ col }}&dir={% if sort == col and direction == 'asc' %}desc{% else %}asc{% endif %}"
                                                class="text-decoration-none text-dark">

@@ -1,54 +1,75 @@
 from multiprocessing import Value
 
 from django.contrib import messages
-from django.db.models import Q, Subquery, OuterRef
-from django.db.models.functions import Coalesce
+from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
-from unicodedata import category
-
 from Tickets.forms import TicketForm
 from Tickets.models import *
 from django.core.exceptions import PermissionDenied
 from .Choices import *
 from .validators import validate
-
 def dashboard(request):
     return render(request, 'dashboard.html', {'dashboard': dashboard})
     # return HttpResponse("Dashboard")
 
 def index(request):
-    search_query = request.GET.get('q',"").strip()
+    search_query = request.GET.get('q', "").strip()
     category_id = request.GET.get('category')
     priority = request.GET.get('priority')
-    sort = request.GET.get('sort','created_at')  # پیش‌فرض
-    direction = request.GET.get('dir','desc')
-
-    tickets = Ticket.objects.select_related('category',"created_by").prefetch_related('tags')
+    search_mode = request.GET.get('search_mode', 'and')
+    sort = request.GET.get('sort', 'created_at')
+    direction = request.GET.get('dir', 'desc')
+    tickets = Ticket.objects.select_related('category', "created_by").prefetch_related('tags')
 
     if search_query:
-       tickets = tickets.filter(
+        search_q = Q(
             Q(subject__icontains=search_query)
             | Q(description__icontains=search_query)
             | Q(tracking_code__icontains=search_query)
             | Q(category__name__icontains=search_query)
-            )
+        )
 
-    if category_id and category_id not in ["","None"]:
-        tickets = tickets.filter(category_id=category_id)
+        filter_conditions = []
 
-    if priority and priority not in ["","None"]:
-        tickets = tickets.filter(priority=priority)
+        if search_query:
+            filter_conditions.append(search_q)
+
+        if category_id and category_id not in ["", "None"]:
+            if search_mode == 'or':
+                filter_conditions.append(Q(category_id=category_id))
+            else:  # AND
+                tickets = tickets.filter(category_id=category_id)
+
+        if priority and priority not in ["", "None"]:
+            if search_mode == 'or':
+                filter_conditions.append(Q(priority=priority))
+            else:  # AND
+                tickets = tickets.filter(priority=priority)
+
+        if filter_conditions:
+            if search_mode == 'or':
+                combined_q = Q()
+                for condition in filter_conditions:
+                    combined_q |= condition
+                tickets = tickets.filter(combined_q)
+            else:
+                tickets = tickets.filter(search_q)
+
+    else:
+        if category_id and category_id not in ["", "None"]:
+            tickets = tickets.filter(category_id=category_id)
+
+        if priority and priority not in ["", "None"]:
+            tickets = tickets.filter(priority=priority)
 
     categories = Category.objects.filter(is_active=True)
     priorities = Ticket._meta.get_field('priority').choices
 
-    if sort == 'row':
-        sort = 'id'
-
-    if direction == 'desc':
-        tickets = tickets.order_by('-' + sort)
-    else:
-        tickets = tickets.order_by(sort)
+    if sort:
+        if direction == 'desc':
+            tickets = tickets.order_by('-' + sort)
+        else:
+            tickets = tickets.order_by(sort)
 
     columns = [
         ('row', 'Row'),
@@ -65,8 +86,9 @@ def index(request):
     context = {
         'tickets': tickets,
         'search_query': search_query,
-        'selected_category': category_id if category_id not in ["","None"] else "",
-        'selected_priority': priority if priority not in ["","None"] else "",
+        'selected_category': category_id if category_id not in ["", "None"] else "",
+        'selected_priority': priority if priority not in ["", "None"] else "",
+        'search_mode': search_mode,
         'categories': categories,
         'priorities': priorities,
         'direction': direction,
@@ -74,7 +96,6 @@ def index(request):
         'columns': columns,
     }
     return render(request, template_name='index.html', context=context)
-
 
 def ticket_create(request):
     if request.method == 'POST':
@@ -177,14 +198,4 @@ def ticket_delete(request, id):
     except Ticket.DoesNotExist:
         messages.error(request, 'Ticket not found')
         return redirect('tickets')
-
-# def change_mode(request):
-#     # GET
-#     mode = request.GET.get('mode')
-#     if mode in ['dark', 'light']:
-#         response = redirect(request.META.get('HTTP_REFERER', 'tickets'))
-#         response.set_cookie('theme_mode', mode, max_age=365 * 24 * 60 * 60)  # 1 year
-#         return response
-#
-#     return redirect('tickets')
 
