@@ -14,10 +14,10 @@ DEPARTMENT_CHOICES = [
 ]
 
 PRIORITY_COLORS = {
-    "low": '#198754',
-    "middle": '#0d6efd',
-    "high": '#dc3545',
-    'secret':'#ffc107'
+    "low": '#6a994e',
+    "middle": '#1d3557',
+    "high": '#800e13',
+    'secret':'#ee6c4d'
 }
 
 STATUS_CHOICES = [
