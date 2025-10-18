@@ -107,11 +107,8 @@
                                 <td>{{ ticket.created_by.username }}</td>
 
                                 <td class="d-none d-sm-table-cell">
-
-
-                            <span class="badge bg-{% if ticket.priority == 'high' %}danger{% elif ticket.priority == 'medium' %}warning{% else %}info{% endif %}">
-    {{ ticket.get_priority_display }}
-</span>
+                                    <span class="badge text-white"
+                                          style="background-color: {{ ticket.get_priority_color }}">{{ ticket.get_priority_display }}</span>
                                 </td>
 
                                 <td class="d-none d-lg-table-cell">

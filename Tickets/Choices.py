@@ -17,6 +17,7 @@ PRIORITY_COLORS = {
     "low": '#198754',
     "middle": '#0d6efd',
     "high": '#dc3545',
+    'secret':'#ffc107'
 }
 
 STATUS_CHOICES = [
