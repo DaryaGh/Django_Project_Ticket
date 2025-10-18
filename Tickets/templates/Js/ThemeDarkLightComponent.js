@@ -1,14 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     const themeToggle = document.getElementById('themeToggle');
     const htmlElement = document.documentElement;
-    function getInitialTheme() {
-        const saved = localStorage.getItem('theme');
-        if (saved) return saved;
-        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        return systemDark ? 'dark' : 'light';
-    }
 
     function applyTheme(theme) {
+        localStorage.setItem('theme', theme);
+
         htmlElement.setAttribute('data-bs-theme', theme);
         document.body.setAttribute('data-bs-theme', theme);
 
@@ -21,6 +17,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 el.style.color = '#dee2e6';
                 el.style.borderColor = '#495057';
             });
+
+            document.querySelectorAll('.card').forEach(card => {
+                card.style.backgroundColor = '#2b3035';
+                card.style.color = '#dee2e6';
+            });
+
             themeToggle.innerHTML = '<i class="bi bi-sun-fill fs-5 text-warning"></i>';
 
         } else {
@@ -32,17 +34,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 el.style.color = '';
                 el.style.borderColor = '';
             });
+
+            document.querySelectorAll('.card').forEach(card => {
+                card.style.backgroundColor = '';
+                card.style.color = '';
+            });
+
             themeToggle.innerHTML = '<i class="bi bi-moon-fill fs-5 text-warning"></i>';
         }
     }
 
     function toggleTheme() {
-        const current = htmlElement.getAttribute('data-bs-theme') || 'light';
-        const newTheme = current === 'dark' ? 'light' : 'dark';
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         applyTheme(newTheme);
     }
 
-    const initialTheme = getInitialTheme();
-    applyTheme(initialTheme);
+    function initializeTheme() {
+        const savedTheme = localStorage.getItem('theme');
+
+        if (savedTheme) {
+            applyTheme(savedTheme);
+        } else {
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const initialTheme = systemDark ? 'dark' : 'light';
+            applyTheme(initialTheme);
+        }
+    }
+
+    initializeTheme();
+
     themeToggle.addEventListener('click', toggleTheme);
+
+    window.addEventListener('load', function() {
+        setTimeout(initializeTheme, 100);
+    });
 });
