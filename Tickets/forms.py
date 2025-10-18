@@ -35,6 +35,7 @@ class TicketForm(forms.ModelForm):
                        'pattern': '[0-9]{10,11}', 'title': 'Please enter 10 or 11 digits'}),
             'department': forms.Select(attrs={'class': 'form-select'}),
         }
+
         labels = {
             'contact_name': 'Full Name',
             'contact_email': 'Email Address',
