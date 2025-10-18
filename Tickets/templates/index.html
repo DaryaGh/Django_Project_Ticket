@@ -22,7 +22,6 @@
             <div class="messages my-3">
                 {% for message in messages %}
                     <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-
                         <strong><i class="bi bi-check-square fs-5"></i> {{ message }}</strong>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
@@ -36,123 +35,7 @@
             <div class="card-body">
                 <div class="table-responsive-xl">
                     <table class="table table-striped text-center align-middle table-hover">
-                        {#                     خطوط عمودی =< table-bordered#}
                         <thead class="table-secondary">
-                        {#                        <tr>#}
-                        {#                                                        <th scope="col" class="d-none d-md-table-cell">#}
-                        {#                                                            <div class="table-header-content">#}
-                        {#                                                                <i class="bi bi-sort-down"></i>#}
-                        {#                                                                <span>ID</span>#}
-                        {#                                                            </div>#}
-                        {#                                                        </th>#}
-                        {#                            <th scope="col" class="d-none d-md-table-cell">#}
-                        {#                                <div class="table-header-content" onclick="toggleSort('row')" style="cursor: pointer;">#}
-                        {#                                    <i class="bi bi-sort-down" id="row-sort-icon"></i>#}
-                        {#                                    <span>Row</span>#}
-                        {#                                </div>#}
-                        {#                            </th>#}
-                        {#                            <th scope="col">#}
-                        {#                                <div class="table-header-content">#}
-                        {#                                    <i class="bi bi-hash"></i>#}
-                        {#                                    <span>Tracking Code</span>#}
-                        {#                                </div>#}
-                        {#                            </th>#}
-                        {#                                                        <th scope="col">#}
-                        {#                                                            <div class="table-header-content">#}
-                        {#                                                                <i class="bi bi-search"></i>#}
-                        {#                                                                <span>Subject</span>#}
-                        {#                                                            </div>#}
-                        {#                                                        </th>#}
-                        {##}
-                        {#                            <th scope="col">#}
-                        {#                                <div class="table-header-content">#}
-                        {#                                    <i class="bi bi-search"></i>#}
-                        {#                                                                        <span>Subject</span>#}
-                        {#                                    <a href="?sort=subject&dir={% if direction == 'asc' %}desc{% else %}asc{% endif %}"#}
-                        {#                                       class="text-decoration-none">#}
-                        {#                                        Subject#}
-                        {#                                                                                {% if direction == 'asc' %}<i class="bi bi-caret-up"></i>{% else %}<i class="bi bi-caret-down"></i>{% endif %}#}
-                        {#                                        {% if direction == 'asc' %}#}
-                        {#                                            <i class="bi bi-caret-down"></i>#}
-                        {#                                            <i class="bi bi-arrow-up-fill"></i>#}
-                        {#                                        {% else %}#}
-                        {#                                            <i class="bi bi-caret-down-fill"></i>#}
-                        {#                                            <i class="bi bi-caret-up"></i>#}
-                        {#                                        {% endif %}#}
-                        {##}
-                        {#                                    </a>#}
-                        {#                                </div>#}
-                        {#                            </th>#}
-                        {##}
-                        {#                            <th scope="col">#}
-                        {#                                <div class="table-header-content">#}
-                        {#                                    <i class="bi bi-person"></i>#}
-                        {#                                    <span>Created By</span>#}
-                        {#                                </div>#}
-                        {#                            </th>#}
-                        {#                            <th scope="col" class="d-none d-sm-table-cell">#}
-                        {#                                <div class="table-header-content">#}
-                        {#                                    <i class="bi bi-flag"></i>#}
-                        {#                                    <span>Priority</span>#}
-                        {#                                </div>#}
-                        {#                            </th>#}
-                        {#                            <th scope="col" class="d-none d-lg-table-cell">#}
-                        {#                                <div class="table-header-content">#}
-                        {#                                    <i class="bi bi-tags"></i>#}
-                        {#                                    <span>Category</span>#}
-                        {#                                </div>#}
-                        {#                            </th>#}
-                        {#                            <th scope="col" class="d-none d-lg-table-cell">#}
-                        {#                                <div class="table-header-content">#}
-                        {#                                    <i class="bi bi-circle-fill"></i>#}
-                        {#                                    <span>Tags</span>#}
-                        {#                                </div>#}
-                        {#                            </th>#}
-                        {#                            <th scope="col" class="d-none d-xl-table-cell">#}
-                        {#                                <div class="table-header-content">#}
-                        {#                                    <i class="bi bi-calendar"></i>#}
-                        {#                                    <span>Max Replay Code</span>#}
-                        {#                                </div>#}
-                        {#                            </th>#}
-                        {#                            <th scope="col" class="d-none d-md-table-cell">#}
-                        {#                                <div class="table-header-content">#}
-                        {#                                    <i class="bi bi-calendar"></i>#}
-                        {#                                    <span>Created At</span>#}
-                        {#                                </div>#}
-                        {#                            </th>#}
-                        {#                                                        <th scope="col" class="d-none d-xl-table-cell">#}
-                        {#                                                            <div class="table-header-content">#}
-                        {#                                                                <i class="bi bi-card-text"></i>#}
-                        {#                                                                <span>Description</span>#}
-                        {#                                                            </div>#}
-                        {#                                                        </th>#}
-                        {#                            <th scope="col">#}
-                        {#                                <div class="table-header-content">#}
-                        {#                                    <i class="bi bi-gear"></i>#}
-                        {#                                    <span>Actions</span>#}
-                        {#                                </div>#}
-                        {#                            </th>#}
-                        {#                        </tr>#}
-
-
-                        {#                                                <tr>#}
-                        {#                                                    {% for col,label in columns %}#}
-                        {#                                                        <th>#}
-                        {#                                                            <a href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&sort={{ col }}&dir={% if sort == col and direction == "asc" %}desc{% else %}asc{% endif %}">#}
-                        {#                                                                {{ label }}#}
-                        {#                                                                {% if sort == col %}#}
-                        {#                                                                    {% if direction == "asc" %}#}
-                        {#                                                                        <i class="bi bi-arrow-up-short"></i>#}
-                        {#                                                                        {% else %}#}
-                        {#                                                                        <i class="bi bi-arrow-down-short"></i>#}
-                        {#                                                                    {% endif %}#}
-                        {#                                                                {% endif %}#}
-                        {#                                                            </a>#}
-                        {#                                                        </th>#}
-                        {#                                                    {% endfor %}#}
-                        {#                                                </tr>#}
-
-
                         <tr>
                             {% for col,label in columns %}
                                 <th scope="col" class="
@@ -177,7 +60,7 @@
                                         {% endif %}
 
                                         {% if col == 'row' %}
-                                            <span class="text-dark " onclick="toggleSort('row')" >{{ label }}</span>
+                                            <span class="text-dark " onclick="toggleSort('row')">{{ label }}</span>
                                         {% else %}
                                             <a href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&sort={{ col }}&dir={% if sort == col and direction == 'asc' %}desc{% else %}asc{% endif %}"
                                                class="text-decoration-none text-dark">
@@ -202,23 +85,20 @@
                                 </div>
                             </th>
                         </tr>
-
                         </thead>
 
                         <tbody class="table-group-divider">
-
                         {% for ticket in tickets %}
                             <tr>
-                                {#                                <td class="d-none d-md-table-cell">{{ ticket.id }}</td>#}
                                 <td class="d-none d-md-table-cell">{{ forloop.counter }}</td>
-                                {#                            <td class="d-none d-md-table-cell">{{ ticket.row_number }}</td>#}
                                 <td>{{ ticket.tracking_code|highlight:search_query }}</td>
 
                                 <td class="text-start">
                                     <a href="{% url 'tickets-details' ticket.pk %}"
                                        class="btn-link text-decoration-none"
                                        data-bs-toggle="tooltip"
-                                            {#                                       data-bs-title="{{ ticket.subject }}"#}
+                                       data-bs-custom-class="tooltip-subject"
+                                       data-bs-title="{{ ticket.subject }}"
                                        data-bs-placement="top">
                                         {{ ticket.subject|truncatewords:5|highlight:search_query }}
                                     </a>
@@ -226,17 +106,12 @@
 
                                 <td>{{ ticket.created_by.username }}</td>
 
-                                {#                                <td class="d-none d-sm-table-cell">#}
-                                {#                                    <span class="badge text-white"#}
-                                {#                                          style="background-color: {{ ticket.get_priority_color }}">#}
-                                {#                                        {{ ticket.priority }}#}
-                                {#                                    </span>#}
-                                {##}
-                                {#                                </td>#}
                                 <td class="d-none d-sm-table-cell">
-                <span class="badge bg-{% if ticket.priority == 'high' %}danger{% elif ticket.priority == 'medium' %}warning{% else %}info{% endif %}">
-                    {{ ticket.get_priority_display }}
-                </span>
+
+
+                            <span class="badge bg-{% if ticket.priority == 'high' %}danger{% elif ticket.priority == 'medium' %}warning{% else %}info{% endif %}">
+    {{ ticket.get_priority_display }}
+</span>
                                 </td>
 
                                 <td class="d-none d-lg-table-cell">
@@ -249,36 +124,39 @@
 
                                 <td class="d-none d-lg-table-cell">
                                     {% if ticket.tags.all %}
-                                        <span class="badge bg-warning">{{ ticket.tags.all|length }}</span>
+                                        <span class="badge bg-warning"
+                                              data-bs-toggle="tooltip"
+                                              data-bs-custom-class="tooltip-tags-count"
+                                              data-bs-title="Total tags: {{ ticket.tags.all|length }}">
+                                            {{ ticket.tags.all|length }}
+                                        </span>
 
                                         {% for tag in ticket.tags.all|slice:"2" %}
-                                            <span class="badge bg-secondary">{{ tag.name }}</span>
+                                            <span class="badge bg-secondary"
+                                                  data-bs-toggle="tooltip"
+                                                  data-bs-custom-class="tooltip-tags"
+                                                  data-bs-title="{{ tag.name }} - Created: {{ tag.created_at|date:'Y/m/d' }}">
+                                                {{ tag.name }}
+                                            </span>
                                         {% endfor %}
 
                                         {% if ticket.tags.all|length > 2 %}
-                                            {# از Title  برای == > توضیح مختصر نمایش میده وقتی موس رو روی element نگه میداری#}
-                                            {#                  گذاشتن : بعد از عدد 2 اینجا به ما میگوید از ایندکس 2 به بعد را نمایش بده#}
-                                            {#            forloop.last = > وقتی به آخرین تگ در حلقه می‌رسیم True میشه #}
-                                            {#                                            add:'-2' = > فیلتر add: یک عدد به مقدار قبلی اضافه یا کم میکنه ، #}
-                                            {# ،"2" → اضافه کردن ۲//"-2" → کم کردن ۲#}
                                             <span class="badge bg-light text-dark"
-                                                  title=" {% for tag in ticket.tags.all|slice:'2:' %}{{ forloop.counter }}.{{ tag.name }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
-                                                 +{{ ticket.tags.all|length|add:"-2" }}
+                                                  data-bs-toggle="tooltip"
+                                                  data-bs-custom-class="tooltip-tags-more"
+                                                  data-bs-title="Additional tags:
+                                                          {% for tag in ticket.tags.all|slice:'2:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                +{{ ticket.tags.all|length|add:"-2" }}
                                             </span>
                                         {% endif %}
                                     {% else %}
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
+
                                 <td class="d-none d-xl-table-cell">{{ ticket.max_replay_date|date:"Y/m/d" }}</td>
                                 <td class="d-none d-md-table-cell">{{ ticket.created_at|date:"Y/m/d H:i" }}</td>
-                                {#                        <td class="d-none d-xl-table-cell">#}
-                                {#                            <span class="text-truncate d-inline-block" style="max-width: 120px;"#}
-                                {#                                  data-bs-toggle="tooltip" #}
-                                {#                                  data-bs-title="{{ ticket.description|striptags }}">#}
-                                {#                                {{ ticket.description|striptags|truncatechars:15|default:"-" }}#}
-                                {#                            </span>#}
-                                {#                        </td>#}
+
                                 <td class="action-cell" id="action-{{ ticket.id }}">
                                     <a href="{% url 'tickets-update' ticket.id %}"
                                        class="text-decoration-none edit-confirm">
@@ -287,9 +165,7 @@
                                     <a href="{% url 'tickets-destroy' ticket.id %}"
                                        class="text-decoration-none text-danger delete-btn delete-confirm"
                                        data-ticket-id="{{ ticket.id }}"
-                                       data-ticket-number="{{ ticket.id }}"
-                                            {#                                       data-ticket-title="{{ ticket.subject }}"#}
-                                    >
+                                       data-ticket-number="{{ ticket.id }}">
                                         <i class="bi-trash3 fs-5 icon-hover"></i>
                                     </a>
                                 </td>
@@ -300,23 +176,19 @@
                             </tr>
                         {% endfor %}
                         </tbody>
-                        <tfoot></tfoot>
                     </table>
                 </div>
             </div>
         </div>
     </div>
     {% include 'ModelDeleteConformationIndex.html' %}
-
 {% endblock %}
 
 {% block js %}
     <script>
         {% include 'Js/alert.js' %}
         {% include 'Js/delete(confirm).js' %}
-        {#        {% include 'Js/deleteConfirm.js' %}#}
         {% include 'Js/TooltipSubject.js' %}
-        {#        {% include 'Js/EditConfirm.js' %}#}
         {% include 'Js/RowAscDesc.js' %}
     </script>
 {% endblock %}

@@ -1,5 +1,3 @@
-from multiprocessing import Value
-
 from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
@@ -132,17 +130,17 @@ def ticket_create(request):
             form.save_m2m()
             # new_ticket.created_by = request.user
             #             # new_ticket.save(commit=True)
-
-            if 'attachments' in request.FILES:
-                for file in request.FILES.getlist('attachments'):
-                    TicketAttachment.objects.create(
-                        ticket=new_ticket,
-                        file=file,
-                        uploaded_by_id=104
-                    )
-
-            messages.success(request, 'Your ticket has been created successfully!')
-            return redirect('ticket_details', ticket_id=new_ticket.id)
+            #
+            # if 'attachments' in request.FILES:
+            #     for file in request.FILES.getlist('attachments'):
+            #         TicketAttachment.objects.create(
+            #             ticket=new_ticket,
+            #             file=file,
+            #             uploaded_by_id=104
+            #         )
+            #
+            # messages.success(request, 'Your ticket has been created successfully!')
+            # return redirect('ticket_details', ticket_id=new_ticket.id)
 
     else:
         form = TicketForm(initial={'priority': ''})
