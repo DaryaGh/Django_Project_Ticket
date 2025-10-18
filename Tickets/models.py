@@ -105,18 +105,18 @@ class Tag(NameSlugModel):
 class Ticket(TimestampedModel):
     category = models.ForeignKey(Category,related_name='tickets',on_delete=models.SET_NULL,null=True,blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL,related_name='tickets',on_delete=models.PROTECT,default=None,blank=True)
-    priority = models.CharField(max_length=100, default="Low", choices=PRIORITY_CHOICES)
+    priority = models.CharField(max_length=100, choices=PRIORITY_CHOICES)
     subject = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     tags = models.ManyToManyField(Tag, related_name='tickets', blank=True)
     max_replay_date = models.DateTimeField(help_text="The maximum replay date the ticket will reply")
     closed_at = models.DateTimeField(null=True, blank=True)
     tracking_code = models.CharField(max_length=100, null=True, blank=True, unique=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     contact_name = models.CharField(max_length=100, null=True, blank=True)
     contact_email = models.EmailField(null=True, blank=True)
     contact_phone = models.CharField(max_length=15, blank=True)
-    department = models.CharField(max_length=100, default="Django", choices=DEPARTMENT_CHOICES)
+    department = models.CharField(max_length=100, choices=DEPARTMENT_CHOICES)
     due_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
