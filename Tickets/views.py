@@ -113,7 +113,7 @@ def ticket_create(request):
             "tags": ["min_items:1", "max_items:5"],
             "contact_email": ["required", "email"],
             "contact_name": ["required", "min:2", "max:100"],
-            "contact_phone": ["phone"],
+            "contact_phone": ["required","phone"],
             "due_date": ["required", "due_date"],
         }
 
@@ -141,9 +141,12 @@ def ticket_create(request):
             #
             # messages.success(request, 'Your ticket has been created successfully!')
             # return redirect('ticket_details', ticket_id=new_ticket.id)
+            messages.success(request, 'Your Ticket was successfully !')
+            return redirect('ticket_success', id=new_ticket.id)
 
     else:
         form = TicketForm(initial={'priority': ''})
+
 
     return render(request, 'ticket_create.html', {
         'form': form,
@@ -197,3 +200,6 @@ def ticket_delete(request, id):
         messages.error(request, 'Ticket not found')
         return redirect('tickets')
 
+def ticket_success(request, id):
+    ticket = get_object_or_404(Ticket, id=id)
+    return render(request, 'ticket_success.html', {'ticket': ticket})
