@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import models
+from django.urls import reverse
 from django.utils.text import slugify, capfirst
 from django.utils.timezone import now
 from .Choices import *
@@ -140,6 +141,15 @@ class Ticket(TimestampedModel):
 
     def get_priority_color(self):
         return PRIORITY_COLORS.get(self.priority, '#6c757d')
+
+    def get_edit_url(self):
+        return reverse('tickets-update',args=[self.pk])
+
+    def get_absolute_url(self):
+        return  reverse('tickets-details',args=[self.pk])
+
+    def get_delete_url(self):
+        return reverse('tickets-destroy',args=[self.pk])
 
     def delete(self, *args, **kwargs):
         if self.priority == 'high':

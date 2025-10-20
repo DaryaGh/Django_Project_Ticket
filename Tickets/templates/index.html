@@ -2,7 +2,9 @@
 
 {% load static %}
 
+{#اسم فایل های templatetags رو مینویسیم#}
 {% load highlight %}
+{% load button_tags %}
 
 {% block  title %}
     Index
@@ -155,16 +157,26 @@
                                 <td class="d-none d-md-table-cell">{{ ticket.created_at|date:"Y/m/d H:i" }}</td>
 
                                 <td class="action-cell" id="action-{{ ticket.id }}">
-                                    <a href="{% url 'tickets-update' ticket.id %}"
-                                       class="text-decoration-none edit-confirm">
-                                        <i class="bi-pencil-square fs-5 icon-hover-p"></i>
-                                    </a>
-                                    <a href="{% url 'tickets-destroy' ticket.id %}"
-                                       class="text-decoration-none text-danger delete-btn delete-confirm"
-                                       data-ticket-id="{{ ticket.id }}"
-                                       data-ticket-number="{{ ticket.id }}">
-                                        <i class="bi-trash3 fs-5 icon-hover"></i>
-                                    </a>
+                                    {#                                    <a href="{% url 'tickets-update' ticket.id %}"#}
+                                    {#                                       class="text-decoration-none edit-confirm">#}
+                                    {#                                        <i class="bi-pencil-square fs-5 icon-hover-p"></i>#}
+                                    {#                                    </a>#}
+                                    {#                                    Component#}
+                                    {#                                    {% include 'components/button-a.html' with label="Edit" color="info" icon='bi-pencil-square' %}#}
+                                    {#                                    {% include 'components/button-a.html' with label="Edit" color="info" size="lg" icon='bi-pencil-square' %}#}
+                                    {#                                    {% include 'components/button-advance.html' with type='submit' label="Edit" color="info" icon='bi-pencil-square' %}#}
+
+                                    {% button label="Edit" url=ticket.get_edit_url icon="bi-pencil-square" color="warning" extra_class="text-light" %}
+                                    {#                                    {% button "Edit" ticket.get_edit_url "warning" "bi-pencil-square"  "text-light" %}#}
+                                    {% button label="Delete" url=ticket.get_delete_url icon="bi-trash3" color="danger" extra_class="text-light" %}
+                                    {% button label="View" url=ticket.get_absolute_url icon="bi-eye" color="success" extra_class="text-light" %}
+
+                                    {#                                    <a href="{% url 'tickets-destroy' ticket.id %}"#}
+                                    {#                                       class="text-decoration-none text-danger delete-btn delete-confirm"#}
+                                    {#                                       data-ticket-id="{{ ticket.id }}"#}
+                                    {#                                       data-ticket-number="{{ ticket.id }}">#}
+                                    {#                                        <i class="bi-trash3 fs-5 icon-hover"></i>#}
+                                    {#                                    </a>#}
                                 </td>
                             </tr>
                         {% empty %}

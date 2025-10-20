@@ -1,4 +1,6 @@
-{#<div class="card my-4">#}
+{% load button_tags %}
+
+ {#<div class="card my-4">#}
     <div class="card-body">
 {#        <form method="get" class="mb-3 d-flex gap-2">#}
 {#            <input type="text"#}
@@ -52,9 +54,12 @@
             </div>
             <div class="col-md-3">
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary px-4 flex-fill">
-                        <i class="fas fa-play me-2"></i>Filter
-                    </button>
+{#                    <button type="submit" class="btn btn-primary px-4 flex-fill">#}
+{#                        <i class="fas fa-play me-2"></i>Filter#}
+{#                    </button>#}
+
+                    {% button label="Filter" color="warning" type="submit" icon="bi-file-play" extra_class="me-2" %}
+
                     <a href="{% url "tickets" %}" class="btn btn-danger px-3">
                         <i class="fas fa-redo"></i> Clear
                     </a>
