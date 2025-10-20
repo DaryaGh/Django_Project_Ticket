@@ -1,0 +1,16 @@
+{% if url %}
+<a href="{{ url }}" class="btn btn-{{ color|default:'primary' }} btn-sm d-inline-flex align-items-center">
+    {% if icon %}
+        <i class="bi {{ icon }} me-1"></i>
+    {% endif %}
+    {{ label }}
+</a>
+{% else %}
+<button type="{{ type|default:'submit' }}" class="btn btn-{{ color|default:'primary' }} btn-sm d-inline-flex align-items-center">
+
+    {% if icon %}
+    <i class="bi {{ icon }} me-1"></i>
+    {% endif %}
+    {{ label }}
+</button>
+{% endif %}

@@ -1,0 +1,9 @@
+{#<a href="{{ url }}" class="btn btn-{{ color|default:'primary' }} btn-sm d-inline-flex align-items-center">#}
+<a href="{{ url }}" class="btn btn-{{ color|default:'primary' }} btn-{{ size|default:'sm' }} d-inline-flex align-items-center">
+    {% if icon %}
+        <i class="bi {{ icon }} me-1"></i>
+{#        <i class="bi bi-{{ icon }} me-1"></i>#}
+    {% endif %}
+{#inner text element a#}
+    {{ label }}
+</a>
