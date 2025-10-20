@@ -70,3 +70,24 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(initializeTheme, 100);
     });
 });
+
+
+
+// const colorModeElm = document.querySelector("#color-mode")
+// document.addEventListener("DOMContentLoaded", function () {
+//     if (localStorage.getItem('default-color-theme')) {
+//         const theme = localStorage.getItem('default-color-theme')
+//         document.body.setAttribute('data-bs-theme', theme)
+//     } else {
+//         document.body.setAttribute('data-bs-theme', 'dark')
+//     }
+// })
+//
+// colorModeElm.addEventListener('click',function (){
+//     if(document.body.getAttribute('data-bs-theme') === 'light'){
+//         document.body.setAttribute('data-bs-theme','dark')
+//     } else {
+//         document.body.setAttribute('data-bs-theme','light')
+//         localStorage.setItem('default-color-theme','light')
+//     }
+// })
