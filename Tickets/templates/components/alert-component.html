@@ -1,7 +1,7 @@
-div class="alert alert-{{ type|default:'info' }} alert-dismissible fade show" role="alert">
+<div class="alert alert-{{ type|default:'info' }} alert-dismissible fade show" role="alert">
     {% if type == "success" %}
         <i class="bi bi-check-circle-fill me-2"></i>
-    {% elif type == "error" or type == "danger" %}~
+    {% elif type == "error" or type == "danger" %}
         <i class="bi bi-x-circle-fill me-2"></i>
     {% elif type == "warning" %}
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
