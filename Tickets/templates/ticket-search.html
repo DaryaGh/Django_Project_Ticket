@@ -1,72 +1,49 @@
 {% load button_tags %}
 
- {#<div class="card my-4">#}
-    <div class="card-body">
-{#        <form method="get" class="mb-3 d-flex gap-2">#}
-{#            <input type="text"#}
-{#                   name="q"#}
-{#                   value="{{ search_query }}"#}
-{#                   placeholder="Search by Subject , Description , Tracking-Code"#}
-{#                   class="form-control"#}
-{#            >#}
-{#            <button type="submit" class="btn btn-outline-primary">Search</button>#}
-{#        </form>#}
-        <form method="get" class="mb-3 row g-2 align-items-center">
-            <div class="col-md-3">
-                <input type="text" name="q" value="{{ search_query }}"
-                       placeholder="Search by Subject , Tracking-Code" class="form-control">
-            </div>
-            <div class="col-md-2">
-                <select name="category" class="form-select">
-                    <option value="">All Category</option>
-                    {% for category in categories %}
-                        <option value="{{ category.id }}"
-                                {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
-                            {{ category.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <div class="btn-group w-100" role="group">
-                    <input type="radio" class="btn-check" name="search_mode" id="search_mode_and" value="and"
-                           {% if search_mode == 'and' %}checked{% endif %} autocomplete="off">
-
-                    <label class="btn btn-outline-info" for="search_mode_and">AND</label>
-
-                    <input type="radio" class="btn-check" name="search_mode" id="search_mode_or" value="or"
-                           {% if search_mode == 'or' %}checked{% endif %} autocomplete="off">
-
-                    <label class="btn btn-outline-warning" for="search_mode_or">OR</label>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <select name="priority" class="form-select">
-                    <option value="">
-                        All Priority
+<div class="card-body">
+    <form method="get" class="mb-3 row g-2 align-items-center">
+        <div class="col-md-3">
+            <input type="text" name="q" value="{{ search_query }}"
+                   placeholder="Search by Subject , Tracking-Code" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <select name="category" class="form-select">
+                <option value="">All Category</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}"
+                            {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
                     </option>
-                    {% for value , label in priorities %}
-                        <option value="{{ value }}" {% if selected_priority == value %}selected{% endif %}>
-                            {{ label|title }}
-                        </option>
-                    {% endfor %}
-                </select>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="search_mode" id="search_mode_and" value="and"
+                       {% if search_mode == 'and' %}checked{% endif %} autocomplete="off">
+                <label class="btn btn-outline-info" for="search_mode_and">AND</label>
+                <input type="radio" class="btn-check" name="search_mode" id="search_mode_or" value="or"
+                       {% if search_mode == 'or' %}checked{% endif %} autocomplete="off">
+                <label class="btn btn-outline-warning" for="search_mode_or">OR</label>
             </div>
-            <div class="col-md-3">
-                <div class="d-flex gap-2">
-{#                    <button type="submit" class="btn btn-primary px-4 flex-fill">#}
-{#                        <i class="fas fa-play me-2"></i>Filter#}
-{#                    </button>#}
-
-                    {% button label="Filter" color="warning" type="submit" icon="bi-file-play" extra_class="me-2" %}
-
-                    <a href="{% url "tickets" %}" class="btn btn-danger px-3">
-                        <i class="fas fa-redo"></i> Clear
-                    </a>
-                </div>
+        </div>
+        <div class="col-md-2">
+            <select name="priority" class="form-select">
+                <option value="">All Priority</option>
+                {% for value , label in priorities %}
+                    <option value="{{ value }}" {% if selected_priority == value %}selected{% endif %}>
+                        {{ label|title }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <div class="d-flex gap-2">
+                {% button label="Filter" color="warning" type="submit" icon="bi-play-circle" extra_class="flex-fill" %}
+                <a href="{% url "tickets" %}" class="btn btn-danger flex-fill d-flex align-items-center justify-content-center">
+                    <i class="fas fa-redo me-2"></i>Clear
+                </a>
             </div>
-        </form>
-    </div>
-{#</div>#}
-
-
+        </div>
+    </form>
+</div>
