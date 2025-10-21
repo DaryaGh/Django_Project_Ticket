@@ -8,6 +8,7 @@ from .Choices import *
 from .validators import validate
 def dashboard(request):
     return render(request, 'dashboard.html', {'dashboard': dashboard})
+    # return render(request, 'dashboard-component.html', {'dashboard': dashboard})
     # return HttpResponse("Dashboard")
 
 def index(request):
@@ -165,6 +166,7 @@ def ticket_details(request, id):
             row_number = i
             break
     return render(request, 'ticket-details.html', {'ticket': ticket, 'row_number': row_number})
+    # return render(request, 'ticket-details-component.html', {'ticket': ticket, 'row_number': row_number})
 
 def ticket_update(request, id):
     ticket = get_object_or_404(Ticket, id=id)
