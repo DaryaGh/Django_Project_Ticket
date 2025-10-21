@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-lg mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+
+            {% include 'components/ticket-details-body.html' %}
+
+            {% include 'components/ticket-details-footer.html' %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+<div class="card shadow-lg border-success">
+    <div class="card-header bg-success text-white border-success">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+                <i class="bi bi-ticket-detailed-fill me-2"></i>
+                Ticket Details
+            </h4>
+            <span class="badge bg-light text-dark fs-6">#{{ ticket.tracking_code }}</span>
+        </div>
+    </div>
+
+    <div class="card-body border-success">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <strong class="text-muted">Row:</strong>
+                    <p class="fs-5 fw-semibold mt-1">{{ row_number }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong class="text-muted">Subject:</strong>
+                    <p class="fs-5 fw-semibold mt-1">{{ ticket.subject }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong class="text-muted">Created By:</strong>
+                    <p class="mt-1">{{ ticket.created_by.username }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong class="text-muted">Priority:</strong>
+                    <span class="badge text-{{ ticket.priority|lower }} mt-1"
+                          style="background-color: {{ ticket.get_priority_color }}">
+                        {{ ticket.priority|upper }}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong class="text-muted">Category:</strong>
+                    <p class="mt-1">
+                        {% if ticket.category %}
+                            {{ ticket.category.name }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <strong class="text-muted">Created At:</strong>
+                    <p class="mt-1">{{ ticket.created_at|date:"F j, Y g:i A" }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong class="text-muted">Updated At:</strong>
+                    <p class="mt-1">{{ ticket.updated_at|timesince }} ago</p>
+                </div>
+                <div class="mb-3">
+                    <strong class="text-muted">Max Reply Date:</strong>
+                    <p class="mt-1">{{ ticket.max_replay_date|date:"Y/m/d" }}</p>
+                </div>
+                <div class="mb-3">
+                    <strong class="text-muted">Tags:</strong>
+                    <div class="mt-1">
+                        {% if ticket.tags.all %}
+                            {% for tag in ticket.tags.all %}
+                                <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <strong class="text-muted">Ticket ID:</strong>
+                    <p class="mt-1">{{ ticket.id }}</p>
+                </div>
+            </div>
+        </div>
+
+        {% if ticket.description %}
+            <div class="mt-4 pt-3 border-top">
+                <strong class="text-muted">Description:</strong>
+                <div class="mt-2 p-3 rounded">
+                    {{ ticket.description|linebreaks|safe }}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
