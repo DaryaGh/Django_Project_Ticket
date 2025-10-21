@@ -20,15 +20,12 @@
             </a>
         </div>
 
+        {#        {% include 'alert.html' %}#}
+
         {% if messages %}
-            <div class="messages my-3">
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        <strong><i class="bi bi-check-square fs-5"></i> {{ message }}</strong>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            </div>
+            {% for message in messages %}
+                {% include 'components/alert-component.html' with type=message.tags message=message dismissible=True %}
+            {% endfor %}
         {% endif %}
 
         {% include 'ticket-search.html' %}
@@ -144,6 +141,8 @@
                                                   data-bs-toggle="tooltip"
                                                   data-bs-custom-class="tooltip-tags-more"
                                                   data-bs-title="Additional tags:
+
+
                                                           {% for tag in ticket.tags.all|slice:'2:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                                                 +{{ ticket.tags.all|length|add:"-2" }}
                                             </span>
@@ -168,15 +167,19 @@
 
                                     {% button label="Edit" url=ticket.get_edit_url icon="bi-pencil-square" color="warning" extra_class="text-light" %}
                                     {#                                    {% button "Edit" ticket.get_edit_url "warning" "bi-pencil-square"  "text-light" %}#}
-                                    {% button label="Delete" url=ticket.get_delete_url icon="bi-trash3" color="danger" extra_class="text-light" %}
+                                    {#                                    {% button label="Delete" url=ticket.get_delete_url icon="bi-trash3" color="danger" extra_class="text-light delete-confirm"  %}#}
                                     {% button label="View" url=ticket.get_absolute_url icon="bi-eye" color="success" extra_class="text-light" %}
 
-                                    {#                                    <a href="{% url 'tickets-destroy' ticket.id %}"#}
-                                    {#                                       class="text-decoration-none text-danger delete-btn delete-confirm"#}
-                                    {#                                       data-ticket-id="{{ ticket.id }}"#}
-                                    {#                                       data-ticket-number="{{ ticket.id }}">#}
-                                    {#                                        <i class="bi-trash3 fs-5 icon-hover"></i>#}
-                                    {#                                    </a>#}
+
+                                    {% button label="Delete" icon="bi-trash3" outline=True color="danger" extra_class="text-decoration-none text-light delete-btn" modal_target="#deleteModal" data_ticket_id=ticket.id data_ticket_number=ticket.id %}
+                                    {#{% button "Delete" color='danger' icon='bi-trash3' outline=True modal_target='#deleteModal' data_ticket_id=ticket.id %}#}
+
+                                    {#                                                                        <a href="{% url 'tickets-destroy' ticket.id %}"#}
+                                    {#                                                                           class="text-decoration-none text-danger delete-btn delete-confirm"#}
+                                    {#                                                                           data-ticket-id="{{ ticket.id }}"#}
+                                    {#                                                                           data-ticket-number="{{ ticket.id }}">#}
+                                    {#                                                                            <i class="bi-trash3 fs-5 icon-hover"></i>#}
+                                    {#                                                                        </a>#}
                                 </td>
                             </tr>
                         {% empty %}
