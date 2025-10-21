@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {{ ticket.subject }}
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                {% include "components/card-component.html" with color="primary" title="New Ticket" icon="bi bi-ticket-perforated" %}
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                {% include "components/card-component.html" with color="success" title="Received Ticket" icon="bi bi-clock" %}
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                {% include "components/card-component.html" with color="info" title="Notification Ticket" icon="bi bi-gear" %}
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                {% include "components/card-component.html" with color="warning" title="Immediate Ticket" icon="bi bi-check-circle" %}
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                {% include "components/card-component.html" with color="warning" title="Regular Ticket" icon="bi bi-check-circle" %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
