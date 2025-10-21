@@ -14,10 +14,13 @@
 
 <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.js' %}"></script>
 
-{% include 'MessageToastComponent.html' %}
+{% if messages %}
+    {% include 'components/toast-container-component.html' %}
+{% endif %}
 
 <script>
     {% include "Js/ThemeDarkLightComponent.js" %}
+    {% include "Js/toast.js" %}
 </script>
 
 {% block js %}

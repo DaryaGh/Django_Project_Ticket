@@ -1,0 +1,5 @@
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+    {% for message in messages %}
+        {% include 'components/toast-component.html' with message=message delay=2000 autohide=true close_button=true %}
+    {% endfor %}
+</div>
