@@ -40,9 +40,15 @@
         <div class="col-md-3">
             <div class="d-flex gap-2">
                 {% button label="Filter" color="warning" type="submit" icon="bi-play-circle" extra_class="flex-fill" %}
-                <a href="{% url "tickets" %}" class="btn btn-danger flex-fill d-flex align-items-center justify-content-center">
-                    <i class="fas fa-redo me-2"></i>Clear
-                </a>
+
+{#                {% button "Clear" url=ticket.get_tickets_url extra_class="lex-fill d-flex align-items-center justify-content-center" color="danger" icon="bi-play" %}#}
+
+                {% url "tickets" as tickets_url %}
+                {% button "Clear" url=tickets_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}
+
+{#                <a href="{% url "tickets" %}" class="btn btn-danger flex-fill d-flex align-items-center justify-content-center">#}
+{#                    <i class="fas fa-redo me-2"></i>Clear#}
+{#                </a>#}
             </div>
         </div>
     </form>

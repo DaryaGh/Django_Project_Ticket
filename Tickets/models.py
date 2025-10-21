@@ -151,6 +151,9 @@ class Ticket(TimestampedModel):
     def get_delete_url(self):
         return reverse('tickets-destroy',args=[self.pk])
 
+    def get_tickets_url(self):
+        return reverse('tickets',args=[self.pk])
+
     def delete(self, *args, **kwargs):
         if self.priority == 'high':
             raise PermissionDenied("Cannot delete tickets with HIGH priority")
