@@ -5,6 +5,7 @@
 {#اسم فایل های templatetags رو مینویسیم#}
 {% load highlight %}
 {% load button_tags %}
+{% load alert_tags %}
 
 {% block  title %}
     Index
@@ -22,11 +23,12 @@
 
         {#        {% include 'alert.html' %}#}
 
-        {% if messages %}
-            {% for message in messages %}
-                {% include 'components/alert-component.html' with type=message.tags message=message dismissible=True %}
-            {% endfor %}
-        {% endif %}
+                {% if messages %}
+                    {% for message in messages %}
+{#                        {% include 'components/alert-component.html' with type=message.tags message=message dismissible=True %}#}
+                            {% alert "The Ticket Delete Successfully !!!" "success" True %}
+                    {% endfor %}
+                {% endif %}
 
         {% include 'ticket-search.html' %}
 
@@ -144,6 +146,7 @@
 
 
 
+
                                                           {% for tag in ticket.tags.all|slice:'2:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                                                 +{{ ticket.tags.all|length|add:"-2" }}
                                             </span>
@@ -183,7 +186,7 @@
                                 {#                                    </a>#}
                                 {#                                </td>#}
                                 {##}
-{#--------------------------------------------------------------------------------------------#}
+                                {#--------------------------------------------------------------------------------------------#}
                                 {#                                <td class="action-cell" id="action-{{ ticket.id }}">#}
                                 {#                                    <div class="btn-group btn-group-sm" role="group">#}
                                 {#                                        {% button label="" url=ticket.get_absolute_url icon="bi-eye" color="success" extra_class="border-0" data_bs_toggle="tooltip" data_bs_title="View Ticket" %}#}
@@ -193,7 +196,7 @@
                                 {#                                        {% button label="" icon="bi-trash3" color="danger" extra_class="border-0 delete-btn" data_bs_toggle="tooltip" data_bs_title="Delete Ticket" modal_target="#deleteModal" data_ticket_id=ticket.id data_ticket_number=ticket.id %}#}
                                 {#                                    </div>#}
                                 {#                                </td>#}
-{#---------------------------------------------------------------------------------------------------#}
+                                {#---------------------------------------------------------------------------------------------------#}
                                 <td class="action-cell" id="action-{{ ticket.id }}">
                                     <div class="btn-group btn-group-sm" role="group">
                                         <div class="btn-container" data-bs-toggle="tooltip" data-bs-title="View Ticket">
