@@ -28,6 +28,14 @@ class NameSlugModel(TimestampedModel):
     def __str__(self):
         return capfirst(self.name)
 
+class CategoryQuerySet(models.QuerySet):
+    def active(self):
+        return self.filter(is_active=True)
+
+    def inactive(self):
+        return self.filter(is_active=False)
+
+
 class Category(NameSlugModel):
     is_active = models.BooleanField(default=True)
 
@@ -38,6 +46,8 @@ class Category(NameSlugModel):
 
         # برای دیتابیس
         db_table = 'Tickets-Categories'
+
+    objects = CategoryQuerySet.as_manager()
 
     # def __str__(self):
     #     return capfirst(self.name)
@@ -103,6 +113,32 @@ class Tag(NameSlugModel):
 #     def __str__(self):
 #         return f"#{self.tracking_code} {self.subject[:30]}..."
 
+class TicketQuerySet(models.QuerySet):
+    def with_priority(self,priority):
+        return self.filter(priority=priority)
+
+    def is_close(self):
+        # دارای تاریخ برای تمام شدن پروژه نیستند
+        return self.filter(closed_at__isnull=True)
+
+        # دارای تاریخ برای تمام شدن پروژه هستند
+        # return self.filter(closed_at__isnull=False)
+
+        # دارای تاریخ برای تمام شدن پروژه هستند
+        # return self.exclude(closed_at__isnull=True)
+
+    def is_open(self):
+        return self.filter(closed_at__isnull=True)
+
+    def is_expired(self):
+        pass
+
+    def max_replay_date(self):
+        pass
+
+    def assigned_by(self):
+        pass
+
 class Ticket(TimestampedModel):
     category = models.ForeignKey(Category,related_name='tickets',on_delete=models.SET_NULL,null=True,blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL,related_name='tickets',on_delete=models.PROTECT,default=None,blank=True)
@@ -161,6 +197,8 @@ class Ticket(TimestampedModel):
 
     def __str__(self):
         return f"#{self.tracking_code} {self.subject[:30]}..."
+
+    objects = TicketQuerySet.as_manager()
 
 class Assignment(TimestampedModel):
     assigned_ticket = models.ForeignKey(Ticket,related_name='assignments_tickets',on_delete=models.CASCADE,help_text="The ticket that will be assigned to this assignment")

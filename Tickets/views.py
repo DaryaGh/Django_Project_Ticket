@@ -18,7 +18,19 @@ def index(request):
     search_mode = request.GET.get('search_mode', 'and')
     sort = request.GET.get('sort', 'created_at')
     direction = request.GET.get('dir', 'desc')
-    tickets = Ticket.objects.select_related('category', "created_by").prefetch_related('tags')
+
+    with_close = request.GET.get('with_close', None)
+    print('with_close',with_close)
+
+    # if with_close == "on":
+    #     tickets = Ticket.objects
+    # else :
+    #     tickets = Ticket.objects.is_open()
+    # کوتاه نوشت متن بالا
+
+    tickets = Ticket.objects if with_close == "on" else Ticket.objects.is_open()
+
+    tickets = tickets.select_related('category', "created_by").prefetch_related('tags')
 
     if search_query:
         search_q = Q(
@@ -39,11 +51,14 @@ def index(request):
             else:  # AND
                 tickets = tickets.filter(category_id=category_id)
 
+        # if priority and priority not in ["", "None"]:
+        #     if search_mode == 'or':
+        #         filter_conditions.append(Q(priority=priority))
+        #     else:  # AND
+        #         tickets = tickets.filter(priority=priority)
+
         if priority and priority not in ["", "None"]:
-            if search_mode == 'or':
-                filter_conditions.append(Q(priority=priority))
-            else:  # AND
-                tickets = tickets.filter(priority=priority)
+            tickets = tickets.with_priority(priority)
 
         if filter_conditions:
             if search_mode == 'or':
@@ -90,6 +105,7 @@ def index(request):
         'search_mode': search_mode,
         'categories': categories,
         'priorities': priorities,
+        'with_close': with_close,
         'direction': direction,
         'sort': sort,
         'columns': columns,
