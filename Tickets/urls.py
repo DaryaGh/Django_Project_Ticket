@@ -8,5 +8,6 @@ urlpatterns = [
     path('Tickets/<int:id>/edit',ticket_update,name='tickets-update'),
     path('Tickets/delete/<int:id>',ticket_delete,name='tickets-destroy'),
     # path('Change/mode',change_mode,name='change-mode'),
-path('success/<int:id>/', ticket_success, name='ticket_success')
-]
+    path('Tickets/success/<int:id>/', ticket_success, name='ticket_success'),
+    path('Tickets/search-logs/', search_logs, name='search_logs'),
+ ]
