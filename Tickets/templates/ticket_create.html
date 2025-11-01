@@ -3,7 +3,7 @@
 {% block content %}
     <div class="container-lg mt-5">
         <div class="card shadow-sm p-4">
-            <h2 class="mb-4">
+            <h2 class="mb-4 text-success">
                 Submit a Ticket
             </h2>
             {% if form.non_field_errors %}
@@ -31,7 +31,7 @@
                         </div>
                     {% endfor %}
                 </div>
-                <button type="submit" class="btn btn-primary mt-3">Submit Ticket</button>
+                <button type="submit" class="btn btn-success mt-3">Submit Ticket</button>
             </form>
         </div>
     </div>
