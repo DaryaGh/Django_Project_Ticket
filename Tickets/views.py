@@ -6,6 +6,8 @@ from Tickets.models import *
 from django.core.exceptions import PermissionDenied
 from .Choices import *
 from .validators import validate
+from django.core.paginator import Paginator
+
 def dashboard(request):
     return render(request, 'dashboard.html', {'dashboard': dashboard})
     # return render(request, 'dashboard-component.html', {'dashboard': dashboard})
@@ -18,18 +20,17 @@ def index(request):
     search_mode = request.GET.get('search_mode', 'and')
     sort = request.GET.get('sort', 'created_at')
     direction = request.GET.get('dir', 'desc')
-
     with_close = request.GET.get('with_close', None)
-    print('with_close',with_close)
 
-    # if with_close == "on":
-    #     tickets = Ticket.objects
-    # else :
-    #     tickets = Ticket.objects.is_open()
-    # کوتاه نوشت متن بالا
+    if search_query or category_id or priority:
+        print("📝 Logging search activity...")
+        try:
+            from Tickets.signals import create_search_log
+            create_search_log(request.user, request.GET)
+        except Exception as e:
+            print(f"⚠️ Error in search logging: {e}")
 
     tickets = Ticket.objects if with_close == "on" else Ticket.objects.is_open()
-
     tickets = tickets.select_related('category', "created_by").prefetch_related('tags')
 
     if search_query:
@@ -51,12 +52,6 @@ def index(request):
             else:  # AND
                 tickets = tickets.filter(category_id=category_id)
 
-        # if priority and priority not in ["", "None"]:
-        #     if search_mode == 'or':
-        #         filter_conditions.append(Q(priority=priority))
-        #     else:  # AND
-        #         tickets = tickets.filter(priority=priority)
-
         if priority and priority not in ["", "None"]:
             tickets = tickets.with_priority(priority)
 
@@ -74,9 +69,9 @@ def index(request):
             tickets = tickets.filter(category_id=category_id)
 
         if priority and priority not in ["", "None"]:
-            tickets = tickets.filter(priority=priority)
+            tickets = tickets.with_priority(priority)
 
-    categories = Category.objects.filter(is_active=True)
+    categories = Category.objects.active()
     priorities = Ticket._meta.get_field('priority').choices
 
     if sort:
@@ -221,3 +216,30 @@ def ticket_delete(request, id):
 def ticket_success(request, id):
     ticket = get_object_or_404(Ticket, id=id)
     return render(request, 'ticket_success.html', {'ticket': ticket})
+
+# @login_required
+def search_logs(request):
+    try:
+        # اگر کاربر لاگین کرده، لاگ‌های خودش رو ببین، در غیر این صورت همه لاگ‌ها رو نشون بده
+        if request.user.is_authenticated:
+            logs = SearchLog.objects.filter(user=request.user).select_related('category').order_by('-created_at')
+            print(f"📊 Found {logs.count()} logs for user {request.user.username}")
+        else:
+            # اگر کاربر لاگین نکرده، همه لاگ‌ها رو نشون بده
+            logs = SearchLog.objects.all().select_related('category', 'user').order_by('-created_at')
+            print(f"📊 Found {logs.count()} total logs (user not authenticated)")
+
+        paginator = Paginator(logs, 20)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context = {
+            'page_obj': page_obj,
+            'logs': page_obj.object_list,
+            'user_authenticated': request.user.is_authenticated,
+        }
+        return render(request, 'search_logs.html', context)
+
+    except Exception as e:
+        print(f"❌ Error in search_logs view: {e}")
+        return redirect('tickets')

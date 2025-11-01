@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify, capfirst
 from django.utils.timezone import now
 from .Choices import *
@@ -34,7 +35,6 @@ class CategoryQuerySet(models.QuerySet):
 
     def inactive(self):
         return self.filter(is_active=False)
-
 
 class Category(NameSlugModel):
     is_active = models.BooleanField(default=True)
@@ -131,13 +131,28 @@ class TicketQuerySet(models.QuerySet):
         return self.filter(closed_at__isnull=True)
 
     def is_expired(self):
-        pass
+        # return self.filter(expired_at__isnull=True)
+        return self.filter(
+            max_replay_date__lt=timezone.now(),
+            closed_at__isnull=True
+        )
 
     def max_replay_date(self):
-        pass
+        return self.order_by('-max_replay_date')
 
     def assigned_by(self):
-        pass
+        return self.filter(created_by=settings.AUTH_USER_MODEL)
+
+    def by_status(self,status):
+        return self.filter(status=status)
+
+    def by_department(self,department):
+        return self.filter(department=department)
+
+    def with_tags(self, *tag_names):
+        # تیکت‌هایی که دارای تگ‌های مشخص هستند
+        return self.filter(tags__name__in=tag_names).distinct()
+
 
 class Ticket(TimestampedModel):
     category = models.ForeignKey(Category,related_name='tickets',on_delete=models.SET_NULL,null=True,blank=True)
@@ -246,3 +261,23 @@ class TicketAttachment(TimestampedModel):
         verbose_name = 'Attachment'
         verbose_name_plural = 'Attachments'
         db_table = 'Tickets-Attachments'
+
+    def __str__(self):
+        return f"{self.ticket}"
+
+class SearchLog(TimestampedModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='search_logs')
+    search_query = models.CharField(max_length=200)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    priority = models.CharField(max_length=100, blank=True)
+    search_mode = models.CharField(max_length=10, default='and')
+    results_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'SearchLog'
+        verbose_name_plural = 'SearchLogs'
+        db_table = 'Tickets-SearchLogs'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} searched: {self.search_query}"

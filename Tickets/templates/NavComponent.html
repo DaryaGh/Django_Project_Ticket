@@ -25,6 +25,14 @@
                         </a>
                     </li>
                 {% endif %}
+                {% if request.resolver_match.url_name != 'tickets' and request.resolver_match.url_name != 'tickets-create' and request.resolver_match.url_name != 'tickets-update' %}
+                    <li class="nav-item mx-2">
+                        <a href="{% url 'search_logs' %}" class="nav-link">
+                            <i class="bi bi-clock-history"></i>
+                            Search History
+                        </a>
+                    </li>
+                {% endif %}
                 <li class="nav-item mx-2">
                     <a href="#" class="text-decoration-none position-relative">
                         <i class="bi bi-bell fs-4 text-white"></i>
