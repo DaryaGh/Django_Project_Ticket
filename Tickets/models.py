@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.utils.text import slugify, capfirst
 from django.utils.timezone import now
 from .Choices import *
+from django.contrib.auth.models import User
 
 class TimestampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, editable=False, null=True, blank=True)
@@ -153,7 +154,6 @@ class TicketQuerySet(models.QuerySet):
         # تیکت‌هایی که دارای تگ‌های مشخص هستند
         return self.filter(tags__name__in=tag_names).distinct()
 
-
 class Ticket(TimestampedModel):
     category = models.ForeignKey(Category,related_name='tickets',on_delete=models.SET_NULL,null=True,blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL,related_name='tickets',on_delete=models.PROTECT,default=None,blank=True)
@@ -265,19 +265,36 @@ class TicketAttachment(TimestampedModel):
     def __str__(self):
         return f"{self.ticket}"
 
-class SearchLog(TimestampedModel):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='search_logs')
-    search_query = models.CharField(max_length=200)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
-    priority = models.CharField(max_length=100, blank=True)
-    search_mode = models.CharField(max_length=10, default='and')
-    results_count = models.PositiveIntegerField(default=0)
+# class SearchLog(TimestampedModel):
+#     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='search_logs')
+#     search_query = models.CharField(max_length=200)
+#     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+#     priority = models.CharField(max_length=100, blank=True)
+#     search_mode = models.CharField(max_length=10, default='and')
+#     results_count = models.PositiveIntegerField(default=0)
+#
+#     class Meta:
+#         verbose_name = 'SearchLog'
+#         verbose_name_plural = 'SearchLogs'
+#         db_table = 'Tickets-SearchLogs'
+#         ordering = ['-created_at']
+#
+#     def __str__(self):
+#         return f"{self.user.username} searched: {self.search_query}"
+
+class LogSearch(models.Model):
+    search_subject = models.CharField(max_length=200)
+    search_category = models.CharField(max_length=200)
+    search_priority = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = 'SearchLog'
-        verbose_name_plural = 'SearchLogs'
-        db_table = 'Tickets-SearchLogs'
-        ordering = ['-created_at']
+        verbose_name = 'LogSearch'
+        verbose_name_plural = 'LogSearch'
+        db_table = 'Tickets-LogSearch'
 
     def __str__(self):
-        return f"{self.user.username} searched: {self.search_query}"
+        output = f" at {self.created_at}"
+        if self.user is not None:
+            return output + f" by {self.user}"
+        return output
