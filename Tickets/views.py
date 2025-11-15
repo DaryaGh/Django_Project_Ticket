@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.db.models import Q
+from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from Tickets.forms import TicketForm
 from Tickets.models import *
@@ -12,28 +13,52 @@ def dashboard(request):
     return render(request, 'dashboard.html', {'dashboard': dashboard})
     # return render(request, 'dashboard-component.html', {'dashboard': dashboard})
     # return HttpResponse("Dashboard")
-
-# راه حل خودم
+# راه حل سیگنال
 def index(request):
-    search_query = request.GET.get('q', "").strip()
-    category_id = request.GET.get('category')
-    priority = request.GET.get('priority')
-    search_mode = request.GET.get('search_mode', 'and')
-    sort = request.GET.get('sort', 'created_at')
-    direction = request.GET.get('dir', 'desc')
-    with_close = request.GET.get('with_close', None)
+    # اگر پارامتر clear وجود داشت، session را پاک کن
+    if request.GET.get('clear'):
+        if 'search_params' in request.session:
+            del request.session['search_params']
+        return redirect('tickets')
+
+    # دریافت پارامترها از GET یا session
+    if request.GET:
+        search_params = {
+            'q': request.GET.get('q', "").strip(),
+            'category': request.GET.get('category'),
+            'priority': request.GET.get('priority'),
+            'search_mode': request.GET.get('search_mode', 'and'),
+            'sort': request.GET.get('sort', 'created_at'),
+            'direction': request.GET.get('dir', 'desc'),
+            'with_close': request.GET.get('with_close'),
+        }
+        request.session['search_params'] = search_params
+    else:
+        search_params = request.session.get('search_params', {})
+
+    search_query = search_params.get('q', "")
+    category_id = search_params.get('category')
+    priority = search_params.get('priority')
+    search_mode = search_params.get('search_mode', 'and')
+    sort = search_params.get('sort', 'created_at')
+    direction = search_params.get('dir', 'desc')
+    with_close = search_params.get('with_close')
+
 
     if search_query or category_id or priority:
-        print("📝 Logging search activity...")
         try:
             from Tickets.signals import create_search_log
-            create_search_log(request.user, request.GET)
+            create_search_log(request.user, search_params)
         except Exception as e:
-            print(f"⚠️ Error in search logging: {e}")
+            print(f" Error in search logging: {e}")
 
+    # فیلتر کردن تیکت‌ها
     tickets = Ticket.objects if with_close == "on" else Ticket.objects.is_open()
     tickets = tickets.select_related('category', "created_by").prefetch_related('tags')
 
+    filter_conditions = []
+
+    # اضافه کردن شرط جستجو اگر وجود دارد
     if search_query:
         search_q = Q(
             Q(subject__icontains=search_query)
@@ -41,36 +66,39 @@ def index(request):
             | Q(tracking_code__icontains=search_query)
             | Q(category__name__icontains=search_query)
         )
+        filter_conditions.append(search_q)
 
-        filter_conditions = []
-
-        if search_query:
-            filter_conditions.append(search_q)
-
-        if category_id and category_id not in ["", "None"]:
-            if search_mode == 'or':
-                filter_conditions.append(Q(category_id=category_id))
-            else:  # AND
-                tickets = tickets.filter(category_id=category_id)
-
-        if priority and priority not in ["", "None"]:
-            tickets = tickets.with_priority(priority)
-
-        if filter_conditions:
-            if search_mode == 'or':
-                combined_q = Q()
-                for condition in filter_conditions:
-                    combined_q |= condition
-                tickets = tickets.filter(combined_q)
-            else:
-                tickets = tickets.filter(search_q)
-
-    else:
-        if category_id and category_id not in ["", "None"]:
+    # اضافه کردن شرط دسته‌بندی اگر وجود دارد
+    if category_id and category_id not in ["", "None"]:
+        if search_mode == 'or':
+            filter_conditions.append(Q(category_id=category_id))
+        else:  # AND
             tickets = tickets.filter(category_id=category_id)
 
-        if priority and priority not in ["", "None"]:
+    # اضافه کردن شرط اولویت اگر وجود دارد
+    if priority and priority not in ["", "None"]:
+        if search_mode == 'or':
+            filter_conditions.append(Q(priority=priority))
+        else:  # AND
             tickets = tickets.with_priority(priority)
+
+    # اعمال فیلترها بر اساس حالت جستجو
+    if filter_conditions:
+        if search_mode == 'or':
+            # حالت OR: ترکیب همه شرایط با OR
+            combined_q = Q()
+            for condition in filter_conditions:
+                combined_q |= condition
+            tickets = tickets.filter(combined_q)
+        else:
+            # حالت AND: فقط شرط جستجو اعمال می‌شود (بقیه قبلاً اعمال شده‌اند)
+            if search_query:
+                tickets = tickets.filter(search_q)
+
+    # اگر حالت AND است و هیچ جستجویی نیست، اما فیلترهای دیگر وجود دارند
+    elif search_mode == 'and' and not search_query and (category_id or priority):
+        # در حالت AND بدون جستجو، فیلترها قبلاً اعمال شده‌اند
+        pass
 
     categories = Category.objects.active()
     priorities = Ticket._meta.get_field('priority').choices
@@ -80,6 +108,10 @@ def index(request):
             tickets = tickets.order_by('-' + sort)
         else:
             tickets = tickets.order_by(sort)
+
+    paginator = Paginator(tickets, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     columns = [
         ('row', 'Row'),
@@ -94,6 +126,7 @@ def index(request):
     ]
 
     context = {
+        'page_obj': page_obj,
         'tickets': tickets,
         'search_query': search_query,
         'selected_category': category_id if category_id not in ["", "None"] else "",
@@ -105,6 +138,7 @@ def index(request):
         'direction': direction,
         'sort': sort,
         'columns': columns,
+        'has_active_filters': bool(search_query or category_id or priority),
     }
 
     return render(request, template_name='index.html', context=context)
@@ -225,11 +259,11 @@ def search_logs(request):
         # اگر کاربر لاگین کرده، لاگ‌های خودش رو ببین، در غیر این صورت همه لاگ‌ها رو نشون بده
         if request.user.is_authenticated:
             logs = SearchLogSignal.objects.filter(user=request.user).select_related('category').order_by('-created_at')
-            print(f"📊 Found {logs.count()} logs for user {request.user.username}")
+            print(f" Found {logs.count()} logs for user {request.user.username}")
         else:
             # اگر کاربر لاگین نکرده، همه لاگ‌ها رو نشون بده
             logs = SearchLogSignal.objects.all().select_related('category', 'user').order_by('-created_at')
-            print(f"📊 Found {logs.count()} total logs (user not authenticated)")
+            print(f" Found {logs.count()} total logs (user not authenticated)")
 
         paginator = Paginator(logs, 20)
         page_number = request.GET.get('page')
@@ -243,10 +277,10 @@ def search_logs(request):
         return render(request, 'search_logs.html', context)
 
     except Exception as e:
-        print(f"❌ Error in search_logs view: {e}")
+        print(f" Error in search_logs view: {e}")
         return redirect('tickets')
 
-
+# ---------------------------------------------------------------------------------------------
 # راه دوم برای ساخت logSearch
 # def index(request):
 #     search_query = request.GET.get('q', "").strip()
