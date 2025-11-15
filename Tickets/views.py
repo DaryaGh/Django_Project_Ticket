@@ -131,12 +131,24 @@ def index(request):
     if search_query:
         if new_log:
             new_log.search_subject = search_query
+        request.session['search_query'] = search_query
         tickets = tickets.filter(
             Q(subject__icontains=search_query)
             | Q(description__icontains=search_query)
             | Q(tracking_code__icontains=search_query)
             | Q(category__name__icontains=search_query)
         )
+    elif request.session.get('search_query'):
+        session_query = request.session.get('search_query')
+        if session_query:
+            if new_log:
+                new_log.search_subject = session_query
+            tickets = tickets.filter(
+                Q(subject__icontains=session_query)
+                | Q(description__icontains=session_query)
+                | Q(tracking_code__icontains=session_query)
+                | Q(category__name__icontains=session_query)
+            )
 
     if category_id:
         try:
@@ -187,12 +199,12 @@ def index(request):
 
     selected_category = category_id if category_id else request.session.get('search_category', "")
     selected_priority = priority if priority else request.session.get('search_priority', "")
+    selected_search_query = search_query if search_query else request.session.get('search_query', "")
 
     context = {
         'tickets': tickets,
-        'search_query': search_query,
+        'search_query': selected_search_query,
         'selected_category': str(selected_category),
-        # 'selected_priority': priority if priority not in ["", "None"] else "",
         'selected_priority': selected_priority,
         'search_mode': search_mode,
         'categories': categories,
