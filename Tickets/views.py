@@ -236,6 +236,8 @@ def index(request):
     }
 
     if is_user_search and new_log:
+        if request.user.is_authenticated :
+            new_log.user = request.user
         new_log.save()
 
     return render(request, template_name='index.html', context=context)

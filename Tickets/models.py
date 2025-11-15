@@ -287,6 +287,15 @@ class LogSearch(models.Model):
     search_category = models.CharField(max_length=200)
     search_priority = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='search_user',
+        blank=True,
+        null=True,
+        default=None,
+        # editable=False
+    )
 
     class Meta:
         verbose_name = 'LogSearch'
@@ -294,7 +303,8 @@ class LogSearch(models.Model):
         db_table = 'Tickets-LogSearch'
 
     def __str__(self):
-        output = f" at {self.created_at}"
+        output = f" AT {self.created_at}"
         if self.user is not None:
-            return output + f" by {self.user}"
-        return output
+            return output + f" By {self.user}"
+        else:
+            return output + " By Guest"
