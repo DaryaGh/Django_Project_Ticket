@@ -38,9 +38,9 @@ def create_search_log(user, search_data):
                 }
             )
             user = default_user
-            print("👤 Using anonymous user for logging")
+            print("Using anonymous user for logging")
         except:
-            print("❌ Could not create anonymous user")
+            print("Could not create anonymous user")
             return
 
     tickets = Ticket.objects.is_open()
@@ -70,7 +70,7 @@ def create_search_log(user, search_data):
             except Category.DoesNotExist:
                 pass
 
-        log = SearchLog.objects.create(
+        log = SearchLogSignal.objects.create(
             user=user,
             search_query=search_query,
             category=category_obj,
@@ -78,6 +78,6 @@ def create_search_log(user, search_data):
             search_mode=search_mode,
             results_count=results_count
         )
-        print(f"✅ Search log created: ID {log.id}, User: {user.username}, Query: '{search_query}'")
+        print(f" Search log created: ID {log.id}, User: {user.username}, Query: '{search_query}'")
     except Exception as e:
-        print(f"❌ Error creating search log: {e}")
+        print(f" Error creating search log: {e}")

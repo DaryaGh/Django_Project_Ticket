@@ -265,42 +265,22 @@ class TicketAttachment(TimestampedModel):
     def __str__(self):
         return f"{self.ticket}"
 
-# class SearchLog(TimestampedModel):
-#     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='search_logs')
-#     search_query = models.CharField(max_length=200)
-#     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
-#     priority = models.CharField(max_length=100, blank=True)
-#     search_mode = models.CharField(max_length=10, default='and')
-#     results_count = models.PositiveIntegerField(default=0)
-#
-#     class Meta:
-#         verbose_name = 'SearchLog'
-#         verbose_name_plural = 'SearchLogs'
-#         db_table = 'Tickets-SearchLogs'
-#         ordering = ['-created_at']
-#
-#     def __str__(self):
-#         return f"{self.user.username} searched: {self.search_query}"
-
-class LogSearch(models.Model):
-    search_subject = models.CharField(max_length=200)
-    search_category = models.CharField(max_length=200)
-    search_priority = models.CharField(max_length=200)
-    created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='search_user',
-        blank=True,
-        null=True,
-        default=None,
-        # editable=False
-    )
+class SearchLogSignal(TimestampedModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='search_logs')
+    search_query = models.CharField(max_length=200)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    priority = models.CharField(max_length=100, blank=True)
+    search_mode = models.CharField(max_length=10, default='and')
+    results_count = models.PositiveIntegerField(default=0)
 
     class Meta:
-        verbose_name = 'LogSearch'
-        verbose_name_plural = 'LogSearch'
-        db_table = 'Tickets-LogSearch'
+        verbose_name = 'SearchLog'
+        verbose_name_plural = 'SearchLogs'
+        db_table = 'Tickets-SearchLogs'
+        ordering = ['-created_at']
+
+    # def __str__(self):
+    #     return f"{self.user.username} searched: {self.search_query}"
 
     def __str__(self):
         output = f" AT {self.created_at}"
@@ -308,3 +288,32 @@ class LogSearch(models.Model):
             return output + f" By {self.user}"
         else:
             return output + " By Guest"
+
+# راه دوم برای ساخت logSearch
+
+# class LogSearch(models.Model):
+#     search_subject = models.CharField(max_length=200)
+#     search_category = models.CharField(max_length=200)
+#     search_priority = models.CharField(max_length=200)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     user = models.ForeignKey(
+#         settings.AUTH_USER_MODEL,
+#         on_delete=models.CASCADE,
+#         related_name='search_user',
+#         blank=True,
+#         null=True,
+#         default=None,
+#         # editable=False
+#     )
+#
+#     class Meta:
+#         verbose_name = 'LogSearch'
+#         verbose_name_plural = 'LogSearch'
+#         db_table = 'Tickets-LogSearch'
+#
+#     def __str__(self):
+#         output = f" AT {self.created_at}"
+#         if self.user is not None:
+#             return output + f" By {self.user}"
+#         else:
+#             return output + " By Guest"
