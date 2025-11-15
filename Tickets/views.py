@@ -12,6 +12,7 @@ def dashboard(request):
     return render(request, 'dashboard.html', {'dashboard': dashboard})
     # return render(request, 'dashboard-component.html', {'dashboard': dashboard})
     # return HttpResponse("Dashboard")
+
 # راه حل خودم
 # def index(request):
 #     search_query = request.GET.get('q', "").strip()
@@ -108,10 +109,7 @@ def dashboard(request):
 #
 #     return render(request, template_name='index.html', context=context)
 
-
 def index(request):
-    # print(request.session.items())
-    # tickets = Ticket.objects.all()
     search_query = request.GET.get('q', "").strip()
     category_id = request.GET.get('category',"").strip()
     priority = request.GET.get('priority',"").strip()
@@ -119,7 +117,6 @@ def index(request):
     sort = request.GET.get('sort', 'created_at')
     direction = request.GET.get('dir', 'desc')
     with_close = request.GET.get('with_close', None)
-
 
     tickets = Ticket.objects if with_close == "on" else Ticket.objects.is_open()
     tickets = tickets.select_related('category', "created_by").prefetch_related('tags')
@@ -141,19 +138,6 @@ def index(request):
             | Q(category__name__icontains=search_query)
         )
 
-    # print("category_id",category_id)
-
-    # if category_id:
-    #     # print("True")
-    #     # print("category_id is not none" , category_id)
-    #     tickets = tickets.filter(category_id=category_id)
-    #     new_log.search_category = Category.objects.get(id=category_id).name
-    #     request.session['search_category'] = category_id
-    #     tickets = tickets.filter(category_id=category_id)
-    # elif request.session.get('search_category'):
-    #     print("session is true")
-    #     tickets = tickets.filter(category_id=request.session['search_category'])
-
     if category_id:
         try:
             category = Category.objects.get(id=category_id)
@@ -168,25 +152,19 @@ def index(request):
         if session_category:
             tickets = tickets.filter(category_id=session_category)
 
-
-    # if priority:
-    #     new_log.search_priority = priority
-    #     tickets = tickets.with_priority(priority)
-
     if priority:
         if new_log:
             new_log.search_priority = priority
+        request.session['search_priority'] = priority
         tickets = tickets.filter(priority=priority)
+    elif request.session.get('search_priority'):
+        session_priority = request.session.get('search_priority')
+        if session_priority:
+            tickets = tickets.filter(priority=session_priority)
 
 
     categories = Category.objects.active()
     priorities = Ticket._meta.get_field('priority').choices
-
-    # if sort:
-    #     if direction == 'desc':
-    #         tickets = tickets.order_by('-' + sort)
-    #     else:
-    #         tickets = tickets.order_by(sort)
 
     if sort :
         if direction == 'desc':
@@ -207,25 +185,15 @@ def index(request):
         ('created_at', 'Created At'),
     ]
 
-    # selected_category = None
-    # if category_id is not None:
-    #     selected_category = category_id
-    #     print("True")
-    # elif request.session.get('search_category'):
-    #     selected_category = request.session.get('search_category')
-    #
-    # print("session",request.session.get('search_category'))
-    # print("selected_category",selected_category)
-
-    # selected_category = category_id if category_id else request.session.get('search_category',"")
     selected_category = category_id if category_id else request.session.get('search_category', "")
+    selected_priority = priority if priority else request.session.get('search_priority', "")
+
     context = {
         'tickets': tickets,
         'search_query': search_query,
-        # 'selected_category': selected_category,
         'selected_category': str(selected_category),
         # 'selected_priority': priority if priority not in ["", "None"] else "",
-        'selected_priority': priority,
+        'selected_priority': selected_priority,
         'search_mode': search_mode,
         'categories': categories,
         'priorities': priorities,
@@ -241,7 +209,6 @@ def index(request):
         new_log.save()
 
     return render(request, template_name='index.html', context=context)
-
 
 def ticket_create(request):
     if request.method == 'POST':
@@ -383,4 +350,8 @@ def ticket_success(request, id):
 def ticket_clear(request):
     if request.session.get('search_category'):
         del request.session['search_category']
+    if request.session.get('search_query'):
+        del request.session['search_query']
+    if request.session.get('search_priority'):
+        del request.session['search_priority']
     return redirect('tickets')
