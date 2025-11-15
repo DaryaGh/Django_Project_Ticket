@@ -45,8 +45,11 @@
             <div class="d-flex gap-2" style="height: 38px;">
                 {% button label="Filter" color="warning" type="submit" icon="bi-play-circle" extra_class="flex-fill" %}
 
-                {% url "tickets" as tickets_url %}
+                {% url "ticket_clear" as tickets_url %}
                 {% button "Clear" url=tickets_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}
+
+{#                {% url "tickets" as tickets_url %}#}
+{#                {% button "Clear" url=tickets_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}#}
             </div>
         </div>
         {#    ---------------------------------------------------------------------------------------#}
