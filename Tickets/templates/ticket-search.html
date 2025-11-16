@@ -45,12 +45,18 @@
             <div class="d-flex gap-2" style="height: 38px;">
                 {% button label="Filter" color="warning" type="submit" icon="bi-play-circle" extra_class="flex-fill" %}
 
-                {% url "tickets" as tickets_url %}
-                {% button "Clear" url=tickets_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}
+{#                {% url "tickets" as tickets_url %}#}
+{#                {% button "Clear" url=tickets_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}#}
 
-                {# راه دوم برای ساخت logSearch#}
-                {#                {% url "ticket_clear" as tickets_url %}#}
-                {#                {% button "Clear" url=tickets_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}#}
+                {% url "tickets" as tickets_url %}
+                {% with clear_url=tickets_url|add:"?clear=1" %}
+                    {% button "Clear" url=clear_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}
+                {% endwith %}
+
+                {#                 راه دوم برای ساخت logSearch#}
+                {#                                {% url "ticket_clear" as tickets_url %}#}
+                {#                                {% button "Clear" url=tickets_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}#}
+
             </div>
         </div>
 
