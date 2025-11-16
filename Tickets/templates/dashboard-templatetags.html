@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget-card %}
+
+{% block title %}
+    {{ ticket.subject }}
+{% endblock %}
+
+
+{% block content %}
+    <section class="container my-4">
+        <div class="row">
+
+            <div class="col-md-4">
+                {% widget_card title="Total Ticket Count" color="success" count=total_tickets icon='user' url="Tickets" extra_class="shadow" %}
+
+{#                <div class="card card-body shadow">#}
+{#                    <h3 class="card-title">#}
+{#                        Low Ticket Count#}
+{#                    </h3>#}
+{#                    <p>#}
+{#                        <span class="badge bg-danger fs-1">#}
+{#                            {{ low_tickets }}#}
+{#                        </span>#}
+{#                    </p>#}
+{#                </div>#}
+            </div>
+            <div class="col-md-4">
+                {% widget_card title="Low Ticket Count" color="danger" count=low_tickets icon='user' url="Tickets?priority=low" extra_class="shadow bg-warning" %}
+
+            </div>
+        </div>
+    </section>
+{% endblock %}

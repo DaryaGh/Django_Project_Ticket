@@ -9,7 +9,6 @@ urlpatterns = [
     path('Tickets/delete/<int:id>',ticket_delete,name='tickets-destroy'),
     # path('Change/mode',change_mode,name='change-mode'),
     path('Tickets/success/<int:id>/', ticket_success, name='ticket_success'),
-
     path('Tickets/search-logs/', search_logs, name='search_logs'),
 
 # راه دوم برای ساخت logSearch

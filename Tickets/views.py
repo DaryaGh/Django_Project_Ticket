@@ -10,7 +10,30 @@ from .validators import validate
 from django.core.paginator import Paginator
 
 def dashboard(request):
-    return render(request, 'dashboard.html', {'dashboard': dashboard})
+    context = {
+        'total_tickets': Ticket.objects.all().count(),
+        'low_tickets': Ticket.objects.with_priority('low').count(),
+        'high_tickets': Ticket.objects.with_priority('high').count(),
+        'middle_tickets': Ticket.objects.with_priority('middle').count(),
+        'secret_tickets': Ticket.objects.with_priority('secret').count(),
+        'expired_tickets': Ticket.objects.is_expired().count(),
+        'open_tickets': Ticket.objects.is_open().count(),
+        'close_tickets': Ticket.objects.is_close().count(),
+        'status_new_tickets': Ticket.objects.by_status('new').count(),
+        'status_in_progress_tickets': Ticket.objects.by_status('in-progress').count(),
+        'status_solved_tickets': Ticket.objects.by_status('solved').count(),
+        'status_impossible_tickets': Ticket.objects.by_status('impossible').count(),
+        # 'tags': Ticket.objects.with_tags().count(),
+        'department_developer_tickets': Ticket.objects.by_department('developer').count(),
+        'department_full_stack_tickets': Ticket.objects.by_department('fullstack').count(),
+        'department_python_tickets': Ticket.objects.by_department('python').count(),
+        'department_django_tickets': Ticket.objects.by_department('django').count(),
+        'department_react_tickets': Ticket.objects.by_department('react').count(),
+        # 'assigned_by_author_user':Ticket.objects.assigned_by(request.user).count(),
+    }
+    print(context)
+    return render(request, 'dashboard-templatetags.html', context=context)
+    # return render(request, 'dashboard.html', {'dashboard': dashboard})
     # return render(request, 'dashboard-component.html', {'dashboard': dashboard})
     # return HttpResponse("Dashboard")
 # راه حل سیگنال
