@@ -32,8 +32,8 @@ def dashboard(request):
         # 'assigned_by_author_user':Ticket.objects.assigned_by(request.user).count(),
         'active_categories': active_categories,
     }
-    return render(request, 'dashboard-templatetags.html', context=context)
-    # return render(request, 'dashboard-templatetags-btn.html', context=context)
+    # return render(request, 'dashboard-templatetags.html', context=context)
+    return render(request, 'dashboard-templatetags-btn.html', context=context)
     # return render(request, 'dashboard.html', {'dashboard': dashboard})
     # return render(request, 'dashboard-component.html', {'dashboard': dashboard})
     # return HttpResponse("Dashboard")
@@ -51,10 +51,17 @@ def index(request):
             'q': request.GET.get('q', "").strip(),
             'category': request.GET.get('category'),
             'priority': request.GET.get('priority'),
+            'status': request.GET.get('status'),
+            'department': request.GET.get('department'),
+            'response_status': request.GET.get('response_status'),  # جدید - وضعیت پاسخ
             'search_mode': request.GET.get('search_mode', 'and'),
             'sort': request.GET.get('sort', 'created_at'),
             'direction': request.GET.get('dir', 'desc'),
             'with_close': request.GET.get('with_close'),
+            'created_at_from': request.GET.get('created_at_from'),
+            'created_at_to': request.GET.get('created_at_to'),
+            'max_replay_date_from': request.GET.get('max_replay_date_from'),
+            'max_replay_date_to': request.GET.get('max_replay_date_to'),
         }
         request.session['search_params'] = search_params
     else:
@@ -63,13 +70,19 @@ def index(request):
     search_query = search_params.get('q', "")
     category_id = search_params.get('category')
     priority = search_params.get('priority')
+    status = search_params.get('status')
+    department = search_params.get('department')
+    response_status = search_params.get('response_status')  # جدید
     search_mode = search_params.get('search_mode', 'and')
     sort = search_params.get('sort', 'created_at')
     direction = search_params.get('dir', 'desc')
     with_close = search_params.get('with_close')
+    created_at_from = search_params.get('created_at_from')
+    created_at_to = search_params.get('created_at_to')
+    max_replay_date_from = search_params.get('max_replay_date_from')
+    max_replay_date_to = search_params.get('max_replay_date_to')
 
-
-    if search_query or category_id or priority:
+    if search_query or category_id or priority or status or department or response_status or created_at_from or created_at_to or max_replay_date_from or max_replay_date_to:
         try:
             from Tickets.signals import create_search_log
             create_search_log(request.user, search_params)
@@ -78,7 +91,7 @@ def index(request):
 
     # فیلتر کردن تیکت‌ها
     tickets = Ticket.objects if with_close == "on" else Ticket.objects.is_open()
-    tickets = tickets.select_related('category', "created_by").prefetch_related('tags')
+    tickets = tickets.select_related('category', "created_by").prefetch_related('tags', 'responses')
 
     filter_conditions = []
 
@@ -106,26 +119,83 @@ def index(request):
         else:  # AND
             tickets = tickets.with_priority(priority)
 
+    # اضافه کردن شرط وضعیت تیکت اگر وجود دارد
+    if status and status not in ["", "None"]:
+        if search_mode == 'or':
+            filter_conditions.append(Q(status=status))
+        else:  # AND
+            tickets = tickets.by_status(status)
+
+    # اضافه کردن شرط دپارتمان
+    if department and department not in ["", "None"]:
+        if search_mode == 'or':
+            filter_conditions.append(Q(department=department))
+        else:
+            tickets = tickets.filter(department=department)
+
+    # اضافه کردن شرط وضعیت پاسخ
+    if response_status and response_status not in ["", "None"]:
+        if search_mode == 'or':
+            filter_conditions.append(Q(responses__response_status=response_status))
+        else:
+            tickets = tickets.filter(responses__response_status=response_status)
+
+    # فیلتر تاریخ ایجاد تیکت
+    if created_at_from:
+        if search_mode == 'or':
+            filter_conditions.append(Q(created_at__date__gte=created_at_from))
+        else:
+            tickets = tickets.filter(created_at__date__gte=created_at_from)
+
+    if created_at_to:
+        if search_mode == 'or':
+            filter_conditions.append(Q(created_at__date__lte=created_at_to))
+        else:
+            tickets = tickets.filter(created_at__date__lte=created_at_to)
+
+    # فیلتر تاریخ مهلت پاسخ
+    if max_replay_date_from:
+        if search_mode == 'or':
+            filter_conditions.append(Q(max_replay_date__date__gte=max_replay_date_from))
+        else:
+            tickets = tickets.filter(max_replay_date__date__gte=max_replay_date_from)
+
+    if max_replay_date_to:
+        if search_mode == 'or':
+            filter_conditions.append(Q(max_replay_date__date__lte=max_replay_date_to))
+        else:
+            tickets = tickets.filter(max_replay_date__date__lte=max_replay_date_to)
+
     # اعمال فیلترها بر اساس حالت جستجو
     if filter_conditions:
         if search_mode == 'or':
-            # حالت OR: ترکیب همه شرایط با OR
             combined_q = Q()
             for condition in filter_conditions:
                 combined_q |= condition
-            tickets = tickets.filter(combined_q)
+            tickets = tickets.filter(combined_q).distinct()
         else:
             # حالت AND: فقط شرط جستجو اعمال می‌شود (بقیه قبلاً اعمال شده‌اند)
             if search_query:
                 tickets = tickets.filter(search_q)
 
     # اگر حالت AND است و هیچ جستجویی نیست، اما فیلترهای دیگر وجود دارند
-    elif search_mode == 'and' and not search_query and (category_id or priority):
+    elif search_mode == 'and' and not search_query and (
+            category_id or priority or status or department or response_status or created_at_from or created_at_to or max_replay_date_from or max_replay_date_to):
         # در حالت AND بدون جستجو، فیلترها قبلاً اعمال شده‌اند
         pass
 
     categories = Category.objects.active()
     priorities = Ticket._meta.get_field('priority').choices
+    statuses = Ticket._meta.get_field('status').choices
+    departments = Ticket._meta.get_field('department').choices
+
+    # choices برای وضعیت پاسخ - جدید
+    response_statuses = [
+        ('sent', 'Sent'),
+        ('seen', 'Seen'),
+        ('read', 'Read'),
+        ('replied', 'Replied'),
+    ]
 
     if sort:
         if direction == 'desc':
@@ -147,6 +217,7 @@ def index(request):
         ('tags', 'Tags'),
         ('max_replay_date', 'Max Replay Date'),
         ('created_at', 'Created At'),
+        # ('status', 'Status'),  # اضافه شده
     ]
 
     context = {
@@ -155,14 +226,25 @@ def index(request):
         'search_query': search_query,
         'selected_category': category_id if category_id not in ["", "None"] else "",
         'selected_priority': priority if priority not in ["", "None"] else "",
+        'selected_status': status if status not in ["", "None"] else "",
+        'selected_department': department if department not in ["", "None"] else "",
+        'selected_response_status': response_status if response_status not in ["", "None"] else "",  # جدید
         'search_mode': search_mode,
         'categories': categories,
         'priorities': priorities,
+        'statuses': statuses,
+        'departments': departments,
+        'response_statuses': response_statuses,  # جدید
         'with_close': with_close,
         'direction': direction,
         'sort': sort,
         'columns': columns,
-        'has_active_filters': bool(search_query or category_id or priority),
+        'created_at_from': created_at_from,
+        'created_at_to': created_at_to,
+        'max_replay_date_from': max_replay_date_from,
+        'max_replay_date_to': max_replay_date_to,
+        'has_active_filters': bool(
+            search_query or category_id or priority or status or department or response_status or created_at_from or created_at_to or max_replay_date_from or max_replay_date_to),
     }
 
     return render(request, template_name='index.html', context=context)

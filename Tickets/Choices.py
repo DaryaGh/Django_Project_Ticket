@@ -2,7 +2,8 @@ PRIORITY_CHOICES = [
     ("low", 'Low'),
     ("middle", 'Middle'),
     ("high", 'High'),
-    ('secret', 'Secret')
+    ('secret', 'Secret'),
+    ('critical', 'Critical'),
 ]
 
 DEPARTMENT_CHOICES = [
@@ -17,7 +18,8 @@ PRIORITY_COLORS = {
     "low": '#6a994e',
     "middle": '#1d3557',
     "high": '#800e13',
-    'secret':'#ee6c4d'
+    'secret':'#ee6c4d',
+    'critical': '#ffd8c6',
 }
 
 STATUS_CHOICES = [
@@ -39,3 +41,10 @@ EMAIL_CHOICES = [
     ("gmail.com", "Gmail.com"),
     ("hotmail.com", "Hotmail.com"),
 ]
+
+RESPONSE_STATUS_CHOICES = [
+        ('sent', 'Sent'),
+        ('seen', 'Seen'),
+        ('read', 'Read'),
+        ('replied', 'Replied'),
+    ]

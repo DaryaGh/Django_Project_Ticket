@@ -1,14 +1,127 @@
-{% load button_tags %}
-{% load input_tags %}
+{#{% load button_tags %}#}
+{#{% load input_tags %}#}
+{##}
+{#<div class="card-body">#}
+{#    <form method="get" class="mb-3 row g-2 align-items-center">#}
+{#        <div class="col-md-3">#}
+{#            <label for="id_q" class="form-label visually-hidden">Search</label>#}
+{#            {% input_tag "q" "text" search_query "Search by Subject, Tracking-Code" "form-control" %}#}
+{#        </div>#}
+{#        <div class="col-md-2">#}
+{#            <label for="id_category" class="form-label visually-hidden">Category</label>#}
+{#            <select name="category" id="id_category" class="form-select">#}
+{#                <option value="">All Category</option>#}
+{#                {% for category in categories %}#}
+{#                    <option value="{{ category.id }}"#}
+{#                            {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>#}
+{#                        {{ category.name }}#}
+{#                    </option>#}
+{#                {% endfor %}#}
+{#            </select>#}
+{#        </div>#}
+{##}
+{#    <div class="col-md-2">#}
+{#            <label for="id_status" class="form-label visually-hidden">Status</label>#}
+{#            <select name="status" id="id_status" class="form-select">#}
+{#                <option value="">All Status</option>#}
+{#                {% for value, label in priorities %}#}
+{#                    <option value="{{ value }}" {% if selected_priority == value %}selected{% endif %}>#}
+{#                        {{ label|title }}#}
+{#                    </option>#}
+{#                {% endfor %}#}
+{#            </select>#}
+{#        </div>#}
+{##}
+{#        <div class="col-md-2">#}
+{#            <label class="form-label visually-hidden">Search Mode</label>#}
+{#            <div class="btn-group w-100" role="group">#}
+{#                <input type="radio" class="btn-check" name="search_mode" id="search_mode_and" value="and"#}
+{#                       {% if search_mode == 'and' %}checked{% endif %} autocomplete="off">#}
+{#                <label class="btn btn-outline-info" for="search_mode_and">AND</label>#}
+{#                <input type="radio" class="btn-check" name="search_mode" id="search_mode_or" value="or"#}
+{#                       {% if search_mode == 'or' %}checked{% endif %} autocomplete="off">#}
+{#                <label class="btn btn-outline-warning" for="search_mode_or">OR</label>#}
+{#            </div>#}
+{#        </div>#}
+{#        <div class="col-md-2">#}
+{#            <label for="id_priority" class="form-label visually-hidden">Priority</label>#}
+{#            <select name="priority" id="id_priority" class="form-select">#}
+{#                <option value="">All Priority</option>#}
+{#                {% for value, label in priorities %}#}
+{#                    <option value="{{ value }}" {% if selected_priority == value %}selected{% endif %}>#}
+{#                        {{ label|title }}#}
+{#                    </option>#}
+{#                {% endfor %}#}
+{#            </select>#}
+{#        </div>#}
+{#        <div class="col-md-3">#}
+{#            <div class="d-flex gap-2" style="height: 38px;">#}
+{#                {% button label="Filter" color="warning" type="submit" icon="bi-play-circle" extra_class="flex-fill" %}#}
+{##}
+{#                {% url "tickets" as tickets_url %}#}
+{#                {% button "Clear" url=tickets_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}#}
+{##}
+{#                {% url "tickets" as tickets_url %}#}
+{#                {% with clear_url=tickets_url|add:"?clear=1" %}#}
+{#                    {% button "Clear" url=clear_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}#}
+{#                {% endwith %}#}
+{##}
+{#                 راه دوم برای ساخت logSearch#}
+{#                                {% url "ticket_clear" as tickets_url %}#}
+{#                                {% button "Clear" url=tickets_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}#}
+{##}
+{#            </div>#}
+{#        </div>#}
+{##}
+{#    ---------------------------------------------------------------------------------------#}
+{#        <div class="col-md-3">#}
+{#            <div class="form-check form-switch">#}
+{#                <input class="form-check-input"#}
+{#                       type="checkbox"#}
+{#                       role="switch"#}
+{#                       id="switchCheckChecked"#}
+{#                       name="with_close"#}
+{#                        {% if with_close == "on" %}#}
+{#                       checked#}
+{#                        {% endif %}>#}
+{#                <label class="form-check-label" for="switchCheckChecked">With Close Tickets</label>#}
+{#            </div>#}
+{#        </div>#}
+{#    ---------------------------------------------------------------------------------------------#}
+{##}
+{#        <div class="col-md-3">#}
+{#            <div class="form-check form-switch">#}
+{#                <input class="form-check-input"#}
+{#                       type="checkbox"#}
+{#                       role="switch"#}
+{#                       id="switchCheckChecked"#}
+{#                       name="with_close"#}
+{#                       {% if with_close == "on" %}checked data-checked="true"{% endif %}#}
+{#                       onchange="this.dataset.checked = this.checked">#}
+{#                <label class="form-check-label" for="switchCheckChecked">With Close Tickets</label>#}
+{#            </div>#}
+{#        </div>#}
+{##}
+{#        <style>#}
+{#            .form-check-input[data-checked="true"] {#}
+{#                background-color: #0d6efd !important;#}
+{#                border-color: #0d6efd !important;#}
+{#            }#}
+{#        </style>#}
+{##}
+{#    </form>#}
+{#</div>#}
 
 <div class="card-body">
     <form method="get" class="mb-3 row g-2 align-items-center">
+        <!-- ردیف اول - فیلترهای اصلی -->
         <div class="col-md-3">
-            <label for="id_q" class="form-label visually-hidden">Search</label>
+            <label for="id_q" class="form-label">Search</label>
             {% input_tag "q" "text" search_query "Search by Subject, Tracking-Code" "form-control" %}
         </div>
-        <div class="col-md-2">
-            <label for="id_category" class="form-label visually-hidden">Category</label>
+
+        <div class="col-md-3">
+            <label for="id_category" class="form-label">Category</label>
             <select name="category" id="id_category" class="form-select">
                 <option value="">All Category</option>
                 {% for category in categories %}
@@ -19,19 +132,46 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2">
-            <label class="form-label visually-hidden">Search Mode</label>
-            <div class="btn-group w-100" role="group">
-                <input type="radio" class="btn-check" name="search_mode" id="search_mode_and" value="and"
-                       {% if search_mode == 'and' %}checked{% endif %} autocomplete="off">
-                <label class="btn btn-outline-info" for="search_mode_and">AND</label>
-                <input type="radio" class="btn-check" name="search_mode" id="search_mode_or" value="or"
-                       {% if search_mode == 'or' %}checked{% endif %} autocomplete="off">
-                <label class="btn btn-outline-warning" for="search_mode_or">OR</label>
-            </div>
+
+        <div class="col-md-3">
+            <label for="id_status" class="form-label">All Status</label>
+            <select name="status" id="id_status" class="form-select">
+                <option value="">All Status</option>
+                {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>
+                        {{ label|title }}
+                    </option>
+                {% endfor %}
+            </select>
         </div>
-        <div class="col-md-2">
-            <label for="id_priority" class="form-label visually-hidden">Priority</label>
+
+        <!-- ردیف دوم - وضعیت پاسخ و سایر فیلترها -->
+        <div class="col-md-3">
+            <label for="id_response_status" class="form-label">All Response Status</label>
+            <select name="response_status" id="id_response_status" class="form-select">
+                <option value="">All Response Status</option>
+                {% for value, label in response_statuses %}
+                    <option value="{{ value }}" {% if selected_response_status == value %}selected{% endif %}>
+                        {{ label|title }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="id_department" class="form-label">Department</label>
+            <select name="department" id="id_department" class="form-select">
+                <option value="">All Department</option>
+                {% for value, label in departments %}
+                    <option value="{{ value }}" {% if selected_department == value %}selected{% endif %}>
+                        {{ label|title }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="id_priority" class="form-label">Priority</label>
             <select name="priority" id="id_priority" class="form-select">
                 <option value="">All Priority</option>
                 {% for value, label in priorities %}
@@ -41,43 +181,71 @@
                 {% endfor %}
             </select>
         </div>
+
+        <!-- ردیف سوم - فیلترهای تاریخ -->
         <div class="col-md-3">
+            <label for="created_at_from" class="form-label">Ticket date from</label>
+            <input type="date"
+                   name="created_at_from"
+                   id="created_at_from"
+                   class="form-control"
+                   value="{{ created_at_from }}">
+        </div>
+
+        <div class="col-md-3">
+            <label for="created_at_to" class="form-label">Ticket date to</label>
+            <input type="date"
+                   name="created_at_to"
+                   id="created_at_to"
+                   class="form-control"
+                   value="{{ created_at_to }}">
+        </div>
+
+        <div class="col-md-3">
+            <label for="max_replay_date_from" class="form-label">Response deadline from</label>
+            <input type="date"
+                   name="max_replay_date_from"
+                   id="max_replay_date_from"
+                   class="form-control"
+                   value="{{ max_replay_date_from }}">
+        </div>
+
+        <div class="col-md-3">
+            <label for="max_replay_date_to" class="form-label">Response deadline to</label>
+            <input type="date"
+                   name="max_replay_date_to"
+                   id="max_replay_date_to"
+                   class="form-control"
+                   value="{{ max_replay_date_to }}">
+        </div>
+
+        <!-- ردیف چهارم - دکمه‌ها و تنظیمات -->
+        <div class="col-md-2">
+            <label class="form-label">Search Mode</label>
+            <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="search_mode" id="search_mode_and" value="and"
+                       {% if search_mode == 'and' %}checked{% endif %} autocomplete="off">
+                <label class="btn btn-outline-info" for="search_mode_and">AND</label>
+                <input type="radio" class="btn-check" name="search_mode" id="search_mode_or" value="or"
+                       {% if search_mode == 'or' %}checked{% endif %} autocomplete="off">
+                <label class="btn btn-outline-warning" for="search_mode_or">OR</label>
+            </div>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label">Actions</label>
             <div class="d-flex gap-2" style="height: 38px;">
                 {% button label="Filter" color="warning" type="submit" icon="bi-play-circle" extra_class="flex-fill" %}
-
-{#                {% url "tickets" as tickets_url %}#}
-{#                {% button "Clear" url=tickets_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}#}
 
                 {% url "tickets" as tickets_url %}
                 {% with clear_url=tickets_url|add:"?clear=1" %}
                     {% button "Clear" url=clear_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}
                 {% endwith %}
-
-                {#                 راه دوم برای ساخت logSearch#}
-                {#                                {% url "ticket_clear" as tickets_url %}#}
-                {#                                {% button "Clear" url=tickets_url color="danger" icon="bi-arrow-clockwise" extra_class="flex-fill d-flex align-items-center justify-content-center" %}#}
-
             </div>
         </div>
 
-        {#    ---------------------------------------------------------------------------------------#}
-        {#        <div class="col-md-3">#}
-        {#            <div class="form-check form-switch">#}
-        {#                <input class="form-check-input"#}
-        {#                       type="checkbox"#}
-        {#                       role="switch"#}
-        {#                       id="switchCheckChecked"#}
-        {#                       name="with_close"#}
-        {#                        {% if with_close == "on" %}#}
-        {#                       checked#}
-        {#                        {% endif %}>#}
-        {#                <label class="form-check-label" for="switchCheckChecked">With Close Tickets</label>#}
-        {#            </div>#}
-        {#        </div>#}
-        {#    ---------------------------------------------------------------------------------------------#}
-
-        <div class="col-md-3">
-            <div class="form-check form-switch">
+        <div class="col-md-2">
+            <div class="form-check form-switch mt-4">
                 <input class="form-check-input"
                        type="checkbox"
                        role="switch"
@@ -85,17 +253,22 @@
                        name="with_close"
                        {% if with_close == "on" %}checked data-checked="true"{% endif %}
                        onchange="this.dataset.checked = this.checked">
-                <label class="form-check-label" for="switchCheckChecked">With Close Tickets</label>
+                <label class="form-label" for="switchCheckChecked">With Close Tickets</label>
             </div>
         </div>
-
-        <style>
-            .form-check-input[data-checked="true"] {
-                background-color: #0d6efd !important;
-                border-color: #0d6efd !important;
-            }
-        </style>
-
     </form>
 </div>
+
+<style>
+    .form-check-input[data-checked="true"] {
+        background-color: #0d6efd !important;
+        border-color: #0d6efd !important;
+    }
+
+    .form-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+</style>
 

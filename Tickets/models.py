@@ -8,6 +8,7 @@ from django.utils.timezone import now
 from .Choices import *
 from django.contrib.auth.models import User
 
+
 class TimestampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, editable=False, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, editable=False, null=True, blank=True)
@@ -165,6 +166,7 @@ class Ticket(TimestampedModel):
     closed_at = models.DateTimeField(null=True, blank=True)
     tracking_code = models.CharField(max_length=100, null=True, blank=True, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    published_at = models.DateTimeField(null=True, blank=True)
     contact_name = models.CharField(max_length=100, null=True, blank=True)
     contact_email = models.EmailField(null=True, blank=True)
     contact_phone = models.CharField(max_length=15, blank=True)
@@ -214,6 +216,19 @@ class Ticket(TimestampedModel):
         return f"#{self.tracking_code} {self.subject[:30]}..."
 
     objects = TicketQuerySet.as_manager()
+
+class TicketResponse(TimestampedModel):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='responses')
+    message = models.TextField()
+    response_status = models.CharField(max_length=10, choices=RESPONSE_STATUS_CHOICES, default='sent')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'Tickets-Responses'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Response #{self.id} for {self.ticket.tracking_code}"
 
 class Assignment(TimestampedModel):
     assigned_ticket = models.ForeignKey(Ticket,related_name='assignments_tickets',on_delete=models.CASCADE,help_text="The ticket that will be assigned to this assignment")
@@ -288,6 +303,17 @@ class SearchLogSignal(TimestampedModel):
             return output + f" By {self.user}"
         else:
             return output + " By Guest"
+
+class Swiper(TimestampedModel):
+    title = models.CharField(max_length=100, blank=True, null=True, default='title_swiper')
+    name_swiper = models.CharField(max_length=100, blank=True, null=True)
+    main_image = models.FileField(upload_to='swiper/', null=True, blank=True)
+    name_of_alt = models.CharField(max_length=100, blank=True, null=True)
+    description_swiper = models.CharField(max_length=100, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name_swiper
 
 # راه دوم برای ساخت logSearch
 
