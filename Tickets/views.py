@@ -4,12 +4,17 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from Tickets.forms import TicketForm
 from Tickets.models import *
-from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.core.exceptions import PermissionDenied
 from .Choices import *
 from .validators import validate
 from django.core.paginator import Paginator
 
 def dashboard(request):
+    # active_categories = Category.objects.active()
+    active_categories = Category.objects.active().annotate(
+        ticket_count=models.Count('tickets')
+    )
+
     context = {
         'total_tickets': Ticket.objects.all().count(),
         'low_tickets': Ticket.objects.with_priority('low').count(),
@@ -24,19 +29,15 @@ def dashboard(request):
         'status_solved_tickets': Ticket.objects.by_status('solved').count(),
         'status_impossible_tickets': Ticket.objects.by_status('impossible').count(),
         # 'tags': Ticket.objects.with_tags().count(),
-        'department_developer_tickets': Ticket.objects.by_department('developer').count(),
-        'department_full_stack_tickets': Ticket.objects.by_department('fullstack').count(),
-        'department_python_tickets': Ticket.objects.by_department('python').count(),
-        'department_django_tickets': Ticket.objects.by_department('django').count(),
-        'department_react_tickets': Ticket.objects.by_department('react').count(),
         # 'assigned_by_author_user':Ticket.objects.assigned_by(request.user).count(),
+        'active_categories': active_categories,
     }
-    print(context)
     return render(request, 'dashboard-templatetags.html', context=context)
+    # return render(request, 'dashboard-templatetags-btn.html', context=context)
     # return render(request, 'dashboard.html', {'dashboard': dashboard})
     # return render(request, 'dashboard-component.html', {'dashboard': dashboard})
     # return HttpResponse("Dashboard")
-# راه حل سیگنال
+
 def index(request):
     # اگر پارامتر clear وجود داشت، session را پاک کن
     if request.GET.get('clear'):
