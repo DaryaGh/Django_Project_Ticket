@@ -1,0 +1,468 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{#اسم فایل های templatetags رو مینویسیم#}
+{% load highlight %}
+{% load button_tags %}
+{% load alert_tags %}
+
+{% block  title %}
+    Index
+{% endblock %}
+
+{% block content %}
+    <div class="container-lg">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>All Tickets</h2>
+
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="view-mode" id="table-view" autocomplete="off" checked>
+                <label class="btn btn-outline-secondary" for="table-view" onclick="switchView('table')">
+                    <i class="bi bi-table"></i>
+                </label>
+
+                <input type="radio" class="btn-check" name="view-mode" id="card-view" autocomplete="off">
+                <label class="btn btn-outline-secondary" for="card-view" onclick="switchView('card')">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                </label>
+            </div>
+
+            <a href="{% url 'tickets-create' %}" class="btn btn-success">
+                <i class="fas fa-plus me-1"></i>
+                New Ticket
+            </a>
+        </div>
+
+        {#        {% include 'alert.html' %}#}
+
+        {% if messages %}
+            {% for message in messages %}
+                {#                        {% include 'components/alert-component.html' with type=message.tags message=message dismissible=True %}#}
+                {% alert "The Ticket Delete Successfully !!!" "success" True %}
+            {% endfor %}
+        {% endif %}
+
+        {% include 'ticket-search.html' %}
+        <div id="table-view-container">
+            <div class="card shadow mt-2">
+                <div class="card-body">
+                    <div class="table-responsive-xl">
+                        <table class="table table-striped text-center align-middle table-hover">
+                            <thead class="table-secondary">
+                            <tr>
+                                {% for col,label in columns %}
+                                    <th scope="col" class="
+                                            {% if col == 'row' or col == 'id' or col == 'created_at' %}d-none d-md-table-cell
+                                            {% elif col == 'priority' %}d-none d-sm-table-cell
+                                            {% elif col == 'category__name' or col == 'tags' %}d-none d-lg-table-cell
+                                            {% elif col == 'max_replay_date' %}d-none d-xl-table-cell
+                                            {% endif %}
+                                ">
+                                        <div class="table-header-content">
+
+                                            {% if col == 'row' %}<i class="bi bi-list-ol"></i>
+                                            {% elif col == 'id' %}<i class="bi bi-sort-down"></i>
+                                            {% elif col == 'tracking_code' %}<i class="bi bi-hash"></i>
+                                            {% elif col == 'subject' %}<i class="bi bi-search"></i>
+                                            {% elif col == 'created_by' %}<i class="bi bi-person"></i>
+                                            {% elif col == 'priority' %}<i class="bi bi-flag"></i>
+                                            {% elif col == 'category__name' %}<i class="bi bi-tags"></i>
+                                            {% elif col == 'tags' %}<i class="bi bi-circle-fill"></i>
+                                            {% elif col == 'max_replay_date' or col == 'created_at' %}
+                                                <i class="bi bi-calendar"></i>
+                                            {% endif %}
+
+                                            {% if col == 'row' %}
+                                                <span class="text-dark " onclick="toggleSort('row')">{{ label }}</span>
+                                            {% else %}
+                                                <a href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&sort={{ col }}&dir={% if sort == col and direction == 'asc' %}desc{% else %}asc{% endif %}"
+                                                   class="text-decoration-none text-dark">
+                                                    {{ label }}
+                                                    {% if sort == col %}
+                                                        {% if direction == 'asc' %}
+                                                            <i class="bi bi-arrow-up-short"></i>
+                                                        {% else %}
+                                                            <i class="bi bi-arrow-down-short"></i>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </th>
+                                {% endfor %}
+
+                                <th scope="col">
+                                    <div class="table-header-content">
+                                        <i class="bi bi-gear"></i>
+                                        <span>Actions</span>
+                                    </div>
+                                </th>
+                            </tr>
+                            </thead>
+
+                            <tbody class="table-group-divider">
+                            {% for ticket in page_obj %}
+                                {#                        {% for ticket in tickets %}#}
+                                <tr>
+                                    <td class="d-none d-md-table-cell">{{ forloop.counter }}</td>
+                                    <td>{{ ticket.tracking_code|highlight:search_query }}</td>
+
+                                    <td class="text-start">
+                                        <a href="{% url 'tickets-details' ticket.pk %}"
+                                           class="btn-link text-decoration-none"
+                                           data-bs-toggle="tooltip"
+                                           data-bs-custom-class="tooltip-subject"
+                                           data-bs-title="{{ ticket.subject }}"
+                                           data-bs-placement="top">
+                                            {{ ticket.subject|truncatewords:5|highlight:search_query }}
+                                        </a>
+                                    </td>
+
+                                    <td>{{ ticket.created_by.username }}</td>
+
+                                    <td class="d-none d-sm-table-cell">
+                                    <span class="badge text-white"
+                                          style="background-color: {{ ticket.get_priority_color }}">{{ ticket.get_priority_display }}</span>
+                                    </td>
+
+                                    <td class="d-none d-lg-table-cell">
+                                        {% if ticket.category %}
+                                            {{ ticket.category.name }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="d-none d-lg-table-cell">
+                                        {% if ticket.tags.all %}
+                                            <span class="badge bg-warning"
+                                                  data-bs-toggle="tooltip"
+                                                  data-bs-custom-class="tooltip-tags-count"
+                                                  data-bs-title="Total tags: {{ ticket.tags.all|length }}">
+                                            {{ ticket.tags.all|length }}
+                                        </span>
+
+                                            {% for tag in ticket.tags.all|slice:"2" %}
+                                                <span class="badge bg-secondary"
+                                                      data-bs-toggle="tooltip"
+                                                      data-bs-custom-class="tooltip-tags"
+                                                      data-bs-title="{{ tag.name }} - Created: {{ tag.created_at|date:'Y/m/d' }}">
+                                                {{ tag.name }}
+                                            </span>
+                                            {% endfor %}
+
+                                            {% if ticket.tags.all|length > 2 %}
+                                                <span class="badge bg-light text-dark"
+                                                      data-bs-toggle="tooltip"
+                                                      data-bs-custom-class="tooltip-tags-more"
+                                                      data-bs-title="Additional tags:
+
+
+
+
+
+                                                              {% for tag in ticket.tags.all|slice:'2:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                +{{ ticket.tags.all|length|add:"-2" }}
+                                            </span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="d-none d-xl-table-cell">{{ ticket.max_replay_date|date:"Y/m/d" }}</td>
+                                    <td class="d-none d-md-table-cell">{{ ticket.created_at|date:"Y/m/d H:i" }}</td>
+
+                                    {#                                <td class="action-cell" id="action-{{ ticket.id }}">#}
+                                    {#                                    <a href="{% url 'tickets-update' ticket.id %}"#}
+                                    {#                                       class="text-decoration-none edit-confirm">#}
+                                    {#                                        <i class="bi-pencil-square fs-5 icon-hover-p"></i>#}
+                                    {#                                    </a>#}
+                                    {#                                    Component#}
+                                    {#                                    {% include 'components/button-a.html' with label="Edit" color="info" icon='bi-pencil-square' %}#}
+                                    {#                                    {% include 'components/button-a.html' with label="Edit" color="info" size="lg" icon='bi-pencil-square' %}#}
+                                    {#                                    {% include 'components/button-advance.html' with type='submit' label="Edit" color="info" icon='bi-pencil-square' %}#}
+                                    {##}
+                                    {#                                    {% button label="Edit" url=ticket.get_edit_url icon="bi-pencil-square" color="warning" extra_class="text-light" %}#}
+                                    {#                                    {% button "Edit" ticket.get_edit_url "warning" "bi-pencil-square" "text-light" %}#}
+                                    {#                                    {% button label="Delete" url=ticket.get_delete_url icon="bi-trash3" color="danger" extra_class="text-light delete-confirm" %}#}
+                                    {#                                    {% button label="View" url=ticket.get_absolute_url icon="bi-eye" color="success" extra_class="text-light" %}#}
+                                    {##}
+                                    {##}
+                                    {#                                    {% button label="Delete" icon="bi-trash3" outline=True color="danger" extra_class="text-decoration-none text-light delete-btn" modal_target="#deleteModal" data_ticket_id=ticket.id data_ticket_number=ticket.id %}#}
+                                    {#                                    {% button "Delete" color='danger' icon='bi-trash3' outline=True modal_target='#deleteModal' data_ticket_id=ticket.id %}#}
+                                    {##}
+                                    {#                                    <a href="{% url 'tickets-destroy' ticket.id %}"#}
+                                    {#                                       class="text-decoration-none text-danger delete-btn delete-confirm"#}
+                                    {#                                       data-ticket-id="{{ ticket.id }}"#}
+                                    {#                                       data-ticket-number="{{ ticket.id }}">#}
+                                    {#                                        <i class="bi-trash3 fs-5 icon-hover"></i>#}
+                                    {#                                    </a>#}
+                                    {#                                </td>#}
+                                    {##}
+                                    {#--------------------------------------------------------------------------------------------#}
+                                    {#                                <td class="action-cell" id="action-{{ ticket.id }}">#}
+                                    {#                                    <div class="btn-group btn-group-sm" role="group">#}
+                                    {#                                        {% button label="" url=ticket.get_absolute_url icon="bi-eye" color="success" extra_class="border-0" data_bs_toggle="tooltip" data_bs_title="View Ticket" %}#}
+                                    {##}
+                                    {#                                        {% button label="" url=ticket.get_edit_url icon="bi-pencil-square" color="warning" extra_class="border-0" data_bs_toggle="tooltip" data_bs_title="Edit Ticket" %}#}
+                                    {##}
+                                    {#                                        {% button label="" icon="bi-trash3" color="danger" extra_class="border-0 delete-btn" data_bs_toggle="tooltip" data_bs_title="Delete Ticket" modal_target="#deleteModal" data_ticket_id=ticket.id data_ticket_number=ticket.id %}#}
+                                    {#                                    </div>#}
+                                    {#                                </td>#}
+                                    {#---------------------------------------------------------------------------------------------------#}
+                                    <td class="action-cell" id="action-{{ ticket.id }}">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <div class="btn-container" data-bs-toggle="tooltip"
+                                                 data-bs-title="View Ticket">
+                                                {% button label="" url=ticket.get_absolute_url icon="bi-eye" color="success" extra_class="border-0" %}
+                                            </div>
+                                            <div class="btn-container" data-bs-toggle="tooltip"
+                                                 data-bs-title="Edit Ticket">
+                                                {% button label="" url=ticket.get_edit_url icon="bi-pencil-square" color="warning" extra_class="border-0" %}
+                                            </div>
+
+                                            <div class="btn-container" data-bs-toggle="tooltip"
+                                                 data-bs-title="Delete Ticket">
+                                                {% button label="" icon="bi-trash3" color="danger" extra_class="border-0 delete-btn" modal_target="#deleteModal" data_ticket_id=ticket.id data_ticket_number=ticket.id %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="10" class="text-center">No Tickets Found!!!</td>
+                                </tr>
+                                {#                        {% endfor %}#}
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="container-lg">
+    <div id="card-view-container" style="display: none;">
+        <div class="row mt-3">
+            {% for ticket in page_obj %}
+                <div class="col-12 col-md-6 col-lg-4 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-primary">#{{ ticket.tracking_code|highlight:search_query }}</span>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary border-0" type="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'tickets-details' ticket.pk %}">
+                                            <i class="bi bi-eye me-2"></i>View
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'tickets-update' ticket.pk %}">
+                                            <i class="bi bi-pencil-square me-2"></i>Edit
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-danger delete-btn"
+                                           href="#"
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#deleteModal"
+                                           data-ticket-id="{{ ticket.id }}"
+                                           data-ticket-number="{{ ticket.id }}">
+                                            <i class="bi bi-trash3 me-2"></i>Delete
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <a href="{% url 'tickets-details' ticket.pk %}"
+                                   class="text-decoration-none text-dark"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-custom-class="tooltip-subject"
+                                   data-bs-title="{{ ticket.subject }}"
+                                   data-bs-placement="top">
+                                    {{ ticket.subject|truncatewords:8|highlight:search_query }}
+                                </a>
+                            </h6>
+
+                            <div class="ticket-meta mb-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-person me-2 text-muted"></i>
+                                    <small class="text-muted">{{ ticket.created_by.username }}</small>
+                                </div>
+
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-flag me-2 text-muted"></i>
+                                    <span class="badge text-white"
+                                          style="background-color: {{ ticket.get_priority_color }}">
+                                        {{ ticket.get_priority_display }}
+                                    </span>
+                                </div>
+
+                                {% if ticket.category %}
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-tags me-2 text-muted"></i>
+                                        <small class="text-muted">{{ ticket.category.name }}</small>
+                                    </div>
+                                {% endif %}
+
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-calendar me-2 text-muted"></i>
+                                    <small class="text-muted">Due: {{ ticket.max_replay_date|date:"Y/m/d" }}</small>
+                                </div>
+
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-clock me-2 text-muted"></i>
+                                    <small class="text-muted">Created: {{ ticket.created_at|date:"Y/m/d H:i" }}</small>
+                                </div>
+                            </div>
+
+                            {% if ticket.tags.all %}
+                                <div class="tags-section mt-3">
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for tag in ticket.tags.all|slice:"3" %}
+                                            <span class="badge bg-secondary bg-opacity-25 text-dark"
+                                                  data-bs-toggle="tooltip"
+                                                  data-bs-custom-class="tooltip-tags"
+                                                  data-bs-title="{{ tag.name }} - Created: {{ tag.created_at|date:'Y/m/d' }}">
+                                            {{ tag.name }}
+                                        </span>
+                                        {% endfor %}
+                                        {% if ticket.tags.all|length > 3 %}
+                                            <span class="badge bg-light text-dark"
+                                                  data-bs-toggle="tooltip"
+                                                  data-bs-custom-class="tooltip-tags-more"
+                                                  data-bs-title="Additional tags:
+                                                          {% for tag in ticket.tags.all|slice:'3:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                            +{{ ticket.tags.all|length|add:"-3" }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">ID: {{ ticket.id }}</small>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    {% button label="" url=ticket.get_absolute_url icon="bi-eye" color="outline-primary" extra_class="border-0 btn-sm" data_bs_toggle="tooltip" data_bs_title="View Ticket" %}
+                                    {% button label="" url=ticket.get_edit_url icon="bi-pencil-square" color="outline-warning" extra_class="border-0 btn-sm" data_bs_toggle="tooltip" data_bs_title="Edit Ticket" %}
+                                    {% button label="" icon="bi-trash3" color="outline-danger" extra_class="border-0 btn-sm delete-btn" data_bs_toggle="tooltip" data_bs_title="Delete Ticket" modal_target="#deleteModal" data_ticket_id=ticket.id data_ticket_number=ticket.id %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                            <h5 class="text-muted">No Tickets Found</h5>
+                            <p class="text-muted mb-0">There are no tickets matching your criteria.</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    </div>
+
+
+
+    {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1
+                                {% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                           aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=
+                                {{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                           aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;&laquo;</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=
+                                    {{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=
+                                {{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                           aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=
+                                {{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                           aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;&raquo;</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+
+
+    {% include 'ModelDeleteConformationIndex.html' %}
+{% endblock %}
+
+{% block js %}
+    <script>
+        {% include 'Js/alert.js' %}
+        {% include 'Js/delete(confirm).js' %}
+        {% include 'Js/TooltipSubject.js' %}
+        {% include 'Js/RowAscDesc.js' %}
+        {% include 'Js/SwitchView.js' %}
+    </script>
+{% endblock %}
