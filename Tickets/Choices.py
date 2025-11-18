@@ -6,20 +6,12 @@ PRIORITY_CHOICES = [
     ('critical', 'Critical'),
 ]
 
-DEPARTMENT_CHOICES = [
-    ('developer', 'Developer'),
-    ('fullstack', 'Full Stack'),
-    ("python", 'Python'),
-    ("django", 'Django'),
-    ('react', 'React'),
-]
-
 PRIORITY_COLORS = {
     "low": '#6a994e',
     "middle": '#1d3557',
     "high": '#800e13',
     'secret':'#ee6c4d',
-    'critical': '#ffd8c6',
+    'critical': '#ef476f',
 }
 
 STATUS_CHOICES = [
@@ -36,15 +28,38 @@ STATUS_COLORS = {
     "impossible": "#dc3545",
 }
 
-EMAIL_CHOICES = [
-    ("yahoo.com", "Yahoo.com"),
-    ("gmail.com", "Gmail.com"),
-    ("hotmail.com", "Hotmail.com"),
-]
-
 RESPONSE_STATUS_CHOICES = [
         ('sent', 'Sent'),
         ('seen', 'Seen'),
         ('read', 'Read'),
         ('replied', 'Replied'),
     ]
+
+RESPONSE_STATUS_COLORS = {
+    "sent": "#bb8588",
+    "seen": "#dc2f02",
+    "read": "#5e503f",
+    "replied": "#656d4a",
+}
+
+DEPARTMENT_CHOICES = [
+    ('developer', 'Developer'),
+    ('fullstack', 'Full Stack'),
+    ("python", 'Python'),
+    ("django", 'Django'),
+    ('react', 'React'),
+]
+
+DEPARTMENT_COLORS = {
+    'developer': '#007ea7',
+    'fullstack': '#7b2cbf',
+    'python': '#ff7d00',
+    'django': '#274c77',
+    'react': '#fee440',
+}
+
+EMAIL_CHOICES = [
+    ("yahoo.com", "Yahoo.com"),
+    ("gmail.com", "Gmail.com"),
+    ("hotmail.com", "Hotmail.com"),
+]
