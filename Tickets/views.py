@@ -8,6 +8,8 @@ from django.core.exceptions import PermissionDenied
 from .Choices import *
 from .validators import validate
 from django.core.paginator import Paginator
+from django.shortcuts import render
+from .models import Swiper
 
 def dashboard(request):
     # active_categories = Category.objects.active()
@@ -229,6 +231,15 @@ def index(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    swipers = Swiper.objects.filter(is_active=True).order_by('-created_at')
+
+    # برای دیباگ
+    print(f"Found {swipers.count()} active swipers")
+    for swiper in swipers:
+        print(f"Swiper: {swiper.title}, Image: {swiper.main_image}")
+        if swiper.main_image:
+            print(f"Image URL: {swiper.main_image.url}")
+
     columns = [
         ('row', 'Row'),
         ('tracking_code', 'Tracking Code'),
@@ -267,6 +278,7 @@ def index(request):
         'max_replay_date_to': max_replay_date_to,
         'has_active_filters': bool(
             search_query or category_id or priority or status or department or response_status or created_at_from or created_at_to or max_replay_date_from or max_replay_date_to),
+        'swipers': swipers,
     }
 
     # return render(request, template_name='index.html', context=context)
@@ -531,3 +543,6 @@ def search_logs(request):
 #     if request.session.get('search_priority'):
 #         del request.session['search_priority']
 #     return redirect('tickets')
+def ticket_login(request):
+    swipers = Swiper.objects.filter(is_active=True).order_by('-created_at')
+    return render(request, 'login-page.html', {'swipers': swipers})

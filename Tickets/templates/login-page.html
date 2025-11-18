@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ticketing{% endblock %}
+
+{% block content %}
+
+    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center py-4">
+        <div class="row w-100 justify-content-center">
+            <div class="col-12 col-xl-10">
+                <div class="card shadow border-0 rounded-4 overflow-hidden" style="margin-top: -20px;">
+                    <div class="row g-0 h-100">
+                        <div class="col-md-7 position-relative">
+                            <div class="swiper-container h-100" style="min-height: 580px;">
+                                <div class="swiper-wrapper">
+                                    {% for swiper in swipers %}
+                                        <div class="swiper-slide">
+                                            <div class="swiper-content position-relative h-100">
+                                                {% if swiper.main_image %}
+                                                    <img src="{{ swiper.main_image.url }}"
+                                                         alt="{{ swiper.name_of_alt|default:swiper.title }}"
+                                                         class="swiper-image w-100 h-100">
+                                                {% endif %}
+
+                                                <div class="position-absolute bottom-0 start-0 w-100">
+                                                    <div class="swiper-text text-white p-4">
+                                                        <div class="row align-items-center">
+                                                            <div class="col-8">
+                                                                {#                                                        {% if swiper.title %}#}
+                                                                {#                                                        <h2 class="swiper-title fw-bold mb-1">#}
+                                                                {#                                                            {{ swiper.title }}#}
+                                                                {#                                                        </h2>#}
+                                                                {#                                                        {% endif %}#}
+                                                                {% if swiper.name_swiper %}
+                                                                    <h3 class="swiper-name mb-1 text-light">
+                                                                        {{ swiper.name_swiper }}
+                                                                    </h3>
+                                                                {% endif %}
+                                                                {% if swiper.description_swiper %}
+                                                                    <p class="swiper-description mb-0 small">
+                                                                        {{ swiper.description_swiper }}
+                                                                    </p>
+                                                                {% endif %}
+                                                            </div>
+                                                            <div class="col-4 text-end">
+                                                                <a href="{% url 'tickets' %}"
+                                                                   class="btn btn-outline-danger btn-sm px-3">
+                                                                    <i class="fas fa-book-reader me-1"></i>
+                                                                    Read More
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% empty %}
+                                        <div class="swiper-slide">
+                                            <div class="swiper-content bg-dark d-flex align-items-center justify-content-center h-100">
+                                                <div class="text-white text-center">
+                                                    <i class="fas fa-images fa-4x mb-3 opacity-50"></i>
+                                                    <h4 class="fw-light">No sliders available</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="swiper-button-next"></div>
+                                <div class="swiper-button-prev"></div>
+                                <div class="swiper-pagination"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-5 ">
+                            <div class="h-100 d-flex align-items-center justify-content-center bg-dark">
+                                <div class="w-100 px-4 py-4">
+                                    <div class="text-center mb-4">
+                                        <div class="mb-3">
+                                            <i class="fas fa-ticket-alt text-primary fs-1"></i>
+                                        </div>
+                                        <h3 class="fw-bold text-success mb-2">Login</h3>
+                                        <p class="text-success">Please enter your information.</p>
+                                    </div>
+                                    <form method="post" action="">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="email" class="form-label fw-medium text-success">Email</label>
+                                            <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0">
+                                                <i class="fas fa-envelope text-muted"></i>
+                                            </span>
+                                                <input type="email" class="form-control border-start-0" id="email"
+                                                       name="email"
+                                                       placeholder="example@email.com" required>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="password"
+                                                   class="form-label fw-medium text-success">Password</label>
+                                            <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0">
+                                                <i class="fas fa-lock text-muted"></i>
+                                            </span>
+                                                <input type="password" class="form-control border-start-0" id="password"
+                                                       name="password"
+                                                       placeholder="Password" required>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="captcha" class="form-label fw-medium text-success">Security
+                                                code</label>
+                                            <div class="row g-2">
+                                                <div class="col-6">
+                                                    <div class="bg-light rounded p-2 text-center border">
+                                                        <span class="fw-bold text-primary fs-5 captcha-code">A3B7</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="text" class="form-control" id="captcha" name="captcha"
+                                                           placeholder="Enter the code." required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3 d-flex justify-content-between align-items-center">
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input" id="remember"
+                                                       name="remember">
+                                                <label class="form-check-label text-success small" for="remember">Remember
+                                                    me.</label>
+                                            </div>
+                                            <a href="#" class="text-decoration-none small text-primary">Forgot your
+                                                password?</a>
+                                        </div>
+                                        <button type="submit" class="btn btn-danger w-100 py-2 mb-3">
+                                            <i class="fas fa-sign-in-alt me-2"></i>
+                                            Login
+                                        </button>
+                                        <div class="text-center mt-3 pt-3 border-top">
+                                            <p class="text-muted small mb-0">
+                                                Don't have an account?
+                                                <a href="#" class="text-decoration-none text-success">Register</a>
+                                            </p>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+  {% block js %}
+    <script>
+        {% include 'Js/swiper-codeSecret.js' %}
+    </script>
+{% endblock %}
+{% endblock %}
