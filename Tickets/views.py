@@ -21,6 +21,7 @@ def dashboard(request):
         'high_tickets': Ticket.objects.with_priority('high').count(),
         'middle_tickets': Ticket.objects.with_priority('middle').count(),
         'secret_tickets': Ticket.objects.with_priority('secret').count(),
+        'critical_tickets': Ticket.objects.with_priority('critical').count(),
         'expired_tickets': Ticket.objects.is_expired().count(),
         'open_tickets': Ticket.objects.is_open().count(),
         'close_tickets': Ticket.objects.is_close().count(),
@@ -82,10 +83,31 @@ def index(request):
     max_replay_date_from = search_params.get('max_replay_date_from')
     max_replay_date_to = search_params.get('max_replay_date_to')
 
+    # if search_query or category_id or priority or status or department or response_status or created_at_from or created_at_to or max_replay_date_from or max_replay_date_to:
+    #     try:
+    #         from Tickets.signals import create_search_log
+    #         create_search_log(request.user, search_params)
+    #     except Exception as e:
+    #         print(f" Error in search logging: {e}")
+
+
     if search_query or category_id or priority or status or department or response_status or created_at_from or created_at_to or max_replay_date_from or max_replay_date_to:
         try:
             from Tickets.signals import create_search_log
-            create_search_log(request.user, search_params)
+            create_search_log(request.user, {
+                'q': search_query,
+                'category': category_id,
+                'priority': priority,
+                'status': status,
+                'department': department,
+                'response_status': response_status,
+                'search_mode': search_mode,
+                'created_at_from': created_at_from,
+                'created_at_to': created_at_to,
+                'max_replay_date_from': max_replay_date_from,
+                'max_replay_date_to': max_replay_date_to,
+                'with_close': with_close,
+            })
         except Exception as e:
             print(f" Error in search logging: {e}")
 
@@ -95,7 +117,7 @@ def index(request):
 
     filter_conditions = []
 
-    # اضافه کردن شرط جستجو اگر وجود دارد
+    #  شرط جستجو
     if search_query:
         search_q = Q(
             Q(subject__icontains=search_query)
@@ -105,42 +127,42 @@ def index(request):
         )
         filter_conditions.append(search_q)
 
-    # اضافه کردن شرط دسته‌بندی اگر وجود دارد
+    #  شرط دسته‌بندی
     if category_id and category_id not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(category_id=category_id))
         else:  # AND
             tickets = tickets.filter(category_id=category_id)
 
-    # اضافه کردن شرط اولویت اگر وجود دارد
+    #  شرط اولویت
     if priority and priority not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(priority=priority))
         else:  # AND
             tickets = tickets.with_priority(priority)
 
-    # اضافه کردن شرط وضعیت تیکت اگر وجود دارد
+    #  شرط وضعیت تیکت
     if status and status not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(status=status))
         else:  # AND
             tickets = tickets.by_status(status)
 
-    # اضافه کردن شرط دپارتمان
+    #  شرط دپارتمان
     if department and department not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(department=department))
         else:
             tickets = tickets.filter(department=department)
 
-    # اضافه کردن شرط وضعیت پاسخ
+    # ا شرط وضعیت پاسخ
     if response_status and response_status not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(responses__response_status=response_status))
         else:
             tickets = tickets.filter(responses__response_status=response_status)
 
-    # فیلتر تاریخ ایجاد تیکت
+    #  تاریخ ایجاد تیکت
     if created_at_from:
         if search_mode == 'or':
             filter_conditions.append(Q(created_at__date__gte=created_at_from))
@@ -153,7 +175,7 @@ def index(request):
         else:
             tickets = tickets.filter(created_at__date__lte=created_at_to)
 
-    # فیلتر تاریخ مهلت پاسخ
+    #  تاریخ مهلت پاسخ
     if max_replay_date_from:
         if search_mode == 'or':
             filter_conditions.append(Q(max_replay_date__date__gte=max_replay_date_from))
@@ -247,7 +269,9 @@ def index(request):
             search_query or category_id or priority or status or department or response_status or created_at_from or created_at_to or max_replay_date_from or max_replay_date_to),
     }
 
-    return render(request, template_name='index.html', context=context)
+    # return render(request, template_name='index.html', context=context)
+    # return render(request, template_name='index-card.html', context=context)
+    return render(request, template_name='index-table-card.html', context=context)
 
 def ticket_create(request):
     if request.method == 'POST':
@@ -385,7 +409,6 @@ def search_logs(request):
     except Exception as e:
         print(f" Error in search_logs view: {e}")
         return redirect('tickets')
-
 # ---------------------------------------------------------------------------------------------
 # راه دوم برای ساخت logSearch
 # def index(request):

@@ -195,6 +195,12 @@ class Ticket(TimestampedModel):
     def get_priority_color(self):
         return PRIORITY_COLORS.get(self.priority, '#6c757d')
 
+    def get_status_color(self):
+        return STATUS_COLORS.get(self.status, '#6c757d')
+
+    def get_department_color(self):
+        return DEPARTMENT_COLORS.get(self.department, '#6c757d')
+
     def get_edit_url(self):
         return reverse('tickets-update',args=[self.pk])
 
@@ -226,6 +232,9 @@ class TicketResponse(TimestampedModel):
     class Meta:
         db_table = 'Tickets-Responses'
         ordering = ['created_at']
+
+    def get_response_status_color(self):
+        return RESPONSE_STATUS_COLORS.get(self.response_status, '#6c757d')
 
     def __str__(self):
         return f"Response #{self.id} for {self.ticket.tracking_code}"
@@ -285,6 +294,9 @@ class SearchLogSignal(TimestampedModel):
     search_query = models.CharField(max_length=200)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     priority = models.CharField(max_length=100, blank=True)
+    status = models.CharField(max_length=100, blank=True)
+    department = models.CharField(max_length=100, blank=True)
+    response_status = models.CharField(max_length=100, blank=True)
     search_mode = models.CharField(max_length=10, default='and')
     results_count = models.PositiveIntegerField(default=0)
 
