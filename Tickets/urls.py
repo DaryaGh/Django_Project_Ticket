@@ -13,4 +13,6 @@ urlpatterns = [
     path('Tickets/login', ticket_login, name='tickets-login'),
 # راه دوم برای ساخت logSearch
     # path('Tickets/clear' , ticket_clear , name='ticket_clear'),
+
+    path('Tickets/Attachments/<int:id>/delete',ticket_attachment_delete,name='attachment_delete'),
  ]

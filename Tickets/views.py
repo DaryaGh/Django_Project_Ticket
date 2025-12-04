@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
-from Tickets.forms import TicketForm
+from Tickets.forms import *
 from Tickets.models import *
 from django.core.exceptions import PermissionDenied
 from .Choices import *
@@ -287,7 +287,8 @@ def index(request):
 
 def ticket_create(request):
     if request.method == 'POST':
-        form = TicketForm(request.POST)
+        # form = TicketForm(request.POST)
+        form = TicketForm(request.POST,request.FILES)
         # برای پاک کردن فیلدهای اجباری در جنگو است
         form.errors.clear()
 
@@ -304,10 +305,14 @@ def ticket_create(request):
             "contact_email": ["required", "email"],
             "contact_name": ["required", "min:2", "max:100"],
             "contact_phone": ["required","phone"],
-            "due_date": ["required", "due_date"],
+            "due_date": ["required", "future_date"],
+            "attachments": [
+                "file_type:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png",
+                "max_size:5", "max_files:10"]
         }
 
-        errors = validate(request.POST, rules)
+        # errors = validate(request.POST, rules)
+        errors = validate(request.POST, request.FILES, rules)
 
         if errors:
             for field, error in errors.items():
@@ -317,7 +322,7 @@ def ticket_create(request):
             new_ticket = form.save(commit=False)
             new_ticket.created_by_id = 104
             new_ticket.save()
-            form.save_m2m()
+
             # new_ticket.created_by = request.user
             #             # new_ticket.save(commit=True)
             #
@@ -328,8 +333,13 @@ def ticket_create(request):
             #             file=file,
             #             uploaded_by_id=104
             #         )
-            #
-            # messages.success(request, 'Your ticket has been created successfully!')
+
+            files = request.FILES.getlist("attachments")
+            for file in files:
+                TicketAttachment.objects.create(ticket=new_ticket, file=file)
+
+            form.save_m2m()
+            messages.success(request, 'Your ticket has been created successfully!')
             # return redirect('ticket_details', ticket_id=new_ticket.id)
             messages.success(request, 'Your Ticket was successfully !')
             return redirect('ticket_success', id=new_ticket.id)
@@ -354,7 +364,15 @@ def ticket_details(request, id):
         if t.id == ticket.id:
             row_number = i
             break
-    return render(request, 'ticket-details.html', {'ticket': ticket, 'row_number': row_number})
+    ticket = get_object_or_404(Ticket.objects.select_related('category','created_by').prefetch_related('tags','ticket_attachments'), id=id)
+
+    attachments = ticket.ticket_attachments.all()
+    print(ticket.ticket_attachments.all())
+    return render(request, 'ticket-details.html', {
+        'ticket': ticket,
+        'attachments': attachments,
+        'row_number': row_number
+    })
     # return render(request, 'ticket-details-component.html', {'ticket': ticket, 'row_number': row_number})
 
 def ticket_update(request, id):
@@ -363,13 +381,22 @@ def ticket_update(request, id):
         form = TicketForm(request.POST, instance=ticket)
         if form.is_valid():
             form.save()
+
+            files = request.FILES.getlist("attachments")
+            for file in files:
+                TicketAttachment.objects.create(ticket=ticket, file=file)
+
             messages.info(request, f'Ticket #{ticket.id} has been updated Successfully !!!')
             return redirect('tickets-details', id=ticket.id)
     else:
         form = TicketForm(instance=ticket)
         # instance برای نمایش دوباره مقداری که میخواهیم ویرایش کنیم است
 
-    return render(request, 'ticket_create.html', {'form': form, 'ticket': ticket})
+    return render(request, 'ticket_create.html', {
+        'form': form,
+        'ticket': ticket,
+        'attachments': ticket.ticket_attachments.all(),
+    })
 
 def ticket_delete(request, id):
     try:
@@ -546,3 +573,13 @@ def search_logs(request):
 def ticket_login(request):
     swipers = Swiper.objects.filter(is_active=True).order_by('-created_at')
     return render(request, 'login-page.html', {'swipers': swipers})
+
+def ticket_attachment_delete(request, id):
+    attachment = get_object_or_404(TicketAttachment, id=id)
+    ticket = attachment.ticket
+
+    attachment.file.delete(save=False)
+    attachment.delete()
+
+    messages.success(request, 'Ticket Attachment Deleted Successfully')
+    return redirect('tickets-update',id=ticket.id)

@@ -275,20 +275,6 @@ class Assignment(TimestampedModel):
         # بهترین گزینه - استفاده از username
         return f"#{self.assigned_ticket.subject} assigned to {self.assignee.username}"
 
-class TicketAttachment(TimestampedModel):
-    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE)
-    file = models.FileField(upload_to='ticket_attachments/')
-    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    description = models.CharField(max_length=200, blank=True)
-
-    class Meta:
-        verbose_name = 'Attachment'
-        verbose_name_plural = 'Attachments'
-        db_table = 'Tickets-Attachments'
-
-    def __str__(self):
-        return f"{self.ticket}"
-
 class SearchLogSignal(TimestampedModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='search_logs')
     search_query = models.CharField(max_length=200)
@@ -326,7 +312,7 @@ class Swiper(TimestampedModel):
 
     def __str__(self):
         return self.name_swiper
-
+ 
 # راه دوم برای ساخت logSearch
 
 # class LogSearch(models.Model):
@@ -355,3 +341,23 @@ class Swiper(TimestampedModel):
 #             return output + f" By {self.user}"
 #         else:
 #             return output + " By Guest"
+
+class TicketAttachment(TimestampedModel):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE,related_name="ticket_attachments")
+    file = models.FileField(upload_to='ticket_attachments/%Y/%m/%d/',blank=True,null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    description = models.CharField(max_length=200, blank=True)
+    original_filename = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        verbose_name = 'Attachment'
+        verbose_name_plural = 'Attachments'
+        db_table = 'Tickets_TicketAttachments'
+
+    def __str__(self):
+        return f"{self.ticket}"
+
+    def save(self, *args, **kwargs):
+        if not self.original_filename and self.file:
+            self.original_filename = self.file.name
+        super().save(*args, **kwargs)

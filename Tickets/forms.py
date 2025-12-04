@@ -1,8 +1,21 @@
 from django import forms
+from django.contrib.auth.models import User
 from Tickets.models import Ticket
+from django.core.exceptions import ValidationError
+import re
 
+class MultiFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
 
 class TicketForm(forms.ModelForm):
+    attachments = forms.FileField(
+        widget=MultiFileInput(attrs={
+            "multiple": True,
+            "class":"form-control"
+        }),
+        required=False,
+        help_text="You Can Upload Multiple files (PDF,Word,Images).")
+
     class Meta:
         model = Ticket
         fields = ['contact_name',
@@ -42,3 +55,38 @@ class TicketForm(forms.ModelForm):
             'contact_phone': 'Phone Number',
             'max_replay_date': 'Maximum Reply Date',
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = False
+            field.widget.attrs.update({
+                'class': 'form-control'
+            })
+
+    # def clean_tags(self):
+    #     tags = self.cleaned_data.get('tags')
+    #     count = tags.count() if tags else 0
+    #
+    #     if count < 1:
+    #         raise forms.ValidationError("Please enter at least one tag.")
+    #     if count > 5:
+    #         raise forms.ValidationError("Please enter at most 5 tags.")
+    #
+    #     return tags
+    #
+    # def clean_attachments(self):
+    #     files = self.files.getlist('attachments')
+    #     allowed_types =[
+    #         'application/pdf',
+    #         'application/msword',
+    #         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    #         'image/jpeg',
+    #         'image/png',
+    #     ]
+    #     for f in files:
+    #         if f.content_type not in allowed_types:
+    #             raise forms.ValidationError(f"{f.name} has an unsupported file type.")
+    #         if f.size > 5 * 1024 * 1024:
+    #             raise forms.ValidationError(f"{f.name} exceeds 5 MB size limit.")
+    #     return files
