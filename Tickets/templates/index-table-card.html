@@ -74,10 +74,10 @@
                                             {% endif %}
 
                                             {% if col == 'row' %}
-                                                <span class="text-dark " onclick="toggleSort('row')">{{ label }}</span>
+                                                <span class="text-success" onclick="toggleSort('row')">{{ label }}</span>
                                             {% else %}
                                                 <a href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&sort={{ col }}&dir={% if sort == col and direction == 'asc' %}desc{% else %}asc{% endif %}"
-                                                   class="text-decoration-none text-dark">
+                                                   class="text-decoration-none text-success">
                                                     {{ label }}
                                                     {% if sort == col %}
                                                         {% if direction == 'asc' %}
@@ -93,7 +93,7 @@
                                 {% endfor %}
 
                                 <th scope="col">
-                                    <div class="table-header-content">
+                                    <div class="table-header-content text-success">
                                         <i class="bi bi-gear"></i>
                                         <span>Actions</span>
                                     </div>
