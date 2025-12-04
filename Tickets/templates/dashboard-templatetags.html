@@ -17,19 +17,19 @@
             </div>
 
             <div class="col-md-3">
-                {% widget_card title="Total Tickets" count=total_tickets color="info" icon='inboxes' title_color="dark" btn_color="info" btn_icon='arrow-right' url="/Tickets" extra_class="shadow" %}
+                {% widget_card title="Total Tickets" count=total_tickets color="info" icon='inboxes' title_color="dark" btn_color="info" btn_icon='arrow-right' url="/Tickets" extra_class="shadow bg-gradient" %}
             </div>
 
             <div class="col-md-3">
-                {% widget_card title="Low Priority" count=low_tickets color="success" icon='arrow-down-circle' title_color="success" btn_color="success" btn_icon='arrow-right' url="Tickets?priority=low" extra_class="shadow" %}
+                {% widget_card title="Low Priority" count=low_tickets color="success" icon='arrow-down-circle' title_color="success" btn_color="success" btn_icon='arrow-right' url="Tickets?priority=low" extra_class="shadow bg-gradient" %}
             </div>
 
             <div class="col-md-3">
-                {% widget_card title="High Priority" count=high_tickets color="danger" icon='exclamation-triangle' title_color="danger" btn_color="danger" btn_icon='arrow-right' url="Tickets?priority=high" extra_class="shadow" %}
+                {% widget_card title="High Priority" count=high_tickets color="danger" icon='exclamation-triangle' title_color="danger" btn_color="danger" btn_icon='arrow-right' url="Tickets?priority=high" extra_class="shadow bg-gradient" %}
             </div>
 
             <div class="col-md-3">
-                {% widget_card title="Middle Priority" count=middle_tickets color="warning" icon='dash-circle' title_color="warning" btn_color="warning" btn_icon='arrow-right' url="Tickets?priority=middle" extra_class="shadow" %}
+                {% widget_card title="Middle Priority" count=middle_tickets color="warning" icon='dash-circle' title_color="warning" btn_color="warning" btn_icon='arrow-right' url="Tickets?priority=middle" extra_class="shadow bg-gradient" %}
             </div>
 
             <div class="col-md-3 mt-3">
@@ -37,32 +37,36 @@
             </div>
 
             <div class="col-md-3 mt-3">
-                {% widget_card title="Expired Tickets" count=expired_tickets color="dark" icon='clock-history' title_color="dark" btn_color="dark" btn_icon='arrow-right' url="Tickets?expired" extra_class="shadow" %}
+                {% widget_card title="Critical Priority" count=critical_tickets color="dark" icon='fire' title_color="danger" btn_color="danger" btn_icon='arrow-right' url="Tickets?priority=critical" extra_class="shadow bg-gradient" %}
             </div>
 
             <div class="col-md-3 mt-3">
-                {% widget_card title="Open Tickets" count=open_tickets color="primary" icon='folder-plus' title_color="primary" btn_color="primary" btn_icon='arrow-right' url="Tickets?open" extra_class="shadow" %}
+                {% widget_card title="Expired Tickets" count=expired_tickets color="dark" icon='clock-history' title_color="dark" btn_color="dark" btn_icon='arrow-right' url="Tickets?expired" extra_class="shadow bg-gradient" %}
             </div>
 
             <div class="col-md-3 mt-3">
-                {% widget_card title="Closed Tickets" count=close_tickets color="success" icon='folder-check' title_color="success" btn_color="success" btn_icon='arrow-right' url="Tickets?close" extra_class="shadow" %}
+                {% widget_card title="Open Tickets" count=open_tickets color="primary" icon='folder-plus' title_color="primary" btn_color="primary" btn_icon='arrow-right' url="Tickets?open" extra_class="shadow bg-gradient" %}
             </div>
 
             <div class="col-md-3 mt-3">
-                {% widget_card title="New Tickets" count=status_new_tickets color="info" icon='star' title_color="info" btn_color="info" btn_icon='arrow-right' url="Tickets?status=new" extra_class="shadow" %}
+                {% widget_card title="Closed Tickets" count=close_tickets color="success" icon='folder-check' title_color="success" btn_color="success" btn_icon='arrow-right' url="Tickets?close" extra_class="shadow bg-gradient" %}
             </div>
 
-            <div class="col-md-3 mt-3">
-                {% widget_card title="In Progress" count=status_in_progress_tickets color="warning" icon='gear' title_color="warning" btn_color="warning" btn_icon='arrow-right' url="Tickets?status=in_progress" extra_class="shadow" %}
-            </div>
-
-            <div class="col-md-3 mt-3">
-                {% widget_card title="Impossible" count=status_impossible_tickets color="danger" icon='x-circle' title_color="danger" btn_color="danger" btn_icon='arrow-right' url="Tickets?status=impossible" extra_class="shadow" %}
-            </div>
-
-            <div class="col-md-3 mt-3">
-                {% widget_card title="Solved" count=status_solved_tickets color="success" icon='check-circle' title_color="success" btn_color="success" btn_icon='arrow-right' url="Tickets?status=solved" extra_class="shadow" %}
-            </div>
+            {#            <div class="col-md-3 mt-3">#}
+            {#                {% widget_card title="New Tickets" count=status_new_tickets color="info" icon='star' title_color="info" btn_color="info" btn_icon='arrow-right' url="Tickets?status=new" extra_class="shadow" %}#}
+            {#            </div>#}
+            {##}
+            {#            <div class="col-md-3 mt-3">#}
+            {#                {% widget_card title="In Progress" count=status_in_progress_tickets color="warning" icon='gear' title_color="warning" btn_color="warning" btn_icon='arrow-right' url="Tickets?status=in_progress" extra_class="shadow" %}#}
+            {#            </div>#}
+            {##}
+            {#            <div class="col-md-3 mt-3">#}
+            {#                {% widget_card title="Impossible" count=status_impossible_tickets color="danger" icon='x-circle' title_color="danger" btn_color="danger" btn_icon='arrow-right' url="Tickets?status=impossible" extra_class="shadow" %}#}
+            {#            </div>#}
+            {##}
+            {#            <div class="col-md-3 mt-3">#}
+            {#                {% widget_card title="Solved" count=status_solved_tickets color="success" icon='check-circle' title_color="success" btn_color="success" btn_icon='arrow-right' url="Tickets?status=solved" extra_class="shadow" %}#}
+            {#            </div>#}
         </div>
 
         <div class="row mb-4">
