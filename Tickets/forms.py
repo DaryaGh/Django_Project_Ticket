@@ -11,7 +11,7 @@ class TicketForm(forms.ModelForm):
     attachments = forms.FileField(
         widget=MultiFileInput(attrs={
             "multiple": True,
-            "class":"form-control"
+            "class": "form-control"
         }),
         required=False,
         help_text="You Can Upload Multiple files (PDF,Word,Images).")
@@ -90,3 +90,75 @@ class TicketForm(forms.ModelForm):
     #         if f.size > 5 * 1024 * 1024:
     #             raise forms.ValidationError(f"{f.name} exceeds 5 MB size limit.")
     #     return files
+
+class RegisterForm(forms.ModelForm):
+    password1 = forms.CharField(
+        label="Password",
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter Password'}),
+    )
+    password2 = forms.CharField(
+        label="Password Confirmation",
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm Password'}),
+    )
+
+    class Meta:
+        model = User
+        fields = ['username', 'email']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Username'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter Email'}),
+        }
+        labels = {
+            'username': 'Username',
+            'email': 'Email Address',
+        }
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if len(username) < 4:
+            raise ValidationError('Username must be at least 4 characters long')
+        if User.objects.filter(username=username).exists():
+            raise ValidationError('Username already exists')
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+
+        # if len(email) == 0 :
+        #     raise ValidationError('Email Address is required')
+
+        if not email or len(email.strip()) == 0:
+            raise ValidationError('Email Address is required')
+
+        if User.objects.filter(email=email).exists():
+            raise ValidationError('Email already exists')
+        return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password2')
+
+        if password1 and password2 and password1 != password2:
+            raise ValidationError('Passwords must match')
+
+        if password1 and len(password1) < 8:
+            raise ValidationError('Password must be at least 8 characters long')
+
+        if password1 and not re.search(r'\d', password1):
+            raise ValidationError('Password must contain at least 1 digit')
+
+        if password1 and not re.search(r'[A-Z]', password1):
+            raise ValidationError('Password must contain at least one uppercase letter')
+
+        if password1 and not re.search(r'[a-z]', password1):
+            raise ValidationError('Password must contain at least one lowercase letter')
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data['password1'])
+        if commit:
+            user.save()
+        return user

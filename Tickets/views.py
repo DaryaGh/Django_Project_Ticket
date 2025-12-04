@@ -4,12 +4,11 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from Tickets.forms import *
 from Tickets.models import *
-from django.core.exceptions import PermissionDenied
 from .Choices import *
+from django.core.exceptions import PermissionDenied
 from .validators import validate
 from django.core.paginator import Paginator
-from django.shortcuts import render
-from .models import Swiper
+from django.contrib.auth import authenticate, login , logout
 
 def dashboard(request):
     # active_categories = Category.objects.active()
@@ -40,7 +39,7 @@ def dashboard(request):
     # return render(request, 'dashboard.html', {'dashboard': dashboard})
     # return render(request, 'dashboard-component.html', {'dashboard': dashboard})
     # return HttpResponse("Dashboard")
-
+# @login_required(login_url='login')
 def index(request):
     # اگر پارامتر clear وجود داشت، session را پاک کن
     if request.GET.get('clear'):
@@ -448,6 +447,52 @@ def search_logs(request):
     except Exception as e:
         print(f" Error in search_logs view: {e}")
         return redirect('tickets')
+
+def ticket_login(request):
+    swipers = Swiper.objects.filter(is_active=True).order_by('-created_at')
+
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            return redirect('dashboard')
+        else:
+            messages.error(request, 'Invalid username or password.')
+
+    return render(request, 'registration/login-page.html', {'swipers': swipers})
+
+def ticket_attachment_delete(request, id):
+    attachment = get_object_or_404(TicketAttachment, id=id)
+    ticket = attachment.ticket
+
+    attachment.file.delete(save=False)
+    attachment.delete()
+
+    messages.success(request, 'Ticket Attachment Deleted Successfully')
+    return redirect('tickets-update',id=ticket.id)
+
+def register(request):
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your account was created successfully . Please login to continue')
+            return redirect('tickets-login')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = RegisterForm()
+    return render(request, 'registration/register.html', {'form': form})
+
+def ticket_logout(request):
+    logout(request)
+    messages.success(request, 'You have been successfully logged out.')
+    return redirect('tickets-login')
+
 # ---------------------------------------------------------------------------------------------
 # راه دوم برای ساخت logSearch
 # def index(request):
@@ -570,16 +615,6 @@ def search_logs(request):
 #     if request.session.get('search_priority'):
 #         del request.session['search_priority']
 #     return redirect('tickets')
-def ticket_login(request):
-    swipers = Swiper.objects.filter(is_active=True).order_by('-created_at')
-    return render(request, 'login-page.html', {'swipers': swipers})
-
-def ticket_attachment_delete(request, id):
-    attachment = get_object_or_404(TicketAttachment, id=id)
-    ticket = attachment.ticket
-
-    attachment.file.delete(save=False)
-    attachment.delete()
-
-    messages.success(request, 'Ticket Attachment Deleted Successfully')
-    return redirect('tickets-update',id=ticket.id)
+# def ticket_login(request):
+#     swipers = Swiper.objects.filter(is_active=True).order_by('-created_at')
+#     return render(request, 'registration/login-page.html', {'swipers': swipers})

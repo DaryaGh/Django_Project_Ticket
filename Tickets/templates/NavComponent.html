@@ -38,21 +38,62 @@
                         <i class="bi bi-bell fs-4 text-white"></i>
                     </a>
                 </li>
-                <li class="nav-item mx-2">
-                    <a href="{% url 'tickets-login' %}" class="text-decoration-none">
-                        <i class="bi bi-person-circle fs-4 text-white"></i>
-                    </a>
-                </li>
+
+                {% if user.is_authenticated %}
+
+                    <li class="nav-item mx-2 dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle fs-4 me-1"></i>
+                            <span class="small">{{ user.username }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="bi bi-person me-2"></i>
+                                    Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="bi bi-gear me-2"></i>
+                                    Settings
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <form method="post" action="{% url 'tickets-logout' %}" id="logout-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-box-arrow-right me-2"></i>
+                                        Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item mx-2">
+                        <a href="{% url 'tickets-login' %}" class="nav-link d-flex align-items-center">
+                            <i class="bi bi-person-circle fs-4 me-1"></i>
+                            <span>Login</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mx-2">
+                        <a href="{% url 'register' %}" class="nav-link d-flex align-items-center">
+                            <i class="bi bi-person-plus me-1"></i>
+                            <span>Register</span>
+                        </a>
+                    </li>
+                {% endif %}
+
                 <li class="nav-item mx-2">
                     <button id="themeToggle" class="text-warning text-decoration-none p-0 border-0 bg-transparent fs-4">
                         <i class="bi bi-moon-fill fs-5 text-warning"></i>
                     </button>
                 </li>
-                {#            <li class="nav-item mx-2">#}
-                {#                    <button id="color-mode" class="text-warning text-decoration-none p-0 border-0 bg-transparent fs-4">#}
-                {#                        <i class="bi bi-moon-fill fs-5 text-warning"></i>#}
-                {#                    </button>#}
-                {#                </li>#}
                 <li class="nav-item ms-2">
                     <a href="{% url 'dashboard' %}" data-bs-toggle="offcanvas" data-bs-target="#sidebar"
                        class="text-decoration-none text-white" title="Open Sidebar">
@@ -63,6 +104,5 @@
         </div>
     </div>
 </nav>
-
 
 {% include 'OffcanvassComponent.html' %}

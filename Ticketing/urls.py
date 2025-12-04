@@ -22,6 +22,8 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("",include('Tickets.urls')),
+
+    path('Account/', include('django.contrib.auth.urls')),
 ]
 # اضافه کردن این خط برای سرو کردن فایل‌های media در حالت توسعه
 if settings.DEBUG:

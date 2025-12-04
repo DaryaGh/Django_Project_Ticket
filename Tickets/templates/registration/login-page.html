@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
+{#{% load widget_tweaks %}#}
 {% load static %}
 
 {% block title %}Ticketing{% endblock %}
 
 {% block content %}
-
     <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center py-4">
         <div class="row w-100 justify-content-center">
             <div class="col-12 col-xl-10">
@@ -26,11 +26,6 @@
                                                     <div class="swiper-text text-white p-4">
                                                         <div class="row align-items-center">
                                                             <div class="col-8">
-                                                                {#                                                        {% if swiper.title %}#}
-                                                                {#                                                        <h2 class="swiper-title fw-bold mb-1">#}
-                                                                {#                                                            {{ swiper.title }}#}
-                                                                {#                                                        </h2>#}
-                                                                {#                                                        {% endif %}#}
                                                                 {% if swiper.name_swiper %}
                                                                     <h3 class="swiper-name mb-1 text-light">
                                                                         {{ swiper.name_swiper }}
@@ -83,6 +78,17 @@
                                     </div>
                                     <form method="post" action="">
                                         {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="username" class="form-label fw-medium text-success">Username</label>
+                                            <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0">
+                                                <i class="fas fa-person text-muted"></i>
+                                            </span>
+                                                <input type="text" class="form-control border-start-0" id="username"
+                                                       name="username"
+                                                       placeholder="Enter Username" required>
+                                            </div>
+                                        </div>
                                         <div class="mb-3">
                                             <label for="email" class="form-label fw-medium text-success">Email</label>
                                             <div class="input-group">
@@ -138,7 +144,7 @@
                                         <div class="text-center mt-3 pt-3 border-top">
                                             <p class="text-muted small mb-0">
                                                 Don't have an account?
-                                                <a href="#" class="text-decoration-none text-success">Register</a>
+                                             <a href="{% url 'register' %}" class="text-decoration-none text-success">Register</a>
                                             </p>
                                         </div>
                                     </form>
@@ -150,8 +156,6 @@
             </div>
         </div>
     </div>
-
-
   {% block js %}
     <script>
         {% include 'Js/swiper-codeSecret.js' %}
