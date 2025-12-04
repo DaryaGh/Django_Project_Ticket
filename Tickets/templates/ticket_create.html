@@ -13,7 +13,7 @@
                     {% endfor %}
                 </div>
             {% endif %}
-            <form method="post" novalidate>
+            <form method="post" novalidate enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="row">
                     {% for field in form %}
@@ -31,6 +31,21 @@
                         </div>
                     {% endfor %}
                 </div>
+
+            <h5>Existing Attachments</h5>
+                            <ul class="list-group mb-3">
+                                {% for a in attachments %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <a href="{{ a.file.url }}" target="_blank">{{ a.file.name }}</a>
+
+                                        <a href="{% url 'attachment_delete' a.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete This Attachment')">
+                                            Delete
+                                        </a>
+                                    </li>
+                                    {% empty %}
+                                    <p>No Attachments</p>
+                                {% endfor %}
+                            </ul>
                 <button type="submit" class="btn btn-success mt-3">Submit Ticket</button>
             </form>
         </div>
