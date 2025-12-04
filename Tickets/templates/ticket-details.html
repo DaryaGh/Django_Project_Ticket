@@ -59,10 +59,10 @@
                                     <p class="mt-1">{{ ticket.created_at|date:"F j, Y g:i A" }}</p>
                                 </div>
 
-                            <div class="mb-3">
-                                <strong class="text-muted">Updated At:</strong>
-                                <p class="mt-1">{{ ticket.updated_at|timesince }} ago</p>
-                            </div>
+                                <div class="mb-3">
+                                    <strong class="text-muted">Updated At:</strong>
+                                    <p class="mt-1">{{ ticket.updated_at|timesince }} ago</p>
+                                </div>
 
                                 <div class="mb-3">
                                     <strong class="text-muted">Max Reply Date:</strong>
@@ -84,6 +84,20 @@
                                     <strong class="text-muted">Ticket ID:</strong>
                                     <p class="mt-1">{{ ticket.id }}</p>
                                 </div>
+                            <h5>Existing Attachments</h5>
+                            <ul class="list-group mb-3">
+                                {% for a in attachments %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <a href="{{ a.file.url }}" target="_blank">{{ a.file.name }}</a>
+
+                                        <a href="{% url 'attachment_delete' a.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete This Attachment')">
+                                            Delete
+                                        </a>
+                                    </li>
+                                    {% empty %}
+                                    <p>No Attachments</p>
+                                {% endfor %}
+                            </ul>
                             </div>
                         </div>
                         {% if ticket.description %}
