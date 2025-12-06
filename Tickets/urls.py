@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import *
+
 urlpatterns = [
     path('', dashboard, name='dashboard'),
     path('Tickets', index, name='tickets'),
@@ -16,4 +17,7 @@ urlpatterns = [
     path('Tickets/logout/', ticket_logout, name='tickets-logout'),
     # راه دوم برای ساخت logSearch
     # path('Tickets/clear' , ticket_clear , name='ticket_clear'),
+    path('ticket/<int:ticket_id>/attachments/delete-all/', ticket_attachments_delete_all,
+         name='ticket-attachments-delete-all'),
+path('ticket/<int:ticket_id>/attachments/download-all/', download_all_attachments, name='ticket-attachments-download-all'),
 ]

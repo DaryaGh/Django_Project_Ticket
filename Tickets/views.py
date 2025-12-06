@@ -5,10 +5,9 @@ from django.shortcuts import render, get_object_or_404, redirect
 from Tickets.forms import *
 from Tickets.models import *
 from .Choices import *
-from django.core.exceptions import PermissionDenied
 from .validators import validate
 from django.core.paginator import Paginator
-from django.contrib.auth import authenticate, login , logout
+from django.contrib.auth import authenticate, login, logout
 
 def dashboard(request):
     total_tickets = Ticket.objects.all().count()
@@ -129,7 +128,6 @@ def index(request):
     #         create_search_log(request.user, search_params)
     #     except Exception as e:
     #         print(f" Error in search logging: {e}")
-
 
     if search_query or category_id or priority or status or department or response_status or created_at_from or created_at_to or max_replay_date_from or max_replay_date_to:
         try:
@@ -326,7 +324,7 @@ def index(request):
 def ticket_create(request):
     if request.method == 'POST':
         # form = TicketForm(request.POST)
-        form = TicketForm(request.POST,request.FILES)
+        form = TicketForm(request.POST, request.FILES)
         # برای پاک کردن فیلدهای اجباری در جنگو است
         form.errors.clear()
 
@@ -342,7 +340,7 @@ def ticket_create(request):
             "tags": ["min_items:1", "max_items:5"],
             "contact_email": ["required", "email"],
             "contact_name": ["required", "min:2", "max:100"],
-            "contact_phone": ["required","phone"],
+            "contact_phone": ["required", "phone"],
             "due_date": ["required", "future_date"],
             "attachments": [
                 "required",
@@ -386,7 +384,6 @@ def ticket_create(request):
     else:
         form = TicketForm(initial={'priority': ''})
 
-
     return render(request, 'ticket_create.html', {
         'form': form,
         'PRIORITY_CHOICES': PRIORITY_CHOICES,
@@ -403,7 +400,8 @@ def ticket_details(request, id):
         if t.id == ticket.id:
             row_number = i
             break
-    ticket = get_object_or_404(Ticket.objects.select_related('category','created_by').prefetch_related('tags','ticket_attachments'), id=id)
+    ticket = get_object_or_404(
+        Ticket.objects.select_related('category', 'created_by').prefetch_related('tags', 'ticket_attachments'), id=id)
 
     attachments = ticket.ticket_attachments.all()
     print(ticket.ticket_attachments.all())
@@ -445,14 +443,15 @@ def ticket_delete(request, id):
             messages.error(request, 'Cannot delete tickets with HIGH priority')
             return redirect('tickets')
 
+        attachments = TicketAttachment.objects.filter(ticket=ticket)
+        for attachment in attachments:
+            attachment.file.delete(save=False)
+            attachment.delete()
+
         ticket.delete()
         messages.success(request, 'Ticket Deleted successfully')
         return redirect('tickets')
 
-    except PermissionDenied:
-        # اگر مدل اجازه نده
-        messages.error(request, 'Cannot delete tickets with HIGH priority')
-        return redirect('tickets')
     except Ticket.DoesNotExist:
         messages.error(request, 'Ticket not found')
         return redirect('tickets')
@@ -513,7 +512,67 @@ def ticket_attachment_delete(request, id):
     attachment.delete()
 
     messages.success(request, 'Ticket Attachment Deleted Successfully')
-    return redirect('tickets-update',id=ticket.id)
+    return redirect('tickets-update', id=ticket.id)
+
+def ticket_attachments_delete_all(request, ticket_id):
+    """حذف تمام attachment های یک تیکت"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+    if request.method == 'POST':
+        attachments = ticket.ticket_attachments.all()
+        count = attachments.count()
+
+        # حذف تمام فایل‌ها
+        for attachment in attachments:
+            attachment.file.delete(save=False)
+            attachment.delete()
+
+        messages.success(request, f'{count} attachment(s) deleted successfully')
+        return redirect('tickets-update', id=ticket.id)
+
+    # اگر درخواست GET بود به صفحه جزئیات برگرد
+    return redirect('tickets-details', id=ticket.id)
+
+
+# در views.py
+from django.http import HttpResponse
+from django.conf import settings
+import zipfile
+import os
+from io import BytesIO
+
+
+def download_all_attachments(request, ticket_id):
+    """دانلود تمام attachment های یک تیکت به صورت ZIP"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    attachments = ticket.ticket_attachments.all()
+
+    if not attachments.exists():
+        messages.warning(request, 'No attachments found')
+        return redirect('tickets-details', id=ticket.id)
+
+    # ایجاد بافر برای ZIP
+    buffer = BytesIO()
+
+    with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for attachment in attachments:
+            try:
+                # خواندن فایل از storage
+                with attachment.file.open('rb') as f:
+                    # نام فایل را استخراج کن (بدون مسیر کامل)
+                    filename = os.path.basename(attachment.file.name)
+                    zip_file.writestr(filename, f.read())
+            except Exception as e:
+                # در صورت خطا ادامه بده و فایل بعدی را اضافه کن
+                continue
+
+    # تنظیم response
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/zip')
+    response['Content-Disposition'] = f'attachment; filename="ticket_{ticket.id}_attachments.zip"'
+    response['Content-Length'] = buffer.tell()
+
+    return response
 
 def register(request):
     if request.method == 'POST':

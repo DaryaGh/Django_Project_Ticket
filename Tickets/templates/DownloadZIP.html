@@ -1,0 +1,67 @@
+{% if attachments and editable %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // ایجاد Zip و دانلود همه فایل‌ها
+            document.getElementById('downloadAllAttachments').addEventListener('click', async function (e) {
+                e.preventDefault();
+
+                // نمایش loading
+                const btn = this;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Preparing...';
+                btn.disabled = true;
+
+                try {
+                    // استفاده از JSZip برای ایجاد فایل ZIP
+                    const JSZip = window.JSZip;
+                    const zip = new JSZip();
+
+                    // ایجاد promise برای دانلود هر فایل
+                    const downloadPromises = [];
+
+                    {% for attachment in attachments %}
+                        downloadPromises.push(
+                            fetch('{{ attachment.file.url }}')
+                                .then(response => {
+                                    if (!response.ok) throw new Error(`Failed to fetch: {{ attachment.file.name }}`);
+                                    return response.blob();
+                                })
+                                .then(blob => {
+                                    const filename = '{{ attachment.file.name|slice:"-50:" }}'.split('/').pop();
+                                    zip.file(filename, blob);
+                                })
+                        );
+                    {% endfor %}
+
+                    // منتظر ماندن برای دانلود همه فایل‌ها
+                    await Promise.all(downloadPromises);
+
+                    // تولید فایل ZIP
+                    const content = await zip.generateAsync({type: "blob"});
+
+                    // ایجاد لینک برای دانلود
+                    const downloadUrl = URL.createObjectURL(content);
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = 'ticket_{{ ticket.id }}_attachments.zip';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    // رها کردن URL
+                    setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
+
+                } catch (error) {
+                    console.error('Error downloading attachments:', error);
+                    alert('Failed to download attachments. Please try again.');
+                } finally {
+                    // بازگرداندن دکمه به حالت اول
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            });
+        });
+    </script>
+    <!-- اضافه کردن کتابخانه JSZip برای ایجاد ZIP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+{% endif %}

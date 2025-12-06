@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-
 {% block content %}
     <div class="container-lg mt-5">
         <div class="card shadow-sm p-4">
             <h2 class="mb-4 text-success">
-                Submit a Ticket
+                {% if ticket %}Edit Ticket{% else %}Submit a Ticket{% endif %}
             </h2>
+            {# نمایش خطاهای غیر فیلدی #}
             {% if form.non_field_errors %}
                 <div class="alert alert-danger mt-3">
                     {% for error in form.non_field_errors %}
@@ -20,6 +20,7 @@
                         <div class="col-md-6 mb-3">
                             <label for="{{ field.id_for_label }}" class="form-label">
                                 {{ field.label }}
+                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                             </label>
                             {{ field }}
                             {% if field.help_text %}
@@ -31,23 +32,61 @@
                         </div>
                     {% endfor %}
                 </div>
-
-            <h5>Existing Attachments</h5>
-                            <ul class="list-group mb-3">
-                                {% for a in attachments %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <a href="{{ a.file.url }}" target="_blank">{{ a.file.name }}</a>
-
-                                        <a href="{% url 'attachment_delete' a.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete This Attachment')">
-                                            Delete
-                                        </a>
-                                    </li>
-                                    {% empty %}
-                                    <p>No Attachments</p>
-                                {% endfor %}
-                            </ul>
-                <button type="submit" class="btn btn-success mt-3">Submit Ticket</button>
+                <div id="file-preview-container" class="mt-4" style="display: none;">
+                    <h5 class="h6 text-muted mb-3">Selected Files Preview:</h5>
+                    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3" id="file-preview">
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between mt-4">
+                    <div>
+                        <a href="{% url 'tickets' %}" class="btn btn-secondary me-2">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Tickets
+                        </a>
+                        {% if ticket %}
+                            <a href="{% url 'tickets-details' ticket.id %}" class="btn btn-outline-primary">
+                                <i class="bi bi-eye me-1"></i> View Details
+                            </a>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {% if ticket %}
+                            {#                             فقط در حالت Edit دکمه Delete را نشان بده #}
+                            <button type="button"
+                                    class="btn btn-danger me-2"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal">
+                                <i class="bi bi-trash3 me-1"></i> Delete Ticket
+                            </button>
+                        {% endif %}
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-1"></i>
+                            {% if ticket %}Update Ticket{% else %}Submit Ticket{% endif %}
+                        </button>
+                    </div>
+                </div>
             </form>
+{#            {% if ticket and attachments %}#}
+{#                <div class="mt-5 pt-4 border-top">#}
+{#                    <h5 class="h6 text-muted mb-3">Current Attachments:</h5>#}
+{#                    {% include 'attachment_preview.html' with attachments=attachments editable=True %}#}
+{#                </div>#}
+{#            {% endif %}#}
+
+        {% if ticket and attachments %}
+    <div class="mt-5 pt-4 border-top">
+        <h5 class="h6 text-muted mb-3">Current Attachments:</h5>
+        {% include 'attachment_preview.html' with attachments=attachments editable=True %}
+    </div>
+{% endif %}
         </div>
     </div>
+    {#     فقط در حالت Edit (وقتی ticket وجود دارد) Modal  را نمایش بدهد  #}
+    {% if ticket %}
+        {% include 'ModelDeleteConformationTicketDetails.html' %}
+    {% endif %}
+    {% block js %}
+        <script>
+            {% include 'Js/preview.js' %}
+        </script>
+    {% endblock %}
 {% endblock %}

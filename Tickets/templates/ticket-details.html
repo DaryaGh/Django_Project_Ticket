@@ -19,7 +19,6 @@
                             <span class="badge bg-light text-dark fs-6">#{{ ticket.tracking_code }}</span>
                         </div>
                     </div>
-
                     <div class="card-body border-success">
                         <div class="row">
                             <div class="col-md-6">
@@ -58,12 +57,10 @@
                                     <strong class="text-muted">Created At:</strong>
                                     <p class="mt-1">{{ ticket.created_at|date:"F j, Y g:i A" }}</p>
                                 </div>
-
                                 <div class="mb-3">
                                     <strong class="text-muted">Updated At:</strong>
                                     <p class="mt-1">{{ ticket.updated_at|timesince }} ago</p>
                                 </div>
-
                                 <div class="mb-3">
                                     <strong class="text-muted">Max Reply Date:</strong>
                                     <p class="mt-1">{{ ticket.max_replay_date|date:"Y/m/d" }}</p>
@@ -84,35 +81,25 @@
                                     <strong class="text-muted">Ticket ID:</strong>
                                     <p class="mt-1">{{ ticket.id }}</p>
                                 </div>
-                            <h5>Existing Attachments</h5>
-                            <ul class="list-group mb-3">
-                                {% for a in attachments %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <a href="{{ a.file.url }}" target="_blank">{{ a.file.name }}</a>
-
-                                        <a href="{% url 'attachment_delete' a.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete This Attachment')">
-                                            Delete
-                                        </a>
-                                    </li>
-                                    {% empty %}
-                                    <p>No Attachments</p>
-                                {% endfor %}
-                            </ul>
                             </div>
                         </div>
                         {% if ticket.description %}
-                            <div class="mt-4 pt-3 border-top">
+                            <div class="mt-1 pt-3 border-top">
                                 <strong class="text-muted">Description:</strong>
                                 <div class="mt-2 p-3 rounded">
                                     {{ ticket.description|linebreaks|safe }}
                                 </div>
                             </div>
                         {% endif %}
+                        <div class="mt-1 pt-3 border-top">
+                            <strong class="text-muted d-block mb-3">Attachments:</strong>
+                            {% include 'attachment_preview.html' with attachments=attachments editable=False %}
+                        </div>
                     </div>
                     <div class="card-footer border-success">
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'tickets' %}" class="btn btn-success">
-                                <i class="bi bi-arrow-left me-1"></i> Back to Ticket
+                                <i class="bi bi-arrow-left me-1"></i> Back to Tickets
                             </a>
                             <div>
                                 <a href="{% url 'tickets-update' ticket.id %}" class="btn btn-warning me-2">
@@ -122,7 +109,7 @@
                                         class="btn btn-danger"
                                         data-bs-toggle="modal"
                                         data-bs-target="#deleteModal">
-                                    <i class="bi bi-trash3 me-1"></i> Delete
+                                    <i class="bi bi-trash3 me-1"></i> Delete Ticket
                                 </button>
                             </div>
                         </div>
