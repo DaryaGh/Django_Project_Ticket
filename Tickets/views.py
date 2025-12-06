@@ -11,13 +11,36 @@ from django.core.paginator import Paginator
 from django.contrib.auth import authenticate, login , logout
 
 def dashboard(request):
-    # active_categories = Category.objects.active()
+    total_tickets = Ticket.objects.all().count()
+
+    # محاسبه درصدها (جلوگیری از خطای تقسیم بر صفر)
+    if total_tickets > 0:
+        low_percentage = (Ticket.objects.with_priority('low').count() / total_tickets) * 100
+        high_percentage = (Ticket.objects.with_priority('high').count() / total_tickets) * 100
+        middle_percentage = (Ticket.objects.with_priority('middle').count() / total_tickets) * 100
+        secret_percentage = (Ticket.objects.with_priority('secret').count() / total_tickets) * 100
+        critical_percentage = (Ticket.objects.with_priority('critical').count() / total_tickets) * 100
+        expired_percentage = (Ticket.objects.is_expired().count() / total_tickets) * 100
+        open_percentage = (Ticket.objects.is_open().count() / total_tickets) * 100
+        close_percentage = (Ticket.objects.is_close().count() / total_tickets) * 100
+        status_new_percentage = (Ticket.objects.by_status('new').count() / total_tickets) * 100
+        status_in_progress_percentage = (Ticket.objects.by_status('in-progress').count() / total_tickets) * 100
+        status_solved_percentage = (Ticket.objects.by_status('solved').count() / total_tickets) * 100
+        status_impossible_percentage = (Ticket.objects.by_status('impossible').count() / total_tickets) * 100
+    else:
+        # اگر تیکتی وجود ندارد، همه درصدها صفر هستند
+        low_percentage = high_percentage = middle_percentage = secret_percentage = critical_percentage = 0
+        expired_percentage = open_percentage = close_percentage = 0
+        status_new_percentage = status_in_progress_percentage = status_solved_percentage = status_impossible_percentage = 0
+
     active_categories = Category.objects.active().annotate(
         ticket_count=models.Count('tickets')
     )
 
     context = {
-        'total_tickets': Ticket.objects.all().count(),
+        'total_tickets': total_tickets,
+
+        # تعدادها (برای استفاده در صورت نیاز)
         'low_tickets': Ticket.objects.with_priority('low').count(),
         'high_tickets': Ticket.objects.with_priority('high').count(),
         'middle_tickets': Ticket.objects.with_priority('middle').count(),
@@ -30,15 +53,31 @@ def dashboard(request):
         'status_in_progress_tickets': Ticket.objects.by_status('in-progress').count(),
         'status_solved_tickets': Ticket.objects.by_status('solved').count(),
         'status_impossible_tickets': Ticket.objects.by_status('impossible').count(),
-        # 'tags': Ticket.objects.with_tags().count(),
-        # 'assigned_by_author_user':Ticket.objects.assigned_by(request.user).count(),
+
+        #  درصد را به یک رقم اعشار گرد می‌کند
+        'low_percentage': round(low_percentage, 1),
+        'high_percentage': round(high_percentage, 1),
+        'middle_percentage': round(middle_percentage, 1),
+        'secret_percentage': round(secret_percentage, 1),
+        'critical_percentage': round(critical_percentage, 1),
+        'expired_percentage': round(expired_percentage, 1),
+        'open_percentage': round(open_percentage, 1),
+        'close_percentage': round(close_percentage, 1),
+        'status_new_percentage': round(status_new_percentage, 1),
+        'status_in_progress_percentage': round(status_in_progress_percentage, 1),
+        'status_solved_percentage': round(status_solved_percentage, 1),
+        'status_impossible_percentage': round(status_impossible_percentage, 1),
+
         'active_categories': active_categories,
     }
-    # return render(request, 'dashboard-templatetags.html', context=context)
-    return render(request, 'dashboard-templatetags-btn.html', context=context)
-    # return render(request, 'dashboard.html', {'dashboard': dashboard})
-    # return render(request, 'dashboard-component.html', {'dashboard': dashboard})
-    # return HttpResponse("Dashboard")
+
+    # return render(request, 'dashboard-templatetags-btn.html', context=context)
+    return render(request, 'dashboard-templatetags-btn-PERCENTAGE.html', context=context)
+#     return render(request, 'dashboard-templatetags-btn.html', context=context)
+#     # return render(request, 'dashboard.html', {'dashboard': dashboard})
+#     # return render(request, 'dashboard-component.html', {'dashboard': dashboard})
+#     # return HttpResponse("Dashboard")
+
 # @login_required(login_url='login')
 def index(request):
     # اگر پارامتر clear وجود داشت، session را پاک کن
@@ -306,6 +345,7 @@ def ticket_create(request):
             "contact_phone": ["required","phone"],
             "due_date": ["required", "future_date"],
             "attachments": [
+                "required",
                 "file_type:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png",
                 "max_size:5", "max_files:10"]
         }
@@ -618,3 +658,34 @@ def ticket_logout(request):
 # def ticket_login(request):
 #     swipers = Swiper.objects.filter(is_active=True).order_by('-created_at')
 #     return render(request, 'registration/login-page.html', {'swipers': swipers})
+
+# def dashboard(request):
+# تعداد تیکت ها
+#     # active_categories = Category.objects.active()
+#     active_categories = Category.objects.active().annotate(
+#         ticket_count=models.Count('tickets')
+#     )
+#
+#     context = {
+#         'total_tickets': Ticket.objects.all().count(),
+#         'low_tickets': Ticket.objects.with_priority('low').count(),
+#         'high_tickets': Ticket.objects.with_priority('high').count(),
+#         'middle_tickets': Ticket.objects.with_priority('middle').count(),
+#         'secret_tickets': Ticket.objects.with_priority('secret').count(),
+#         'critical_tickets': Ticket.objects.with_priority('critical').count(),
+#         'expired_tickets': Ticket.objects.is_expired().count(),
+#         'open_tickets': Ticket.objects.is_open().count(),
+#         'close_tickets': Ticket.objects.is_close().count(),
+#         'status_new_tickets': Ticket.objects.by_status('new').count(),
+#         'status_in_progress_tickets': Ticket.objects.by_status('in-progress').count(),
+#         'status_solved_tickets': Ticket.objects.by_status('solved').count(),
+#         'status_impossible_tickets': Ticket.objects.by_status('impossible').count(),
+#         # 'tags': Ticket.objects.with_tags().count(),
+#         # 'assigned_by_author_user':Ticket.objects.assigned_by(request.user).count(),
+#         'active_categories': active_categories,
+#     }
+#     # return render(request, 'dashboard-templatetags.html', context=context)
+#     return render(request, 'dashboard-templatetags-btn.html', context=context)
+#     # return render(request, 'dashboard.html', {'dashboard': dashboard})
+#     # return render(request, 'dashboard-component.html', {'dashboard': dashboard})
+#     # return HttpResponse("Dashboard")
