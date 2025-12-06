@@ -10,7 +10,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto d-flex align-items-center">
                 {% if request.resolver_match.url_name != 'tickets' %}
-                    <li class="nav-item mx-2">
+                    <li class="nav-item mx-2 text-white">
                         <a href="{% url 'tickets' %}" class="nav-link d-flex align-items-center">
                             <i class="bi bi-list-task me-1"></i>
                             Tickets
@@ -18,7 +18,7 @@
                     </li>
                 {% endif %}
                 {% if request.resolver_match.url_name != 'tickets' and request.resolver_match.url_name != 'tickets-create' %}
-                    <li class="nav-item mx-2">
+                    <li class="nav-item mx-2 text-white">
                         <a href="{% url 'tickets-create' %}" class="nav-link d-flex align-items-center">
                             <i class="bi bi-plus-circle me-1"></i>
                             New Ticket
@@ -26,7 +26,7 @@
                     </li>
                 {% endif %}
                 {% if request.resolver_match.url_name != 'tickets' and request.resolver_match.url_name != 'tickets-create' and request.resolver_match.url_name != 'tickets-update' %}
-                    <li class="nav-item mx-2">
+                    <li class="nav-item mx-2 text-white">
                         <a href="{% url 'search_logs' %}" class="nav-link">
                             <i class="bi bi-clock-history"></i>
                             Search History
@@ -41,7 +41,7 @@
 
                 {% if user.is_authenticated %}
 
-                    <li class="nav-item mx-2 dropdown">
+                    <li class="nav-item mx-2 dropdown text-white">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle fs-4 me-1"></i>
@@ -75,13 +75,13 @@
                         </ul>
                     </li>
                 {% else %}
-                    <li class="nav-item mx-2">
+                    <li class="nav-item mx-2 text-white">
                         <a href="{% url 'tickets-login' %}" class="nav-link d-flex align-items-center">
                             <i class="bi bi-person-circle fs-4 me-1"></i>
                             <span>Login</span>
                         </a>
                     </li>
-                    <li class="nav-item mx-2">
+                    <li class="nav-item mx-2 text-white">
                         <a href="{% url 'register' %}" class="nav-link d-flex align-items-center">
                             <i class="bi bi-person-plus me-1"></i>
                             <span>Register</span>
@@ -89,7 +89,7 @@
                     </li>
                 {% endif %}
 
-                <li class="nav-item mx-2">
+                <li class="nav-item mx-2 ">
                     <button id="themeToggle" class="text-warning text-decoration-none p-0 border-0 bg-transparent fs-4">
                         <i class="bi bi-moon-fill fs-5 text-warning"></i>
                     </button>
