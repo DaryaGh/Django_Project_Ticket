@@ -121,13 +121,13 @@ class TicketQuerySet(models.QuerySet):
 
     def is_close(self):
         # دارای تاریخ برای تمام شدن پروژه نیستند
-        return self.filter(closed_at__isnull=True)
+        # return self.filter(closed_at__isnull=True)
 
         # دارای تاریخ برای تمام شدن پروژه هستند
         # return self.filter(closed_at__isnull=False)
 
         # دارای تاریخ برای تمام شدن پروژه هستند
-        # return self.exclude(closed_at__isnull=True)
+        return self.exclude(closed_at__isnull=True)
 
     def is_open(self):
         return self.filter(closed_at__isnull=True)
