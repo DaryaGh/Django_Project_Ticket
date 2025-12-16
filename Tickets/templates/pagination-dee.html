@@ -1,0 +1,87 @@
+{% if page_obj.has_other_pages %}
+    <nav aria-label="Page navigation" class="mb-0">
+        <ul class="pagination justify-content-center mb-0">
+            <!-- First Page -->
+            <li class="page-item {% if page_obj.number == 1 %}disabled{% endif %}">
+                <a class="page-link text-primary"
+                   href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&page=1"
+                   aria-label="First">
+                    <i class="bi bi-chevron-double-left"></i>
+                </a>
+            </li>
+
+            <!-- Previous Page -->
+            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                <a class="page-link text-primary"
+                   href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&page=
+
+                           {% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}"
+                   aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+
+            <!-- Page Numbers -->
+            {% with start=page_obj.number|add:"-2" end=page_obj.number|add:"2" %}
+                {% if start > 1 %}
+                    <li class="page-item {% if page_obj.number == 1 %}active{% endif %}">
+                        <a class="page-link"
+                           href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&page=1">
+                            1
+                        </a>
+                    </li>
+                    {% if start > 2 %}
+                        <li class="page-item disabled">
+                            <span class="page-link text-secondary">...</span>
+                        </li>
+                    {% endif %}
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num >= start and num <= end and num >= 1 and num <= page_obj.paginator.num_pages %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                            <a class="page-link {% if page_obj.number == num %}fw-bold bg-primary border-primary text-white{% else %}text-primary{% endif %}"
+                               href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&page={{ num }}">
+                                {{ num }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if end < page_obj.paginator.num_pages %}
+                    {% if end < page_obj.paginator.num_pages|add:"-1" %}
+                        <li class="page-item disabled">
+                            <span class="page-link text-secondary">...</span>
+                        </li>
+                    {% endif %}
+                    <li class="page-item {% if page_obj.number == page_obj.paginator.num_pages %}active{% endif %}">
+                        <a class="page-link"
+                           href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&page={{ page_obj.paginator.num_pages }}">
+                            {{ page_obj.paginator.num_pages }}
+                        </a>
+                    </li>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Next Page -->
+            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                <a class="page-link text-primary"
+                   href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&page=
+
+                           {% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.paginator.num_pages }}{% endif %}"
+                   aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+
+            <!-- Last Page -->
+            <li class="page-item {% if page_obj.number == page_obj.paginator.num_pages %}disabled{% endif %}">
+                <a class="page-link text-primary"
+                   href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&page={{ page_obj.paginator.num_pages }}"
+                   aria-label="Last">
+                    <i class="bi bi-chevron-double-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+{% endif %}

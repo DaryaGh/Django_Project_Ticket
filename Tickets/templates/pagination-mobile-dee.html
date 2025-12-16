@@ -1,0 +1,25 @@
+{% if page_obj.has_other_pages %}
+    <nav aria-label="Mobile navigation" class="d-flex d-md-none">
+        <ul class="pagination justify-content-center w-100 mb-0">
+            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                <a class="page-link text-primary d-flex align-items-center"
+                   href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&page=
+
+                           {% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}">
+                    <i class="bi bi-chevron-left me-1"></i>
+                    <span class="d-none d-sm-inline">Previous</span>
+                </a>
+            </li>
+
+            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                <a class="page-link text-primary d-flex align-items-center"
+                   href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&page=
+
+                           {% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.paginator.num_pages }}{% endif %}">
+                    <span class="d-none d-sm-inline">Next</span>
+                    <i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+{% endif %}

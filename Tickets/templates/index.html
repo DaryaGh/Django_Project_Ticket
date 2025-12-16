@@ -21,14 +21,11 @@
             </a>
         </div>
 
-        {#        {% include 'alert.html' %}#}
-
-                {% if messages %}
-                    {% for message in messages %}
-{#                        {% include 'components/alert-component.html' with type=message.tags message=message dismissible=True %}#}
-                            {% alert "The Ticket Delete Successfully !!!" "success" True %}
-                    {% endfor %}
-                {% endif %}
+        {% if messages %}
+            {% for message in messages %}
+                {% alert "The Ticket Delete Successfully !!!" "success" True %}
+            {% endfor %}
+        {% endif %}
 
         {% include 'ticket-search.html' %}
 
@@ -90,7 +87,7 @@
 
                         <tbody class="table-group-divider">
                         {% for ticket in page_obj %}
-{#                        {% for ticket in tickets %}#}
+                            {#                        {% for ticket in tickets %}#}
                             <tr>
                                 <td class="d-none d-md-table-cell">{{ forloop.counter }}</td>
                                 <td>{{ ticket.tracking_code|highlight:search_query }}</td>
@@ -144,10 +141,6 @@
                                                   data-bs-toggle="tooltip"
                                                   data-bs-custom-class="tooltip-tags-more"
                                                   data-bs-title="Additional tags:
-
-
-
-
                                                           {% for tag in ticket.tags.all|slice:'2:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                                                 +{{ ticket.tags.all|length|add:"-2" }}
                                             </span>
@@ -218,7 +211,6 @@
                             <tr>
                                 <td colspan="10" class="text-center">No Tickets Found!!!</td>
                             </tr>
-{#                        {% endfor %}#}
                         {% endfor %}
                         </tbody>
                     </table>
@@ -227,17 +219,38 @@
         </div>
     </div>
 
+    {#    <div class="row mt-2">#}
+    {#        <div class="container-lg">#}
+    {##}
+    {#            <div class="d-none d-md-block">#}
+    {#                {% include 'pagination-showing-result.html' %}#}
+    {#                {% include 'pagination-dee.html' %}#}
+    {#            </div>#}
+    {##}
+    {##}
+    {#            <div class="d-block d-md-none">#}
+    {#                {% include 'pagination-mobile-dee.html' %}#}
+    {#            </div>#}
+    {#        </div>#}
+    {#    </div>#}
+
     {% if page_obj.has_other_pages %}
         <nav aria-label="Page navigation" class="mt-4">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
+                        <a class="page-link" href="?page=1
+
+                                {% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                           aria-label="First">
                             <span aria-hidden="true">&laquo;&laquo;</span>
                         </a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                        <a class="page-link" href="?page=
+
+                                {{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                           aria-label="Previous">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
@@ -249,7 +262,6 @@
                         <span class="page-link">&laquo;</span>
                     </li>
                 {% endif %}
-
                 {% for num in page_obj.paginator.page_range %}
                     {% if page_obj.number == num %}
                         <li class="page-item active">
@@ -257,19 +269,26 @@
                         </li>
                     {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                            <a class="page-link" href="?page=
+
+                                    {{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
                         </li>
                     {% endif %}
                 {% endfor %}
-
                 {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                        <a class="page-link" href="?page=
+
+                                {{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                           aria-label="Next">
                             <span aria-hidden="true">&raquo;</span>
                         </a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
+                        <a class="page-link" href="?page=
+
+                                {{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                           aria-label="Last">
                             <span aria-hidden="true">&raquo;&raquo;</span>
                         </a>
                     </li>
@@ -283,8 +302,7 @@
                 {% endif %}
             </ul>
         </nav>
-        {% endif %}
-
+    {% endif %}
 
     {% include 'ModelDeleteConformationIndex.html' %}
 {% endblock %}

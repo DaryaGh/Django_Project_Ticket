@@ -74,49 +74,52 @@
                                     {#                                <span class="text-muted">-</span>#}
                                     {#                            {% endif %}#}
                                     {#                        </td>#}
-                                <td>
+                                    <td>
                                         {% if log.department %}
-                                            <span class="badge" style="background-color: {{ log.department|get_department_color }}; color: white;">{{ log.department|title }}</span>
+                                            <span class="badge"
+                                                  style="background-color: {{ log.department|get_department_color }}; color: white;">{{ log.department|title }}</span>
                                         {% else %}
                                             <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
 
-{#                                    <td>#}
-{#                                        {% if log.department %}#}
-{#                                            <span class="badge bg-success">{{ log.department|title }}</span>#}
-{#                                        {% else %}#}
-{#                                            <span class="text-muted">-</span>#}
-{#                                        {% endif %}#}
-{#                                    </td>#}
+                                    {#                                    <td>#}
+                                    {#                                        {% if log.department %}#}
+                                    {#                                            <span class="badge bg-success">{{ log.department|title }}</span>#}
+                                    {#                                        {% else %}#}
+                                    {#                                            <span class="text-muted">-</span>#}
+                                    {#                                        {% endif %}#}
+                                    {#                                    </td>#}
 
-{#                                    <td>#}
-{#                                        {% if log.status %}#}
-{#                                            <span class="badge bg-secondary">{{ log.status|title }}</span>#}
-{#                                        {% else %}#}
-{#                                            <span class="text-muted">-</span>#}
-{#                                        {% endif %}#}
-{#                                    </td>#}
+                                    {#                                    <td>#}
+                                    {#                                        {% if log.status %}#}
+                                    {#                                            <span class="badge bg-secondary">{{ log.status|title }}</span>#}
+                                    {#                                        {% else %}#}
+                                    {#                                            <span class="text-muted">-</span>#}
+                                    {#                                        {% endif %}#}
+                                    {#                                    </td>#}
 
-                                <td>
+                                    <td>
                                         {% if log.status %}
-                                            <span class="badge" style="background-color: {{ log.status|get_status_color }}; color: white;">{{ log.status|title }}</span>
+                                            <span class="badge"
+                                                  style="background-color: {{ log.status|get_status_color }}; color: white;">{{ log.status|title }}</span>
                                         {% else %}
                                             <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
 
-{#                                    <td>#}
-{#                                        {% if log.response_status %}#}
-{#                                            <span class="badge bg-dark">{{ log.response_status|title }}</span>#}
-{#                                        {% else %}#}
-{#                                            <span class="text-muted">-</span>#}
-{#                                        {% endif %}#}
-{#                                    </td>#}
+                                    {#                                    <td>#}
+                                    {#                                        {% if log.response_status %}#}
+                                    {#                                            <span class="badge bg-dark">{{ log.response_status|title }}</span>#}
+                                    {#                                        {% else %}#}
+                                    {#                                            <span class="text-muted">-</span>#}
+                                    {#                                        {% endif %}#}
+                                    {#                                    </td>#}
 
-                                <td>
+                                    <td>
                                         {% if log.response_status %}
-                                            <span class="badge" style="background-color: {{ log.response_status|get_response_status_color }}; color: white;">{{ log.response_status|title }}</span>
+                                            <span class="badge"
+                                                  style="background-color: {{ log.response_status|get_response_status_color }}; color: white;">{{ log.response_status|title }}</span>
                                         {% else %}
                                             <span class="text-muted">-</span>
                                         {% endif %}
@@ -148,36 +151,21 @@
                     </div>
 
                     <!-- Pagination -->
-                    {% if page_obj.has_other_pages %}
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination justify-content-center mt-4">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link"
-                                           href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                                    </li>
-                                {% endif %}
-
-                                {% for num in page_obj.paginator.page_range %}
-                                    {% if page_obj.number == num %}
-                                        <li class="page-item active">
-                                            <span class="page-link">{{ num }}</span>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                    {% endif %}
+                    <div class="container mt-3 mb-5">
+                        <div class="d-none d-md-block">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="flex-grow-1 me-3">
+                                    {% include 'pagination-showing-result-dee.html' %}
+                                </div>
+                                <div class="flex-shrink-0">
+                                    {% include 'pagination-dee.html' %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-block d-md-none">
+                            {% include 'pagination-mobile-dee.html' %}
+                        </div>
+                    </div>
                 {% else %}
 
                     <div class="text-center py-4">
