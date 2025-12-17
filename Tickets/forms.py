@@ -16,6 +16,14 @@ class TicketForm(forms.ModelForm):
         required=False,
         help_text="You Can Upload Multiple files (PDF,Word,Images).")
 
+    users = forms.ModelMultipleChoiceField(
+        queryset=User.objects.all(),
+        # widget=forms.SelectMultiple(attrs={'class': 'form-select'}),
+        label="Select Users",
+        help_text="Choose Multiple Users ...",
+        required=True,
+    )
+
     class Meta:
         model = Ticket
         fields = ['contact_name',
@@ -27,6 +35,7 @@ class TicketForm(forms.ModelForm):
                   'subject',
                   'max_replay_date',
                   'tags',
+                  'users',
                   'description',
                   'due_date',
                   ]
@@ -47,6 +56,8 @@ class TicketForm(forms.ModelForm):
                 attrs={'class': 'form-control', 'placeholder': 'Your phone number', 'maxlength': '11',
                        'pattern': '[0-9]{10,11}', 'title': 'Please enter 10 or 11 digits'}),
             'department': forms.Select(attrs={'class': 'form-select'}),
+            # 'users': forms.ModelMultipleChoiceField(attrs={'class': 'form-select'}),
+            'users': forms.SelectMultiple(attrs={'class': 'form-select'}),
         }
 
         labels = {
@@ -64,32 +75,23 @@ class TicketForm(forms.ModelForm):
                 'class': 'form-control'
             })
 
-    # def clean_tags(self):
-    #     tags = self.cleaned_data.get('tags')
-    #     count = tags.count() if tags else 0
+        ticket = kwargs.get("instance")
+        # if ticket:
+        #     self.fields['users'].initial = ticket.assignments.values_list(
+        #         'assigned_id', flat=True
+        #     )
+        if ticket:
+            self.fields['users'].initial = ticket.assignments_tickets.values_list(
+                'assigned_ticket_id', flat=True  # یا 'assignee_id' بسته به نام فیلد
+            )
+
+    # def clean_users(self):
+    #     users = self.cleaned_data.get('users')
+    #     count = users.count() if users else 0
     #
     #     if count < 1:
-    #         raise forms.ValidationError("Please enter at least one tag.")
-    #     if count > 5:
-    #         raise forms.ValidationError("Please enter at most 5 tags.")
-    #
-    #     return tags
-    #
-    # def clean_attachments(self):
-    #     files = self.files.getlist('attachments')
-    #     allowed_types =[
-    #         'application/pdf',
-    #         'application/msword',
-    #         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    #         'image/jpeg',
-    #         'image/png',
-    #     ]
-    #     for f in files:
-    #         if f.content_type not in allowed_types:
-    #             raise forms.ValidationError(f"{f.name} has an unsupported file type.")
-    #         if f.size > 5 * 1024 * 1024:
-    #             raise forms.ValidationError(f"{f.name} exceeds 5 MB size limit.")
-    #     return files
+    #         raise forms.ValidationError('Please select at least one user')
+    #     return users
 
 class RegisterForm(forms.ModelForm):
     password1 = forms.CharField(

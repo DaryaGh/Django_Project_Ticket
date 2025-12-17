@@ -141,6 +141,7 @@
                                                   data-bs-toggle="tooltip"
                                                   data-bs-custom-class="tooltip-tags-more"
                                                   data-bs-title="Additional tags:
+
                                                           {% for tag in ticket.tags.all|slice:'2:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                                                 +{{ ticket.tags.all|length|add:"-2" }}
                                             </span>
@@ -150,8 +151,43 @@
                                     {% endif %}
                                 </td>
 
+
+                                <td class="d-none d-lg-table-cell">
+                                    {% if ticket.get_assigned_users_count > 0 %}
+                                        <span class="badge bg-info"
+                                              data-bs-toggle="tooltip"
+                                              data-bs-custom-class="tooltip-assignees-count"
+                                              data-bs-title="Total assignees: {{ ticket.get_assigned_users_count }}">
+            {{ ticket.get_assigned_users_count }}
+        </span>
+
+                                        {% for username in ticket.get_assigned_users|slice:"2" %}
+                                            <span class="badge bg-primary"
+                                                  data-bs-toggle="tooltip"
+                                                  data-bs-custom-class="tooltip-assignees"
+                                                  data-bs-title="{{ username }}">
+                {{ username|truncatechars:10 }}
+            </span>
+                                        {% endfor %}
+
+                                        {% if ticket.get_assigned_users_count > 2 %}
+                                            <span class="badge bg-light text-dark"
+                                                  data-bs-toggle="tooltip"
+                                                  data-bs-custom-class="tooltip-assignees-more"
+                                                  data-bs-title="Additional assignees:
+
+                                                          {% for username in ticket.get_assigned_users|slice:'2:' %}{{ username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                +{{ ticket.get_assigned_users_count|add:"-2" }}
+            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+
                                 <td class="d-none d-xl-table-cell">{{ ticket.max_replay_date|date:"Y/m/d" }}</td>
                                 <td class="d-none d-md-table-cell">{{ ticket.created_at|date:"Y/m/d H:i" }}</td>
+
 
                                 {#                                <td class="action-cell" id="action-{{ ticket.id }}">#}
                                 {#                                    <a href="{% url 'tickets-update' ticket.id %}"#}
@@ -219,6 +255,7 @@
         </div>
     </div>
 
+
     {#    <div class="row mt-2">#}
     {#        <div class="container-lg">#}
     {##}
@@ -241,6 +278,7 @@
                     <li class="page-item">
                         <a class="page-link" href="?page=1
 
+
                                 {% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                            aria-label="First">
                             <span aria-hidden="true">&laquo;&laquo;</span>
@@ -248,6 +286,7 @@
                     </li>
                     <li class="page-item">
                         <a class="page-link" href="?page=
+
 
                                 {{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                            aria-label="Previous">
@@ -271,6 +310,7 @@
                         <li class="page-item">
                             <a class="page-link" href="?page=
 
+
                                     {{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
                         </li>
                     {% endif %}
@@ -279,6 +319,7 @@
                     <li class="page-item">
                         <a class="page-link" href="?page=
 
+
                                 {{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                            aria-label="Next">
                             <span aria-hidden="true">&raquo;</span>
@@ -286,6 +327,7 @@
                     </li>
                     <li class="page-item">
                         <a class="page-link" href="?page=
+
 
                                 {{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                            aria-label="Last">

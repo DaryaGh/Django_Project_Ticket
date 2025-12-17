@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.db.models import Q
-from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from Tickets.forms import *
 from Tickets.models import *
@@ -8,10 +7,14 @@ from .Choices import *
 from .validators import validate
 from django.core.paginator import Paginator
 from django.contrib.auth import authenticate, login, logout
+# نصب دانلود زیپ
+from django.http import HttpResponse,HttpResponseRedirect
+import zipfile
+import os
+from io import BytesIO
 
 def dashboard(request):
     total_tickets = Ticket.objects.all().count()
-
     # محاسبه درصدها (جلوگیری از خطای تقسیم بر صفر)
     if total_tickets > 0:
         low_percentage = (Ticket.objects.with_priority('low').count() / total_tickets) * 100
@@ -151,7 +154,11 @@ def index(request):
 
     # فیلتر کردن تیکت‌ها
     tickets = Ticket.objects if with_close == "on" else Ticket.objects.is_open()
-    tickets = tickets.select_related('category', "created_by").prefetch_related('tags', 'responses')
+    tickets = tickets.select_related('category', "created_by").prefetch_related(
+        'tags',
+        'responses',
+        'assignments_tickets__assignee'
+    )
 
     filter_conditions = []
 
@@ -284,10 +291,20 @@ def index(request):
         ('priority', 'Priority'),
         ('category__name', 'Category'),
         ('tags', 'Tags'),
+        ('assignees', 'Assignees'),  # ستون جدید
         ('max_replay_date', 'Max Replay Date'),
         ('created_at', 'Created At'),
         # ('status', 'Status'),  # اضافه شده
     ]
+
+    print(f"Total tickets: {page_obj.object_list.count()}")
+    for i, ticket in enumerate(page_obj.object_list, 1):
+        assignee_count = ticket.assignments_tickets.count()
+        print(f"Ticket {i}: {ticket.tracking_code} - Assignees: {assignee_count}")
+        if assignee_count > 0:
+            for assignment in ticket.assignments_tickets.all():
+                print(f"  - {assignment.assignee.username}")
+
 
     context = {
         'page_obj': page_obj,
@@ -315,6 +332,7 @@ def index(request):
         'has_active_filters': bool(
             search_query or category_id or priority or status or department or response_status or created_at_from or created_at_to or max_replay_date_from or max_replay_date_to),
         'swipers': swipers,
+        # 'total_tickets': Ticket.objects.count(),
     }
 
     # return render(request, template_name='index.html', context=context)
@@ -322,6 +340,10 @@ def index(request):
     return render(request, template_name='index-table-card.html', context=context)
 
 def ticket_create(request):
+    if not request.user.is_authenticated:  #  چک کردن لاگین بودن کاربر
+        messages.error(request, 'You must be logged in to create a ticket.')
+        return redirect('tickets-login')
+
     if request.method == 'POST':
         # form = TicketForm(request.POST)
         form = TicketForm(request.POST, request.FILES)
@@ -330,6 +352,7 @@ def ticket_create(request):
 
         priority_values = ",".join([choice[0] for choice in PRIORITY_CHOICES])
         department_values = ",".join([choice[0] for choice in DEPARTMENT_CHOICES])
+
         rules = {
             "category": ["required"],
             "priority": ["required", f"in:{priority_values}"],
@@ -338,6 +361,7 @@ def ticket_create(request):
             "description": ["required", "min:20", "max:2000"],
             "max_replay_date": ["required", "future_date"],
             "tags": ["min_items:1", "max_items:5"],
+            "users":["required","min_items:1", "max_items:5"],
             "contact_email": ["required", "email"],
             "contact_name": ["required", "min:2", "max:100"],
             "contact_phone": ["required", "phone"],
@@ -357,8 +381,10 @@ def ticket_create(request):
 
         elif form.is_valid():
             new_ticket = form.save(commit=False)
-            new_ticket.created_by_id = 104
+            # new_ticket.created_by_id = 104
+            new_ticket.created_by_id = request.user.id
             new_ticket.save()
+
 
             # new_ticket.created_by = request.user
             #             # new_ticket.save(commit=True)
@@ -373,9 +399,24 @@ def ticket_create(request):
 
             files = request.FILES.getlist("attachments")
             for file in files:
-                TicketAttachment.objects.create(ticket=new_ticket, file=file)
+                TicketAttachment.objects.create(ticket=new_ticket, file=file,uploaded_by_id=request.user.id)
 
             form.save_m2m()
+
+            selected_users = form.cleaned_data['users']
+            assignments = []
+            for user in selected_users:
+                assignments.append(
+                    Assignment(
+                        assigned_ticket=new_ticket,
+                        assignee=user,
+                        status='new',
+                        assigned_by_id=request.user.id
+                    )
+                )
+            Assignment.objects.bulk_create(assignments)
+
+
             messages.success(request, 'Your ticket has been created successfully!')
             # return redirect('ticket_details', ticket_id=new_ticket.id)
             messages.success(request, 'Your Ticket was successfully !')
@@ -391,6 +432,15 @@ def ticket_create(request):
         'PRIORITY_COLORS': PRIORITY_COLORS,
         'STATUS_COLORS': STATUS_COLORS,
     })
+
+
+    # return render(request, 'ticket_create-class.html', {
+    #     'form': form,
+    #     'PRIORITY_CHOICES': PRIORITY_CHOICES,
+    #     'STATUS_CHOICES': STATUS_CHOICES,
+    #     'PRIORITY_COLORS': PRIORITY_COLORS,
+    #     'STATUS_COLORS': STATUS_COLORS,
+    # })
 
 def ticket_details(request, id):
     ticket = get_object_or_404(Ticket, id=id)
@@ -422,6 +472,32 @@ def ticket_update(request, id):
             files = request.FILES.getlist("attachments")
             for file in files:
                 TicketAttachment.objects.create(ticket=ticket, file=file)
+
+            selected_users = set(form.cleaned_data['users'])
+            # current_users = set(
+            #     Ticket.assignments.value_list('assignee_id',flat=True)
+            # )
+
+            current_users = set(
+                ticket.assignments_tickets.values_list('assignee_id', flat=True)  # استفاده از related_name صحیح
+            )
+
+            # Assignment.objects.filter(
+            #     assignee_ticket=ticket,
+            #     assignee_id__in=(current_users-set(u.id for u in selected_users)),
+            # ).delete()
+
+            # این بخش هم باید اصلاح شود - اسم فیلد اشتباه است
+            Assignment.objects.filter(
+                assigned_ticket=ticket,  # اصلاح: assignee_ticket به assigned_ticket
+                assignee_id__in=(current_users - set(u.id for u in selected_users)),
+            ).delete()
+
+            new_assignments = [Assignment(assigned_ticket=ticket, assignee=user)
+                               for user in selected_users
+                               if user.id not in current_users
+                               ]
+            Assignment.objects.bulk_create(new_assignments)
 
             messages.info(request, f'Ticket #{ticket.id} has been updated Successfully !!!')
             return redirect('tickets-details', id=ticket.id)
@@ -532,15 +608,6 @@ def ticket_attachments_delete_all(request, ticket_id):
 
     # اگر درخواست GET بود به صفحه جزئیات برگرد
     return redirect('tickets-details', id=ticket.id)
-
-
-# در views.py
-from django.http import HttpResponse
-from django.conf import settings
-import zipfile
-import os
-from io import BytesIO
-
 
 def download_all_attachments(request, ticket_id):
     """دانلود تمام attachment های یک تیکت به صورت ZIP"""

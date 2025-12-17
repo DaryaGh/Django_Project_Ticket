@@ -157,7 +157,7 @@ class TicketQuerySet(models.QuerySet):
 
 class Ticket(TimestampedModel):
     category = models.ForeignKey(Category,related_name='tickets',on_delete=models.SET_NULL,null=True,blank=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL,related_name='tickets',on_delete=models.PROTECT,default=None,blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL,related_name='tickets',on_delete=models.PROTECT,default=None,blank=True,null=True)
     priority = models.CharField(max_length=100, choices=PRIORITY_CHOICES)
     subject = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -218,6 +218,21 @@ class Ticket(TimestampedModel):
             raise PermissionDenied("Cannot delete tickets with HIGH priority")
         super().delete(*args, **kwargs)
 
+    def get_assigned_users(self):
+        """گرفتن کاربرهای تخصیص داده شده به تیکت"""
+        return self.assignments_tickets.all().values_list('assignee__username', flat=True)
+
+    def get_assigned_users_count(self):
+        """تعداد کاربرهای تخصیص داده شده"""
+        return self.assignments_tickets.count()
+
+    def get_assigned_users_display(self):
+        """نمایش کاربرهای تخصیص داده شده به صورت متن"""
+        users = self.get_assigned_users()
+        if users:
+            return ", ".join(users)
+        return "-"
+
     def __str__(self):
         return f"#{self.tracking_code} {self.subject[:30]}..."
 
@@ -240,39 +255,35 @@ class TicketResponse(TimestampedModel):
         return f"Response #{self.id} for {self.ticket.tracking_code}"
 
 class Assignment(TimestampedModel):
-    assigned_ticket = models.ForeignKey(Ticket,related_name='assignments_tickets',on_delete=models.CASCADE,help_text="The ticket that will be assigned to this assignment")
-    assignee = models.ForeignKey(settings.AUTH_USER_MODEL,related_name='assignments_users',on_delete=models.CASCADE,help_text="The user that will be assigned to this assignment")
-    seen_at = models.DateTimeField(null=True, blank=True ,help_text="The date the ticket was seen")
+    assigned_ticket = models.ForeignKey(Ticket, related_name='assignments_tickets', on_delete=models.CASCADE,
+                                        help_text="The ticket that will be assigned to this assignment")
+    assignee = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='assignments_users', on_delete=models.CASCADE,
+                                 help_text="The user that will be assigned to this assignment")
+    seen_at = models.DateTimeField(null=True, blank=True, help_text="The date the ticket was seen")
     status = models.CharField(max_length=100, choices=STATUS_CHOICES, default='new')
     description = models.TextField(blank=True)
-
-    # assigned_ticket ...........assignee
-    # 100..............................1001
-    # 100..............................1002
-    # 100..............................1003
-    # 100..............................1004
-    # 100..............................1005
-    # 107..............................1006
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_assignments'
+    )
+    assigned_at = models.DateTimeField(auto_now_add=False, default=timezone.now)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Assignment'
         verbose_name_plural = 'Assignments'
         db_table = 'Tickets-Assignments'
-
         constraints = [
-            models.UniqueConstraint(fields=['assigned_ticket','assignee' ], name='unique_ticket_assignee'),
+            models.UniqueConstraint(fields=['assigned_ticket', 'assignee'], name='unique_ticket_assignee'),
         ]
         ordering = ['-created_at']
 
     def get_status_color(self):
-        return STATUS_COLORS.get(self.status , '#6c757d')
-
-    # def __str__(self):
-    #     # return f"#{self.pk} {self.assignee[:30]}..."
-    #     return f"#{self.assigned_ticket.subject} assigned to {self.assignee.name}..."
+        return STATUS_COLORS.get(self.status, '#6c757d')
 
     def __str__(self):
-        # بهترین گزینه - استفاده از username
         return f"#{self.assigned_ticket.subject} assigned to {self.assignee.username}"
 
 class SearchLogSignal(TimestampedModel):
@@ -348,6 +359,13 @@ class TicketAttachment(TimestampedModel):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     description = models.CharField(max_length=200, blank=True)
     original_filename = models.CharField(max_length=200, blank=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='uploaded_ticket_attachments'
+    )
 
     class Meta:
         verbose_name = 'Attachment'
@@ -355,7 +373,8 @@ class TicketAttachment(TimestampedModel):
         db_table = 'Tickets_TicketAttachments'
 
     def __str__(self):
-        return f"{self.ticket}"
+        # return f"{self.ticket}"
+        return f"Attachment for {self.ticket.tracking_code}"
 
     def save(self, *args, **kwargs):
         if not self.original_filename and self.file:

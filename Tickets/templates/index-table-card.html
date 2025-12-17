@@ -55,7 +55,7 @@
                                     <th scope="col" class="
                                             {% if col == 'row' or col == 'id' or col == 'created_at' %}d-none d-md-table-cell
                                             {% elif col == 'priority' %}d-none d-sm-table-cell
-                                            {% elif col == 'category__name' or col == 'tags' %}d-none d-lg-table-cell
+                                            {% elif col == 'category__name' or col == 'tags' or col == 'assignees' %}d-none d-lg-table-cell
                                             {% elif col == 'max_replay_date' %}d-none d-xl-table-cell
                                             {% endif %}
                                 ">
@@ -68,7 +68,7 @@
                                             {% elif col == 'created_by' %}<i class="bi bi-person"></i>
                                             {% elif col == 'priority' %}<i class="bi bi-flag"></i>
                                             {% elif col == 'category__name' %}<i class="bi bi-tags"></i>
-                                            {% elif col == 'tags' %}<i class="bi bi-circle-fill"></i>
+                                            {% elif col == 'tags' or col == 'assignees' %}<i class="bi bi-circle-fill"></i>
                                             {% elif col == 'max_replay_date' or col == 'created_at' %}
                                                 <i class="bi bi-calendar"></i>
                                             {% endif %}
@@ -159,17 +159,6 @@
                                                       data-bs-custom-class="tooltip-tags-more"
                                                       data-bs-title="Additional tags:
 
-
-
-
-
-
-
-
-
-
-
-
                                                               {% for tag in ticket.tags.all|slice:'2:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                                                 +{{ ticket.tags.all|length|add:"-2" }}
                                             </span>
@@ -178,6 +167,40 @@
                                             <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
+
+                                <td class="d-none d-lg-table-cell">
+                                    {% with assignees=ticket.assignments_tickets.all %}
+                                        {% if assignees %}
+                                            <span class="badge bg-info"
+                                                  data-bs-toggle="tooltip"
+                                                  data-bs-custom-class="tooltip-assignees-count"
+                                                  data-bs-title="Total assignees: {{ assignees|length }}">
+                                                {{ assignees|length }}
+                                            </span>
+
+                                            {% for assignment in assignees|slice:"2" %}
+                                                <span class="badge bg-primary"
+                                                      data-bs-toggle="tooltip"
+                                                      data-bs-custom-class="tooltip-assignees"
+                                                      data-bs-title="{{ assignment.assignee.username }}">
+                                                    {{ assignment.assignee.username|truncatechars:10 }}
+                                                </span>
+                                            {% endfor %}
+
+                                            {% if assignees|length > 2 %}
+                                                <span class="badge bg-light text-dark"
+                                                      data-bs-toggle="tooltip"
+                                                      data-bs-custom-class="tooltip-assignees-more"
+                                                      data-bs-title="Additional assignees:
+                                                              {% for assignment in assignees|slice:'2:' %}{{ assignment.assignee.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                    +{{ assignees|length|add:"-2" }}
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
 
                                     <td class="d-none d-xl-table-cell">{{ ticket.max_replay_date|date:"Y/m/d" }}</td>
                                     <td class="d-none d-md-table-cell">{{ ticket.created_at|date:"Y/m/d H:i" }}</td>
