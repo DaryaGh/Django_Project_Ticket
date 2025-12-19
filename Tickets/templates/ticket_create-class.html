@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load button_tags %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-sm p-4">
+        <h2 class="mb-4 text-success">
+            {% if form.instance.pk %}Edit Ticket{% else %}Submit a Ticket{% endif %}
+        </h2>
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.category.label_tag }}
+                    {{ form.category }}
+                    {{ form.category.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.priority.label_tag }}
+                    {{ form.priority }}
+                    {{ form.priority.errors }}
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    {{ form.subject.label_tag }}
+                    {{ form.subject }}
+                    {{ form.subject.errors }}
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    {{ form.description.label_tag }}
+                    {{ form.description }}
+                    {{ form.description.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.tags.label_tag }}
+                    {{ form.tags }}
+                    {{ form.tags.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.users.label_tag }}
+                    {{ form.users }}
+                    {{ form.users.errors }}
+                    <div class="form-text">{{ form.users.help_text }}</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.max_reply_date.label_tag }}
+                    {{ form.max_reply_date }}
+                    {{ form.max_reply_date.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.attachments.label_tag }}
+                    {{ form.attachments }}
+                    {{ form.attachments.errors }}
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                {% button "Save" type="submit" color="primary" icon="bi-check-lg" %}
+                {% url 'ticket_list' as ticket_list_url %}
+                {% button "Cancel" url=ticket_list_url color="secondary" icon="bi-arrow-left" %}
+            </div>
+        </form>
+
+            {% if ticket and attachments %}
+    <div class="mt-5 pt-4 border-top">
+        <h5 class="h6 text-muted mb-3">Current Attachments:</h5>
+        {% include 'attachment_preview.html' with attachments=attachments editable=True %}
+    </div>
+{% endif %}
+        </div>
+    </div>
+    {#     فقط در حالت Edit (وقتی ticket وجود دارد) Modal  را نمایش بدهد  #}
+    {% if ticket %}
+        {% include 'ModelDeleteConformationTicketDetails.html' %}
+    {% endif %}
+    {% block js %}
+        <script>
+            {% include 'Js/preview.js' %}
+        </script>
+    {% endblock %}
+
+
+
+    </div>
+</div>
+{% endblock %}

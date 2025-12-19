@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget-card-PERCENTAGE %}
+{% load buttongroup_tags %}
+
+{% block title %}
+    Dashboard
+{% endblock %}
+
+{% block content %}
+    <section class="container my-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-3 mt-3 text-success">Ticket Statistics : </h1>
+                <p class="text-muted mb-4">Total: {{ total_tickets }} tickets</p>
+            </div>
+
+            <div class="col-md-3">
+                {% widget_card_PERCENTAGE title="Total Tickets" count=total_tickets color="dark" icon='inboxes' title_color="dark" btn_color="dark" btn_icon='arrow-right' url="Tickets" extra_class="shadow bg-gradient"%}
+            </div>
+
+            <div class="col-md-3">
+                {% widget_card_PERCENTAGE title="Seen Tickets" count=seen_percentage|floatformat:"0"|add:"%" color="info" icon='eye' title_color="info" btn_color="info" btn_icon='arrow-right' url="Tickets?seen=yes" extra_class="shadow bg-gradient border-info" extra_text=seen_tickets|stringformat:"d"|add:" tickets" %}
+            </div>
+
+            <div class="col-md-3 ">
+                {% widget_card_PERCENTAGE title="Unseen Tickets" count=unseen_tickets|floatformat:"0"|add:"%" color="warning" icon='eye-slash' title_color="warning" btn_color="warning" btn_icon='arrow-right' url="Tickets?seen=no" extra_class="shadow bg-gradient border-warning" extra_text=unseen_tickets|stringformat:"d"|add:" tickets" %}
+            </div>
+
+            <div class="col-md-3">
+                {% widget_card_PERCENTAGE title="Expired Tickets" count=expired_percentage|floatformat:"0"|add:"%" color="dark" icon='clock-history' title_color="dark" btn_color="dark" btn_icon='arrow-right' url="Tickets?expired" extra_class="shadow bg-gradient" extra_text=expired_tickets|stringformat:"d"|add:" tickets" %}
+            </div>
+
+            <div class="col-md-3 mt-3">
+                {% widget_card_PERCENTAGE title="Open Tickets" count=open_percentage|floatformat:"0"|add:"%" color="primary" icon='folder-plus' title_color="primary" btn_color="primary" btn_icon='arrow-right' url="Tickets?open" extra_class="shadow bg-gradient" extra_text=open_tickets|stringformat:"d"|add:" tickets" %}
+            </div>
+
+            <div class="col-md-3 mt-3">
+                {% widget_card_PERCENTAGE title="Closed Tickets" count=close_percentage|floatformat:"0"|add:"%" color="success" icon='folder-check' title_color="success" btn_color="success" btn_icon='arrow-right' url="Tickets?close" extra_class="shadow bg-gradient" extra_text=close_tickets|stringformat:"d"|add:" tickets" %}
+            </div>
+
+            <div class="col-md-3 mt-3">
+                {% widget_card_PERCENTAGE title="Low Priority" count=low_percentage|floatformat:"0"|add:"%" color="success" icon='arrow-down-circle' title_color="success" btn_color="success" btn_icon='arrow-right' url="Tickets?priority=low" extra_class="shadow bg-gradient" extra_text=low_tickets|stringformat:"d"|add:" tickets" %}
+            </div>
+
+            <div class="col-md-3 mt-3">
+                {% widget_card_PERCENTAGE title="High Priority" count=high_percentage|floatformat:"0"|add:"%" color="danger" icon='exclamation-triangle' title_color="danger" btn_color="danger" btn_icon='arrow-right' url="Tickets?priority=high" extra_class="shadow bg-gradient" extra_text=high_tickets|stringformat:"d"|add:" tickets" %}
+            </div>
+
+            <div class="col-md-3 mt-3">
+                {% widget_card_PERCENTAGE title="Middle Priority" count=middle_percentage|floatformat:"0"|add:"%" color="warning" icon='dash-circle' title_color="warning" btn_color="warning" btn_icon='arrow-right' url="Tickets?priority=middle" extra_class="shadow bg-gradient" extra_text=middle_tickets|stringformat:"d"|add:" tickets" %}
+            </div>
+
+            <div class="col-md-3 mt-3">
+                {% widget_card_PERCENTAGE title="Secret Tickets" count=secret_percentage|floatformat:"0"|add:"%" color="secondary" icon='shield-lock' title_color="secondary" btn_color="secondary" btn_icon='arrow-right' url="Tickets?priority=secret" extra_class="shadow bg-gradient" extra_text=secret_tickets|stringformat:"d"|add:" tickets" %}
+            </div>
+
+            <div class="col-md-3 mt-3">
+                {% widget_card_PERCENTAGE title="Critical Priority" count=critical_percentage|floatformat:"0"|add:"%" color="danger" icon='fire' title_color="danger" btn_color="danger" btn_icon='arrow-right' url="Tickets?priority=critical" extra_class="shadow bg-gradient" extra_text=critical_tickets|stringformat:"d"|add:" tickets" %}
+            </div>
+        </div>
+        {# بخش آمار Seen/Unseen با چارت #}
+        <div class="row mt-5">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-eye me-2"></i>Seen Status Overview</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="text-center">
+                                    <div class="display-4 text-info">{{ seen_tickets }}</div>
+                                    <p class="text-muted">Seen Tickets</p>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-info" role="progressbar"
+                                             style="width: {{ seen_percentage|floatformat:0 }}%"
+                                             aria-valuenow="{{ seen_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                            {{ seen_percentage|floatformat:1 }}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-center">
+                                    <div class="display-4 text-warning">{{ unseen_tickets }}</div>
+                                    <p class="text-muted">Unseen Tickets</p>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-warning" role="progressbar"
+                                             style="width: {% widthratio unseen_tickets total_tickets 100 %}%"
+                                             aria-valuenow="{% widthratio unseen_tickets total_tickets 100 %}"
+                                             aria-valuemin="0" aria-valuemax="100">
+                                            {% widthratio unseen_tickets total_tickets 100 %}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {# گراف دایره‌ای ساده با CSS #}
+                        <div class="text-center mt-4">
+                            <div class="pie-chart mx-auto"
+                                 style="width: 150px; height: 150px; position: relative; border-radius: 50%; background: conic-gradient(#0dcaf0 0% {{ seen_percentage }}%, #ffc107 {{ seen_percentage }}% 100%);">
+                                <div class="position-absolute top-50 start-50 translate-middle bg-white rounded-circle"
+                                     style="width: 100px; height: 100px;"></div>
+                                <div class="position-absolute top-50 start-50 translate-middle">
+                                    <strong>{{ total_tickets }}</strong>
+                                    <small class="d-block">Total</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <span class="badge bg-info">Seen</span>
+                                <small class="text-muted d-block">{{ seen_percentage|floatformat:1 }}% of tickets</small>
+                            </div>
+                            <div class="col-6">
+                                <span class="badge bg-warning">Unseen</span>
+                                <small class="text-muted d-block">
+                                    {% widthratio unseen_tickets total_tickets 100 %}% of tickets
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="mb-3 mt-lg-4 text-success">Category :</h1>
+                {% category_button_group active_categories %}
+            </div>
+        </div>
+    </section>
+{% endblock %}

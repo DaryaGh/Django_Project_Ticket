@@ -150,41 +150,6 @@
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
-
-
-                                <td class="d-none d-lg-table-cell">
-                                    {% if ticket.get_assigned_users_count > 0 %}
-                                        <span class="badge bg-info"
-                                              data-bs-toggle="tooltip"
-                                              data-bs-custom-class="tooltip-assignees-count"
-                                              data-bs-title="Total assignees: {{ ticket.get_assigned_users_count }}">
-            {{ ticket.get_assigned_users_count }}
-        </span>
-
-                                        {% for username in ticket.get_assigned_users|slice:"2" %}
-                                            <span class="badge bg-primary"
-                                                  data-bs-toggle="tooltip"
-                                                  data-bs-custom-class="tooltip-assignees"
-                                                  data-bs-title="{{ username }}">
-                {{ username|truncatechars:10 }}
-            </span>
-                                        {% endfor %}
-
-                                        {% if ticket.get_assigned_users_count > 2 %}
-                                            <span class="badge bg-light text-dark"
-                                                  data-bs-toggle="tooltip"
-                                                  data-bs-custom-class="tooltip-assignees-more"
-                                                  data-bs-title="Additional assignees:
-
-                                                          {% for username in ticket.get_assigned_users|slice:'2:' %}{{ username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
-                +{{ ticket.get_assigned_users_count|add:"-2" }}
-            </span>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-
                                 <td class="d-none d-xl-table-cell">{{ ticket.max_replay_date|date:"Y/m/d" }}</td>
                                 <td class="d-none d-md-table-cell">{{ ticket.created_at|date:"Y/m/d H:i" }}</td>
 

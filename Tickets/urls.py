@@ -15,9 +15,7 @@ urlpatterns = [
     path('Tickets/Register', register, name='register'),
     path('Tickets/login', ticket_login, name='tickets-login'),
     path('Tickets/logout/', ticket_logout, name='tickets-logout'),
-    # راه دوم برای ساخت logSearch
-    # path('Tickets/clear' , ticket_clear , name='ticket_clear'),
-    path('ticket/<int:ticket_id>/attachments/delete-all/', ticket_attachments_delete_all,
-         name='ticket-attachments-delete-all'),
-path('ticket/<int:ticket_id>/attachments/download-all/', download_all_attachments, name='ticket-attachments-download-all'),
+    path('ticket/<int:ticket_id>/attachments/delete-all/', ticket_attachments_delete_all,name='ticket-attachments-delete-all'),
+    path('ticket/<int:ticket_id>/attachments/download-all/', download_all_attachments,name='ticket-attachments-download-all'),
+    path('ticket/<int:id>/seen/', mark_ticket_seen, name='mark_ticket_seen'),
 ]

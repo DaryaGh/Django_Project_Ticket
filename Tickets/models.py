@@ -173,6 +173,16 @@ class Ticket(TimestampedModel):
     department = models.CharField(max_length=100, choices=DEPARTMENT_CHOICES)
     due_date = models.DateTimeField(null=True, blank=True)
 
+    seen_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='seen_tickets',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    seen_at = models.DateTimeField(null=True, blank=True)
+    seen_count = models.PositiveIntegerField(default=0)
+
     class Meta:
         verbose_name = 'Ticket'
         verbose_name_plural = 'Tickets'
@@ -232,6 +242,26 @@ class Ticket(TimestampedModel):
         if users:
             return ", ".join(users)
         return "-"
+
+    @property
+    def is_seen(self):
+        """آیا تیکت دیده شده است؟"""
+        return self.seen_at is not None
+
+    @property
+    def seen_by_display(self):
+        """نمایش نام کاربری که تیکت را دیده"""
+        if self.seen_by:
+            return self.seen_by.username
+        return "-"
+
+    def mark_as_seen(self, user):
+        """علامت‌گذاری تیکت به عنوان دیده شده توسط کاربر"""
+        if not self.seen_at or self.seen_by != user:
+            self.seen_by = user
+            self.seen_at = timezone.now()
+            self.seen_count += 1
+            self.save(update_fields=['seen_by', 'seen_at', 'seen_count'])
 
     def __str__(self):
         return f"#{self.tracking_code} {self.subject[:30]}..."

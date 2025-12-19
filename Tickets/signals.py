@@ -128,3 +128,15 @@ def create_search_log(user, search_data):
         print(f" Search log created: ID {log.id}, User: {user.username}, Query: '{search_query}', Results: {results_count}, Mode: {search_mode}")
     except Exception as e:
         print(f" Error creating search log: {e}")
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
+from .models import Ticket, Assignment
+
+@receiver(post_save, sender=Assignment)
+def mark_assignment_seen(sender, instance, created, **kwargs):
+    """وقتی Assignment ایجاد می‌شود، seen_at را تنظیم کن"""
+    if created:
+        instance.seen_at = timezone.now()
+        instance.save(update_fields=['seen_at'])
