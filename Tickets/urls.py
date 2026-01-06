@@ -18,4 +18,5 @@ urlpatterns = [
     path('ticket/<int:ticket_id>/attachments/delete-all/', ticket_attachments_delete_all,name='ticket-attachments-delete-all'),
     path('ticket/<int:ticket_id>/attachments/download-all/', download_all_attachments,name='ticket-attachments-download-all'),
     path('ticket/<int:id>/seen/', mark_ticket_seen, name='mark_ticket_seen'),
+    path('ticket/<int:ticket_id>/seen-details/', ticket_seen_details, name='ticket_seen_details'),
 ]

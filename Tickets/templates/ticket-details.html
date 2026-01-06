@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block  title %}
-    {{ ticket.subject }}
+    {{ ticket.subject }} - {{ ticket.tracking_code }}
 {% endblock %}
 
 {% block content %}
@@ -16,100 +16,236 @@
                                 <i class="bi bi-ticket-detailed-fill me-2"></i>
                                 Ticket Details
                             </h4>
-                            <span class="badge bg-light text-dark fs-6">#{{ ticket.tracking_code }}</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-light text-dark fs-6">#{{ ticket.tracking_code }}</span>
+                                {% if ticket.is_seen %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-eye-fill me-1"></i>Seen
+                                        <small class="ms-1">by {{ ticket.seen_by_display }}</small>
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning">
+                                        <i class="bi bi-eye-slash me-1"></i>Unseen
+                                    </span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
+
                     <div class="card-body border-success">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <strong class="text-muted">Row:</strong>
-                                    <p class="fs-5 fw-semibold mt-1">{{ row_number }}</p>
-                                </div>
-                                <div class="mb-3">
-                                    <strong class="text-muted">Subject:</strong>
-                                    <p class="fs-5 fw-semibold mt-1">{{ ticket.subject }}</p>
-                                </div>
-                                <div class="mb-3">
-                                    <strong class="text-muted">Created By:</strong>
-                                    <p class="mt-1">{{ ticket.created_by.username }}</p>
-                                </div>
-                                <div class="mb-3">
-                                    <strong class="text-muted">Priority:</strong>
-                                    <span class="badge text-{{ ticket.priority|lower }} mt-1"
-                                          style="background-color: {{ ticket.get_priority_color }}">
-                                    {{ ticket.priority|upper }}
-                                </span>
-                                </div>
-                                <div class="mb-3">
-                                    <strong class="text-muted">Category:</strong>
-                                    <p class="mt-1">
-                                        {% if ticket.category %}
-                                            {{ ticket.category.name }}
+                        <!-- Seen Information Banner -->
+                        <div class="alert {% if ticket.is_seen %}alert-success{% else %}alert-warning{% endif %} mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="bi {% if ticket.is_seen %}bi-eye-fill{% else %}bi-eye-slash-fill{% endif %} me-3 fs-4"></i>
+                                <div>
+                                    <h6 class="mb-1">
+                                        {% if ticket.is_seen %}
+                                            ✅ این تیکت دیده شده است
                                         {% else %}
-                                            <span class="text-muted">-</span>
+                                            ⚠️ این تیکت هنوز دیده نشده است
+                                        {% endif %}
+                                    </h6>
+                                    <p class="mb-0">
+                                        {% if ticket.is_seen %}
+                                            <strong>دیده شده توسط:</strong> {{ ticket.seen_by_display }}<br>
+                                            <strong>زمان مشاهده:</strong> {{ ticket.seen_at|date:"Y/m/d H:i" }}<br>
+                                            <strong>بعد از ایجاد:</strong> {{ ticket.created_at|timesince:ticket.seen_at }} بعد
+                                        {% else %}
+                                            شما اولین نفری هستید که این تیکت را مشاهده می‌کنید.
+                                            تیکت به طور خودکار به عنوان "دیده شده" علامت‌گذاری خواهد شد.
                                         {% endif %}
                                     </p>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <strong class="text-muted">Created At:</strong>
-                                    <p class="mt-1">{{ ticket.created_at|date:"F j, Y g:i A" }}</p>
+                                    <strong class="text-muted d-block mb-1">
+                                        <i class="bi bi-hash me-1"></i>Row Number:
+                                    </strong>
+                                    <span class="badge bg-info fs-6">{{ row_number }}</span>
                                 </div>
+
                                 <div class="mb-3">
-                                    <strong class="text-muted">Updated At:</strong>
-                                    <p class="mt-1">{{ ticket.updated_at|timesince }} ago</p>
+                                    <strong class="text-muted d-block mb-1">
+                                        <i class="bi bi-chat-left-text me-1"></i>Subject:
+                                    </strong>
+                                    <p class="fs-5 fw-semibold mt-1 text-dark">{{ ticket.subject }}</p>
                                 </div>
+
                                 <div class="mb-3">
-                                    <strong class="text-muted">Max Reply Date:</strong>
-                                    <p class="mt-1">{{ ticket.max_replay_date|date:"Y/m/d" }}</p>
+                                    <strong class="text-muted d-block mb-1">
+                                        <i class="bi bi-person-circle me-1"></i>Created By:
+                                    </strong>
+                                    <div class="d-flex align-items-center mt-1">
+                                        <i class="bi bi-person me-2"></i>
+                                        <span>{{ ticket.created_by.username }}</span>
+                                    </div>
                                 </div>
+
                                 <div class="mb-3">
-                                    <strong class="text-muted">Tags:</strong>
+                                    <strong class="text-muted d-block mb-1">
+                                        <i class="bi bi-flag me-1"></i>Priority:
+                                    </strong>
+                                    <span class="badge text-white mt-1 px-3 py-2"
+                                          style="background-color: {{ ticket.get_priority_color }}">
+                                        <i class="bi bi-flag-fill me-1"></i>
+                                        {{ ticket.get_priority_display }}
+                                    </span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <strong class="text-muted d-block mb-1">
+                                        <i class="bi bi-tag me-1"></i>Category:
+                                    </strong>
+                                    <p class="mt-1">
+                                        {% if ticket.category %}
+                                            <span class="badge bg-secondary">
+                                                {{ ticket.category.name }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">بدون دسته‌بندی</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <strong class="text-muted d-block mb-1">
+                                        <i class="bi bi-calendar-plus me-1"></i>Created At:
+                                    </strong>
+                                    <div class="d-flex align-items-center mt-1">
+                                        <i class="bi bi-clock-history me-2"></i>
+                                        <span>{{ ticket.created_at|date:"Y/m/d H:i" }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <strong class="text-muted d-block mb-1">
+                                        <i class="bi bi-calendar-check me-1"></i>Updated At:
+                                    </strong>
+                                    <div class="d-flex align-items-center mt-1">
+                                        <i class="bi bi-clock me-2"></i>
+                                        <span>{{ ticket.updated_at|timesince }} ago</span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <strong class="text-muted d-block mb-1">
+                                        <i class="bi bi-clock me-1"></i>Max Reply Date:
+                                    </strong>
+                                    <div class="d-flex align-items-center mt-1">
+                                        <i class="bi bi-calendar-x me-2"></i>
+                                        <span class="{% if ticket.is_expired %}text-danger{% endif %}">
+                                            {{ ticket.max_replay_date|date:"Y/m/d" }}
+                                            {% if ticket.is_expired %}
+                                                <span class="badge bg-danger ms-2">Expired</span>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <strong class="text-muted d-block mb-1">
+                                        <i class="bi bi-tags me-1"></i>Tags:
+                                    </strong>
                                     <div class="mt-1">
                                         {% if ticket.tags.all %}
                                             {% for tag in ticket.tags.all %}
-                                                <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+                                                <span class="badge bg-info me-1 mb-1">
+                                                    <i class="bi bi-tag-fill me-1"></i>{{ tag.name }}
+                                                </span>
                                             {% endfor %}
                                         {% else %}
-                                            <span class="text-muted">-</span>
+                                            <span class="text-muted">بدون تگ</span>
                                         {% endif %}
                                     </div>
                                 </div>
+
                                 <div class="mb-3">
-                                    <strong class="text-muted">Ticket ID:</strong>
-                                    <p class="mt-1">{{ ticket.id }}</p>
+                                    <strong class="text-muted d-block mb-1">
+                                        <i class="bi bi-fingerprint me-1"></i>Ticket ID:
+                                    </strong>
+                                    <code class="bg-light p-2 rounded d-inline-block mt-1">{{ ticket.id }}</code>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Description -->
                         {% if ticket.description %}
-                            <div class="mt-1 pt-3 border-top">
-                                <strong class="text-muted">Description:</strong>
-                                <div class="mt-2 p-3 rounded">
-                                    {{ ticket.description|linebreaks|safe }}
+                            <div class="mt-4 pt-3 border-top">
+                                <h5 class="text-muted mb-3">
+                                    <i class="bi bi-card-text me-2"></i>Description
+                                </h5>
+                                <div class="mt-2 p-3 bg-light rounded">
+                                    {{ ticket.description|linebreaks }}
                                 </div>
                             </div>
                         {% endif %}
-                        <div class="mt-1 pt-3 border-top">
-                            <strong class="text-muted d-block mb-3">Attachments:</strong>
-                            {% include 'attachment_preview.html' with attachments=attachments editable=False %}
-                        </div>
+
+                        <!-- Attachments -->
+                        {% if attachments %}
+                            <div class="mt-4 pt-3 border-top">
+                                <h5 class="text-muted mb-3">
+                                    <i class="bi bi-paperclip me-2"></i>Attachments
+                                </h5>
+                                {% include 'attachment_preview.html' with attachments=attachments editable=False %}
+                            </div>
+                        {% endif %}
+
+{#                        <!-- Seen History (اگر وجود دارد) -->#}
+{#                        {% if seen_history %}#}
+{#                            <div class="mt-4 pt-3 border-top">#}
+{#                                <h5 class="text-muted mb-3">#}
+{#                                    <i class="bi bi-eye me-2"></i>Seen History#}
+{#                                </h5>#}
+{#                                <div class="list-group">#}
+{#                                    {% for seen in seen_history %}#}
+{#                                        <div class="list-group-item">#}
+{#                                            <div class="d-flex w-100 justify-content-between align-items-center">#}
+{#                                                <div>#}
+{#                                                    <strong>{{ seen.message }}</strong>#}
+{#                                                    <small class="d-block text-muted">#}
+{#                                                        {{ seen.user.username }} - {{ seen.at|date:"Y/m/d H:i" }}#}
+{#                                                    </small>#}
+{#                                                </div>#}
+{#                                                <span class="badge {% if seen.type == 'ticket' %}bg-success{% else %}bg-info{% endif %}">#}
+{#                                                    {{ seen.type|title }}#}
+{#                                                </span>#}
+{#                                            </div>#}
+{#                                        </div>#}
+{#                                    {% endfor %}#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        {% endif %}#}
                     </div>
+
                     <div class="card-footer border-success">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center">
                             <a href="{% url 'tickets' %}" class="btn btn-success">
-                                <i class="bi bi-arrow-left me-1"></i> Back to Tickets
+                                <i class="bi bi-arrow-left me-1"></i> Back to Tickets List
                             </a>
-                            <div>
-                                <a href="{% url 'tickets-update' ticket.id %}" class="btn btn-warning me-2">
+                            <div class="btn-group">
+                                <a href="{% url 'tickets-update' ticket.id %}" class="btn btn-warning">
                                     <i class="bi bi-pencil-square me-1"></i> Edit
                                 </a>
+
+                                {% if not ticket.is_seen and request.user.is_authenticated %}
+                                    <button type="button" class="btn btn-info mark-seen-btn"
+                                            data-ticket-id="{{ ticket.id }}">
+                                        <i class="bi bi-eye me-1"></i> Mark as Seen
+                                    </button>
+                                {% endif %}
+
                                 <button type="button"
                                         class="btn btn-danger"
                                         data-bs-toggle="modal"
                                         data-bs-target="#deleteModal">
-                                    <i class="bi bi-trash3 me-1"></i> Delete Ticket
+                                    <i class="bi bi-trash3 me-1"></i> Delete
                                 </button>
                             </div>
                         </div>
@@ -118,5 +254,73 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Delete Confirmation -->
     {% include 'ModelDeleteConformationTicketDetails.html' %}
+
+    <!-- JavaScript for Mark as Seen -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mark as Seen button functionality
+        const markSeenBtn = document.querySelector('.mark-seen-btn');
+        if (markSeenBtn) {
+            markSeenBtn.addEventListener('click', function() {
+                const ticketId = this.dataset.ticketId;
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                fetch(`/ticket/${ticketId}/seen/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload the page to show updated status
+                        location.reload();
+                    } else {
+                        alert('خطا: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('خطایی رخ داد. لطفاً دوباره تلاش کنید.');
+                });
+            });
+        }
+
+        // Auto-refresh page after 30 seconds if ticket is unseen
+        {% if not ticket.is_seen and request.user.is_authenticated %}
+            setTimeout(function() {
+                location.reload();
+            }, 30000); // 30 seconds
+        {% endif %}
+    });
+    </script>
+
+    <style>
+    .card {
+        border-width: 2px;
+    }
+    .badge {
+        font-size: 0.9em;
+    }
+    .alert {
+        border-radius: 10px;
+        border: none;
+    }
+    .list-group-item {
+        border-left: none;
+        border-right: none;
+        border-radius: 0;
+    }
+    .list-group-item:first-child {
+        border-top: none;
+    }
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+    </style>
 {% endblock %}

@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import models
@@ -10,6 +12,7 @@ from django.contrib.auth.models import User
 
 
 class TimestampedModel(models.Model):
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, editable=False, null=True, blank=True)
 
@@ -39,7 +42,8 @@ class CategoryQuerySet(models.QuerySet):
         return self.filter(is_active=False)
 
 class Category(NameSlugModel):
-    is_active = models.BooleanField(default=True)
+    # is_active = models.BooleanField(default=True)
+    pass
 
     class Meta:
         # برای ادمین پنل دیگه S اضافه نگیره
@@ -69,51 +73,6 @@ class Tag(NameSlugModel):
 
     # def __str__(self):
     #     return capfirst(self.name)
-
-# class Ticket(TimestampedModel):
-#     category = models.ForeignKey(Category,related_name='tickets',on_delete=models.SET_NULL,null=True,blank=True)
-#     created_by = models.ForeignKey(settings.AUTH_USER_MODEL,related_name='tickets',on_delete=models.PROTECT,default=None,blank=True)
-#     priority = models.CharField(max_length=100, default="Low", choices=PRIORITY_CHOICES)
-#     subject = models.CharField(max_length=200)
-#     description = models.TextField(blank=True)
-#     tags = models.ManyToManyField(Tag, related_name='tickets', blank=True)
-#     max_replay_date = models.DateTimeField(help_text="The maximum replay date the ticket will reply")
-#     closed_at = models.DateTimeField(null=True, blank=True)
-#     tracking_code = models.CharField(max_length=100, null=True, blank=True,unique=True)
-#
-#     class Meta:
-#         verbose_name = 'Ticket'
-#         verbose_name_plural = 'Tickets'
-#
-#         db_table = 'Tickets-Ticket'
-#
-#         indexes = [
-#             models.Index(fields=['category']),
-#             models.Index(fields=['priority']),
-#         ]
-#
-#         ordering = ['-created_at']
-#
-#     def save(self, *args, **kwargs):
-#         is_new = self.pk is None
-#         super().save(*args, **kwargs) #save first to  get primary key
-#         if is_new and not self.tracking_code:
-#             self.tracking_code = f"TCK-{now().strftime('%Y%m%d')}-{self.pk:05d}"
-#             # Example :TCK-20250913-00001
-#             super().save(update_fields=['tracking_code'])
-#
-#
-#     def get_priority_color(self):
-#         return PRIORITY_COLORS.get(self.priority, '#6c757d')
-#
-#     def delete(self, *args, **kwargs):
-#         #  جلوگیری از پاک شدن در سطح مدل
-#         if self.priority == 'high':
-#             raise PermissionDenied("Cannot delete tickets with HIGH priority")
-#         super().delete(*args, **kwargs)
-#
-#     def __str__(self):
-#         return f"#{self.tracking_code} {self.subject[:30]}..."
 
 class TicketQuerySet(models.QuerySet):
     def with_priority(self,priority):
@@ -197,10 +156,19 @@ class Ticket(TimestampedModel):
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
-        super().save(*args, **kwargs)
+
         if is_new and not self.tracking_code:
-            self.tracking_code = f"TCK-{now().strftime('%Y%m%d')}-{self.pk:05d}"
-            super().save(update_fields=['tracking_code'])
+            # ایجاد یک کد موقت با UUID
+            temp_tracking_code = f"TCK-TEMP-{uuid.uuid4().hex[:8].upper()}"
+            self.tracking_code = temp_tracking_code
+
+        # ذخیره اولیه برای دریافت pk
+        super().save(*args, **kwargs)
+        if is_new:
+            final_tracking_code = f"TCK-{now().strftime('%Y%m%d')}-{self.pk:05d}"
+            if self.tracking_code.startswith('TCK-TEMP-'):
+                Ticket.objects.filter(pk=self.pk).update(tracking_code=final_tracking_code)
+                self.tracking_code = final_tracking_code
 
     def get_priority_color(self):
         return PRIORITY_COLORS.get(self.priority, '#6c757d')
@@ -229,15 +197,12 @@ class Ticket(TimestampedModel):
         super().delete(*args, **kwargs)
 
     def get_assigned_users(self):
-        """گرفتن کاربرهای تخصیص داده شده به تیکت"""
         return self.assignments_tickets.all().values_list('assignee__username', flat=True)
 
     def get_assigned_users_count(self):
-        """تعداد کاربرهای تخصیص داده شده"""
         return self.assignments_tickets.count()
 
     def get_assigned_users_display(self):
-        """نمایش کاربرهای تخصیص داده شده به صورت متن"""
         users = self.get_assigned_users()
         if users:
             return ", ".join(users)
@@ -245,23 +210,57 @@ class Ticket(TimestampedModel):
 
     @property
     def is_seen(self):
-        """آیا تیکت دیده شده است؟"""
         return self.seen_at is not None
 
     @property
     def seen_by_display(self):
-        """نمایش نام کاربری که تیکت را دیده"""
         if self.seen_by:
-            return self.seen_by.username
-        return "-"
+            return self.seen_by.get_full_name() or self.seen_by.username
+        return "هنوز دیده نشده"
 
     def mark_as_seen(self, user):
-        """علامت‌گذاری تیکت به عنوان دیده شده توسط کاربر"""
-        if not self.seen_at or self.seen_by != user:
+        try:
+            print(f"DEBUG: mark_as_seen called for user: {user.username}")
+
+            # ایجاد یا آپدیت رکورد در تاریخچه
+            seen_history, created = TicketSeenHistory.objects.get_or_create(
+                ticket=self,
+                user=user,
+                defaults={'seen_at': timezone.now()}
+            )
+
+            print(f"DEBUG: TicketSeenHistory - created: {created}")
+
+            # اگر رکورد از قبل وجود داشت، فقط seen_at را آپدیت کن
+            if not created:
+                seen_history.seen_at = timezone.now()
+                seen_history.save()
+                print(f"DEBUG: TicketSeenHistory updated")
+
+            # آپدیت فیلدهای اصلی (آخرین کاربری که دیده)
             self.seen_by = user
             self.seen_at = timezone.now()
-            self.seen_count += 1
+            self.seen_count = TicketSeenHistory.objects.filter(ticket=self).count()
+
+            print(f"DEBUG: Updating ticket fields...")
             self.save(update_fields=['seen_by', 'seen_at', 'seen_count'])
+            print(f"DEBUG: Ticket saved successfully")
+
+            return True
+        except Exception as e:
+            print(f"DEBUG: Exception in mark_as_seen: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
+
+    def is_seen_by_user(self, user):
+        return TicketSeenHistory.objects.filter(ticket=self, user=user).exists()
+
+    def get_seen_history(self):
+        return self.seen_history.all().select_related('user')
+
+    def check_seen_by_user(self, user):
+        return TicketSeenHistory.objects.filter(ticket=self, user=user).exists()
 
     def __str__(self):
         return f"#{self.tracking_code} {self.subject[:30]}..."
@@ -333,8 +332,6 @@ class SearchLogSignal(TimestampedModel):
         db_table = 'Tickets-SearchLogs'
         ordering = ['-created_at']
 
-    # def __str__(self):
-    #     return f"{self.user.username} searched: {self.search_query}"
 
     def __str__(self):
         output = f" AT {self.created_at}"
@@ -353,35 +350,6 @@ class Swiper(TimestampedModel):
 
     def __str__(self):
         return self.name_swiper
- 
-# راه دوم برای ساخت logSearch
-
-# class LogSearch(models.Model):
-#     search_subject = models.CharField(max_length=200)
-#     search_category = models.CharField(max_length=200)
-#     search_priority = models.CharField(max_length=200)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     user = models.ForeignKey(
-#         settings.AUTH_USER_MODEL,
-#         on_delete=models.CASCADE,
-#         related_name='search_user',
-#         blank=True,
-#         null=True,
-#         default=None,
-#         # editable=False
-#     )
-#
-#     class Meta:
-#         verbose_name = 'LogSearch'
-#         verbose_name_plural = 'LogSearch'
-#         db_table = 'Tickets-LogSearch'
-#
-#     def __str__(self):
-#         output = f" AT {self.created_at}"
-#         if self.user is not None:
-#             return output + f" By {self.user}"
-#         else:
-#             return output + " By Guest"
 
 class TicketAttachment(TimestampedModel):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE,related_name="ticket_attachments")
@@ -410,3 +378,20 @@ class TicketAttachment(TimestampedModel):
         if not self.original_filename and self.file:
             self.original_filename = self.file.name
         super().save(*args, **kwargs)
+
+
+class TicketSeenHistory(models.Model):
+
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='seen_history')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    seen_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'Tickets-SeenHistory'
+        unique_together = ['ticket', 'user']
+        ordering = ['-seen_at']
+        verbose_name = 'Seen History'
+        verbose_name_plural = 'Seen Histories'
+
+    def __str__(self):
+        return f"{self.user.username} saw ticket #{self.ticket.tracking_code} at {self.seen_at}"

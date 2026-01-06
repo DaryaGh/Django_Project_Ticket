@@ -1,6 +1,8 @@
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
+from django.utils.timesince import timesince
 from Tickets.forms import *
 from Tickets.models import *
 from .Choices import *
@@ -195,7 +197,6 @@ def dashboard(request):
         'seen_last_7_days': seen_last_7_days,
     }
 
-    # return render(request, 'dashboard-templatetags-btn-PERCENTAGE.html', context)
     return render(request, 'dashboard-templatetags-btn-PERCENTAGE-seen.html', context)
 
 def index(request):
@@ -217,7 +218,7 @@ def index(request):
             'search_mode': request.GET.get('search_mode', 'and'),
             'sort': request.GET.get('sort', 'created_at'),
             'direction': request.GET.get('dir', 'desc'),
-            'with_close': request.GET.get('with_close'),
+            'with_close': request.GET.get('with_close', 'off'),
             'created_at_from': request.GET.get('created_at_from'),
             'created_at_to': request.GET.get('created_at_to'),
             'max_replay_date_from': request.GET.get('max_replay_date_from'),
@@ -228,6 +229,7 @@ def index(request):
     else:
         search_params = request.session.get('search_params', {})
 
+    # مقادیر پیش‌فرض برای پارامترها
     search_query = search_params.get('q', "")
     category_id = search_params.get('category')
     priority = search_params.get('priority')
@@ -237,13 +239,14 @@ def index(request):
     search_mode = search_params.get('search_mode', 'and')
     sort = search_params.get('sort', 'created_at')
     direction = search_params.get('dir', 'desc')
-    with_close = search_params.get('with_close')
+    with_close = search_params.get('with_close', 'off')
     created_at_from = search_params.get('created_at_from')
     created_at_to = search_params.get('created_at_to')
     max_replay_date_from = search_params.get('max_replay_date_from')
     max_replay_date_to = search_params.get('max_replay_date_to')
     seen = search_params.get('seen')
 
+    # لاگ جستجو
     if search_query or category_id or priority or status or department or response_status or created_at_from or created_at_to or max_replay_date_from or max_replay_date_to or seen:
         try:
             from Tickets.signals import create_search_log
@@ -265,8 +268,12 @@ def index(request):
         except Exception as e:
             print(f" Error in search logging: {e}")
 
-    # فیلتر کردن تیکت‌ها
-    tickets = Ticket.objects if with_close == "on" else Ticket.objects.is_open()
+    # پایه QuerySet بر اساس with_close
+    if with_close == "on":
+        tickets = Ticket.objects.all()
+    else:
+        tickets = Ticket.objects.is_open()
+
     tickets = tickets.select_related('category', "created_by", "seen_by").prefetch_related(
         'tags',
         'responses',
@@ -275,7 +282,7 @@ def index(request):
 
     filter_conditions = []
 
-    #  شرط جستجو
+    # شرط جستجو
     if search_query:
         search_q = Q(
             Q(subject__icontains=search_query)
@@ -285,42 +292,42 @@ def index(request):
         )
         filter_conditions.append(search_q)
 
-    #  شرط دسته‌بندی
+    # شرط دسته‌بندی
     if category_id and category_id not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(category_id=category_id))
         else:  # AND
             tickets = tickets.filter(category_id=category_id)
 
-    #  شرط اولویت
+    # شرط اولویت
     if priority and priority not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(priority=priority))
         else:  # AND
             tickets = tickets.with_priority(priority)
 
-    #  شرط وضعیت تیکت
+    # شرط وضعیت تیکت
     if status and status not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(status=status))
         else:  # AND
             tickets = tickets.by_status(status)
 
-    #  شرط دپارتمان
+    # شرط دپارتمان
     if department and department not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(department=department))
         else:
             tickets = tickets.filter(department=department)
 
-    # ا شرط وضعیت پاسخ
+    # شرط وضعیت پاسخ
     if response_status and response_status not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(responses__response_status=response_status))
         else:
             tickets = tickets.filter(responses__response_status=response_status)
 
-    #  تاریخ ایجاد تیکت
+    # تاریخ ایجاد تیکت
     if created_at_from:
         if search_mode == 'or':
             filter_conditions.append(Q(created_at__date__gte=created_at_from))
@@ -333,7 +340,7 @@ def index(request):
         else:
             tickets = tickets.filter(created_at__date__lte=created_at_to)
 
-    #  تاریخ مهلت پاسخ
+    # تاریخ مهلت پاسخ
     if max_replay_date_from:
         if search_mode == 'or':
             filter_conditions.append(Q(max_replay_date__date__gte=max_replay_date_from))
@@ -346,7 +353,7 @@ def index(request):
         else:
             tickets = tickets.filter(max_replay_date__date__lte=max_replay_date_to)
 
-    #  شرط Seen
+    # شرط Seen
     if seen and seen not in ["", "None"]:
         if seen == 'yes':
             if search_mode == 'or':
@@ -383,7 +390,7 @@ def index(request):
     statuses = Ticket._meta.get_field('status').choices
     departments = Ticket._meta.get_field('department').choices
 
-    # choices برای وضعیت پاسخ - جدید
+    # choices برای وضعیت پاسخ
     response_statuses = [
         ('sent', 'Sent'),
         ('seen', 'Seen'),
@@ -391,7 +398,7 @@ def index(request):
         ('replied', 'Replied'),
     ]
 
-    # choices برای فیلتر Seen - جدید
+    # choices برای فیلتر Seen
     seen_choices = [
         ('yes', 'Seen'),
         ('no', 'Unseen'),
@@ -411,7 +418,154 @@ def index(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+
+    for ticket in page_obj:
+        # بررسی دسترسی کاربر به این تیکت خاص
+        ticket.user_has_access = False
+
+        # بررسی ۴ شرط دسترسی
+        if request.user.is_staff or request.user.is_superuser:
+            ticket.user_has_access = True
+        elif ticket.created_by == request.user:
+            ticket.user_has_access = True
+        elif ticket.assignments_tickets.filter(assignee=request.user).exists():
+            ticket.user_has_access = True
+
+        # همچنین property قدیمی را هم ست کن
+        ticket.seen_by_current_user = ticket.check_seen_by_user(request.user)
+
+
     swipers = Swiper.objects.filter(is_active=True).order_by('-created_at')
+
+    # برای هر تیکت بررسی کن آیا توسط کاربر جاری دیده شده است
+    for ticket in tickets:
+        ticket.seen_by_current_user = ticket.is_seen_by_user(request.user)
+
+    # Bulk Delete Actions
+    if request.method == 'POST':
+        print("🚨 POST request received!")
+        print(f"POST data: {request.POST}")
+
+        if not request.user.is_authenticated:
+            messages.error(request, 'برای انجام این عملیات باید وارد شوید.')
+            return redirect('tickets-login')
+
+        # بررسی action از دو روش مختلف
+        action_value = request.POST.get('action', '').strip()
+
+        # یا بررسی مستقیم
+        delete_selected = 'delete_selected' in request.POST
+        delete_all = 'delete_all_tickets' in request.POST
+        delete_filtered = 'delete_filtered' in request.POST
+
+        print(f"Action value from form: '{action_value}'")
+        print(f"Direct check - delete_selected: {delete_selected}")
+        print(f"Direct check - delete_all_tickets: {delete_all}")
+        print(f"Direct check - delete_filtered: {delete_filtered}")
+
+        # منطق حذف تیکت‌های انتخاب شده
+        if action_value == 'delete_selected' or delete_selected:
+            print("🔍 Processing delete_selected")
+            selected_tickets = request.POST.getlist('selected_tickets')
+            print(f"Selected tickets: {selected_tickets}")
+
+            if not selected_tickets:
+                messages.warning(request, 'هیچ تیکتی انتخاب نشده است.')
+                return redirect('tickets')
+
+            # بررسی unseen بودن
+            unseen_tickets = Ticket.objects.filter(
+                id__in=selected_tickets,
+                seen_at__isnull=True
+            )
+
+            if unseen_tickets.exists():
+                unseen_count = unseen_tickets.count()
+                messages.error(request,
+                               f'❌ {unseen_count} تیکت دیده نشده (unseen) وجود دارد که نمی‌توانید حذف کنید. ابتدا آنها را Mark as Seen کنید.')
+                return redirect('tickets')
+
+            try:
+                with transaction.atomic():
+                    # حذف روابط
+                    TicketAttachment.objects.filter(ticket_id__in=selected_tickets).delete()
+                    Assignment.objects.filter(assigned_ticket_id__in=selected_tickets).delete()
+                    TicketResponse.objects.filter(ticket_id__in=selected_tickets).delete()
+
+                    # حذف تیکت‌ها
+                    count, _ = Ticket.objects.filter(id__in=selected_tickets).delete()
+
+                    messages.success(request, f'✅ {count} تیکت انتخاب شده پاک شدند.')
+            except Exception as e:
+                messages.error(request, f'خطا: {str(e)}')
+
+            return redirect('tickets')
+
+        # منطق حذف همه تیکت‌ها
+        elif action_value == 'delete_all_tickets' or delete_all:
+            print("🔍 Processing delete_all_tickets")
+            if not (request.user.is_superuser or request.user.is_staff):
+                messages.error(request, 'شما مجوز پاک کردن همه تیکت‌ها را ندارید.')
+                return redirect('tickets')
+
+            # بررسی اینکه آیا تیکت‌های unseen وجود دارند
+            unseen_tickets = Ticket.objects.filter(seen_at__isnull=True)
+            if unseen_tickets.exists():
+                unseen_count = unseen_tickets.count()
+                messages.error(request,
+                               f'❌ {unseen_count} تیکت دیده نشده (unseen) وجود دارد که نمی‌توانید حذف کنید. ابتدا آنها را Mark as Seen کنید.')
+                return redirect('tickets')
+
+            try:
+                with transaction.atomic():
+                    TicketAttachment.objects.all().delete()
+                    Assignment.objects.all().delete()
+                    TicketResponse.objects.all().delete()
+                    SearchLogSignal.objects.all().delete()
+
+                    count, _ = Ticket.objects.all().delete()
+
+                    messages.success(request, f'✅ {count} تیکت با موفقیت پاک شدند.')
+            except Exception as e:
+                messages.error(request, f'خطا: {str(e)}')
+
+            return redirect('tickets')
+
+        # منطق حذف تیکت‌های فیلتر شده
+        elif action_value == 'delete_filtered' or delete_filtered:
+            print("🔍 Processing delete_filtered")
+            # بررسی اینکه آیا تیکت‌های unseen در لیست وجود دارند
+            unseen_tickets = tickets.filter(seen_at__isnull=True)
+            if unseen_tickets.exists():
+                unseen_count = unseen_tickets.count()
+                messages.error(request,
+                               f'❌ {unseen_count} تیکت دیده نشده (unseen) وجود دارد که نمی‌توانید حذف کنید. ابتدا آنها را Mark as Seen کنید.')
+                return redirect('tickets')
+
+            try:
+                with transaction.atomic():
+                    ticket_ids = list(tickets.values_list('id', flat=True))
+
+                    if not ticket_ids:
+                        messages.warning(request, 'هیچ تیکتی برای پاک کردن وجود ندارد.')
+                        return redirect('tickets')
+
+                    TicketAttachment.objects.filter(ticket_id__in=ticket_ids).delete()
+                    Assignment.objects.filter(assigned_ticket_id__in=ticket_ids).delete()
+                    TicketResponse.objects.filter(ticket_id__in=ticket_ids).delete()
+
+                    deleted_count, _ = tickets.delete()
+
+                    messages.success(request, f'✅ {deleted_count} تیکت فیلترشده پاک شدند.')
+            except Exception as e:
+                messages.error(request, f'خطا: {str(e)}')
+
+            return redirect('tickets')
+
+        else:
+            print(f"❌ No valid delete action found")
+            messages.error(request, 'عملیات نامشخص است.')
+            return redirect('tickets')
 
     columns = [
         ('row', 'Row'),
@@ -451,16 +605,17 @@ def index(request):
         'created_at_to': created_at_to,
         'max_replay_date_from': max_replay_date_from,
         'max_replay_date_to': max_replay_date_to,
+        'swipers': swipers,
+        'user': request.user,
+
+        # اضافه کردن این خط برای check کردن فیلترهای فعال
         'has_active_filters': bool(
             search_query or category_id or priority or status or department or
             response_status or created_at_from or created_at_to or
-            max_replay_date_from or max_replay_date_to or seen),
-        'swipers': swipers,
+            max_replay_date_from or max_replay_date_to or seen or with_close == "on"),
     }
 
-    # return render(request, template_name='index.html', context=context)
-    # return render(request, template_name='index-table-card.html', context=context)
-    return render(request, template_name='index-table-card-assignment.html', context=context)
+    return render(request, template_name='index-table-card-assignment-BulkDelete-new-seen.html', context=context)
 
 def ticket_create(request):
     if not request.user.is_authenticated:  #  چک کردن لاگین بودن کاربر
@@ -558,8 +713,8 @@ def ticket_details(request, id):
         ).first()
 
         if assignment and not assignment.seen_at:
-            assignment.seen_at = timezone.now()
-            assignment.save(update_fields=['seen_at'])
+            assignment.mark_as_seen()
+
 
     all_tickets = Ticket.objects.all().order_by('-created_at')
     row_number = 0
@@ -570,13 +725,16 @@ def ticket_details(request, id):
 
     attachments = ticket.ticket_attachments.all()
 
-    # گرفتن تاریخچه seen
+    # گرفتن تاریخچه seen (حالا شامل خود ticket هم می‌شود)
     seen_history = []
+
+    # اگر تیکت seen شده
     if ticket.seen_at:
         seen_history.append({
             'user': ticket.seen_by,
             'at': ticket.seen_at,
-            'type': 'ticket'
+            'type': 'ticket',
+            'message': f'تیکت توسط {ticket.seen_by.username if ticket.seen_by else "کاربر ناشناس"} مشاهده شد'
         })
 
     # گرفتن seenهای assignments
@@ -585,6 +743,14 @@ def ticket_details(request, id):
         seen_at__isnull=False
     ).select_related('assignee').order_by('-seen_at')
 
+    for assignment in assignment_seens:
+        seen_history.append({
+            'user': assignment.assignee,
+            'at': assignment.seen_at,
+            'type': 'assignment',
+            'message': f'انتساب توسط {assignment.assignee.username} مشاهده شد'
+        })
+
     context = {
         'ticket': ticket,
         'attachments': attachments,
@@ -592,9 +758,10 @@ def ticket_details(request, id):
         'is_seen': ticket.is_seen,
         'seen_at': ticket.seen_at,
         'seen_by': ticket.seen_by,
+        'seen_by_display': ticket.seen_by_display,
         'seen_count': ticket.seen_count,
         'assignment_seens': assignment_seens,
-        'seen_history': seen_history,
+        'seen_history': sorted(seen_history, key=lambda x: x['at'], reverse=True),
     }
 
     return render(request, 'ticket-details.html', context)
@@ -611,22 +778,13 @@ def ticket_update(request, id):
                 TicketAttachment.objects.create(ticket=ticket, file=file)
 
             selected_users = set(form.cleaned_data['users'])
-            # current_users = set(
-            #     Ticket.assignments.value_list('assignee_id',flat=True)
-            # )
 
             current_users = set(
-                ticket.assignments_tickets.values_list('assignee_id', flat=True)  # استفاده از related_name صحیح
+                ticket.assignments_tickets.values_list('assignee_id', flat=True)
             )
 
-            # Assignment.objects.filter(
-            #     assignee_ticket=ticket,
-            #     assignee_id__in=(current_users-set(u.id for u in selected_users)),
-            # ).delete()
-
-            # این بخش هم باید اصلاح شود - اسم فیلد اشتباه است
             Assignment.objects.filter(
-                assigned_ticket=ticket,  # اصلاح: assignee_ticket به assigned_ticket
+                assigned_ticket=ticket,
                 assignee_id__in=(current_users - set(u.id for u in selected_users)),
             ).delete()
 
@@ -728,7 +886,7 @@ def ticket_attachment_delete(request, id):
     return redirect('tickets-update', id=ticket.id)
 
 def ticket_attachments_delete_all(request, ticket_id):
-    """حذف تمام attachment های یک تیکت"""
+
     ticket = get_object_or_404(Ticket, id=ticket_id)
 
     if request.method == 'POST':
@@ -747,7 +905,7 @@ def ticket_attachments_delete_all(request, ticket_id):
     return redirect('tickets-details', id=ticket.id)
 
 def download_all_attachments(request, ticket_id):
-    """دانلود تمام attachment های یک تیکت به صورت ZIP"""
+
     ticket = get_object_or_404(Ticket, id=ticket_id)
     attachments = ticket.ticket_attachments.all()
 
@@ -763,11 +921,9 @@ def download_all_attachments(request, ticket_id):
             try:
                 # خواندن فایل از storage
                 with attachment.file.open('rb') as f:
-                    # نام فایل را استخراج کن (بدون مسیر کامل)
                     filename = os.path.basename(attachment.file.name)
                     zip_file.writestr(filename, f.read())
             except Exception as e:
-                # در صورت خطا ادامه بده و فایل بعدی را اضافه کن
                 continue
 
     # تنظیم response
@@ -797,22 +953,121 @@ def ticket_logout(request):
     return redirect('tickets-login')
 
 @login_required
+def ticket_seen_details(request, ticket_id):
+    ticket = get_object_or_404(Ticket, pk=ticket_id)
+
+    # بررسی دسترسی کاربر - منطق ساده‌تر
+    has_access = False
+
+    # 1. اگر کاربر staff یا superuser است
+    if request.user.is_staff or request.user.is_superuser:
+        has_access = True
+
+    # 2. اگر کاربر ایجادکننده تیکت است
+    elif ticket.created_by == request.user:
+        has_access = True
+
+    # 3. اگر کاربر به تیکت assign شده است
+    elif ticket.assignments_tickets.filter(assignee=request.user).exists():
+        has_access = True
+
+    if not has_access:
+        return JsonResponse({
+            'success': False,
+            'error': 'شما دسترسی لازم برای مشاهده تاریخچه این تیکت را ندارید.'
+        }, status=403)
+
+    try:
+        # گرفتن تاریخچه
+        seen_history = ticket.get_seen_history()
+
+        # ساخت داده‌های JSON
+        history_data = []
+        for record in seen_history:
+            history_data.append({
+                'user': {
+                    'id': record.user.id,
+                    'username': record.user.username,
+                    'full_name': record.user.get_full_name() or record.user.username,
+                    'email': record.user.email,
+                },
+                'seen_at': record.seen_at.strftime('%Y/%m/%d %H:%M:%S'),
+                'seen_at_display': record.seen_at.strftime('%Y/%m/%d %H:%M'),
+                'seen_at_relative': timesince(record.seen_at) + ' پیش',
+            })
+
+        return JsonResponse({
+            'success': True,
+            'ticket': {
+                'id': ticket.id,
+                'tracking_code': ticket.tracking_code,
+                'subject': ticket.subject,
+                'total_seen_count': ticket.seen_count,
+                'last_seen_by': ticket.seen_by.username if ticket.seen_by else None,
+                'last_seen_at': ticket.seen_at.strftime('%Y/%m/%d %H:%M') if ticket.seen_at else None,
+            },
+            'history': history_data,
+            'total_count': len(history_data),
+        })
+
+    except Exception as e:
+        # لاگ کردن خطا برای دیباگ
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in ticket_seen_details: {str(e)}")
+
+        return JsonResponse({
+            'success': False,
+            'error': 'خطا در دریافت اطلاعات تاریخچه'
+        }, status=500)
+
+@login_required
 @require_POST
 def mark_ticket_seen(request, id):
-    """API برای علامت‌گذاری تیکت به عنوان دیده شده"""
     try:
+        # print(f"DEBUG: mark_ticket_seen called with id={id}")
+        # print(f"DEBUG: User: {request.user}, Is Staff: {request.user.is_staff}")
+
         ticket = Ticket.objects.get(id=id)
-        ticket.mark_as_seen(request.user)
+        # print(f"DEBUG: Ticket found: {ticket.tracking_code}")
+        # print(f"DEBUG: Ticket created_by: {ticket.created_by}")
+        # print(f"DEBUG: User assignments: {ticket.assignments_tickets.filter(assignee=request.user).exists()}")
+
+        if not ticket.is_seen or ticket.seen_by != request.user:
+            # print(f"DEBUG: Marking ticket as seen...")
+            ticket.mark_as_seen(request.user)
+            # print(f"DEBUG: Ticket marked successfully")
+
+            # همچنین Assignment را هم mark کن
+            assignment = Assignment.objects.filter(
+                assigned_ticket=ticket,
+                assignee=request.user
+            ).first()
+
+            if assignment and not assignment.seen_at:
+                assignment.seen_at = timezone.now()
+                assignment.save(update_fields=['seen_at'])
+                print(f"DEBUG: Assignment updated")
 
         return JsonResponse({
             'success': True,
             'message': 'Ticket marked as seen',
-            'seen_at': ticket.seen_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'seen_at': ticket.seen_at.strftime('%Y-%m-%d %H:%M:%S') if ticket.seen_at else None,
             'seen_by': ticket.seen_by.username if ticket.seen_by else None,
+            'seen_by_display': ticket.seen_by_display,
             'seen_count': ticket.seen_count
         })
     except Ticket.DoesNotExist:
+        print(f"DEBUG: Ticket not found")
         return JsonResponse({
             'success': False,
             'message': 'Ticket not found'
         }, status=404)
+    except Exception as e:
+        print(f"DEBUG: Exception in mark_ticket_seen: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Server error: {str(e)}'
+        }, status=500)

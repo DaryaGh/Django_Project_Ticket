@@ -82,16 +82,9 @@ class TicketForm(forms.ModelForm):
         #     )
         if ticket:
             self.fields['users'].initial = ticket.assignments_tickets.values_list(
-                'assigned_ticket_id', flat=True  # یا 'assignee_id' بسته به نام فیلد
+                'assigned_ticket_id', flat=True
             )
 
-    # def clean_users(self):
-    #     users = self.cleaned_data.get('users')
-    #     count = users.count() if users else 0
-    #
-    #     if count < 1:
-    #         raise forms.ValidationError('Please select at least one user')
-    #     return users
 
 class RegisterForm(forms.ModelForm):
     password1 = forms.CharField(
@@ -126,8 +119,6 @@ class RegisterForm(forms.ModelForm):
     def clean_email(self):
         email = self.cleaned_data.get('email')
 
-        # if len(email) == 0 :
-        #     raise ValidationError('Email Address is required')
 
         if not email or len(email.strip()) == 0:
             raise ValidationError('Email Address is required')
