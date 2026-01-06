@@ -3,13 +3,49 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from Tickets.models import *
 from django.contrib.auth.models import User
+from django.utils import timezone
+# seen
+from django.contrib.auth import get_user_model
+# Email
+from django.core.mail import send_mail
+# Email-With-Template
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.conf import settings
+
 
 @receiver(post_save, sender=Ticket)
-def ticket_created_or_updated(sender, instance, created, **kwargs):
+def ticket_email_notification(sender, instance, created, **kwargs):
     if created:
-        print(f" >> New Ticket Created : {instance.subject}")
+        subject = f"New Ticket Created : #{instance.tracking_code}"
+        html_template = 'emails/ticket-email-create.html'
+        text_template = 'emails/ticket-email-create.txt'
     else:
-        print(f" >> Ticket Updated : {instance.subject}")
+        subject = f"New Ticket Updated : #{instance.tracking_code}"
+        html_template = 'emails/ticket-email-update.html'
+        text_template = 'emails/ticket-email-update.txt'
+
+    context = {
+        'ticket' : instance,
+        'creator' : instance.created_by,
+        'ticket_url' : f'http://127.0.0.1:8000/Tickets/#{instance.tracking_code}/',
+    }
+
+    text_content = render_to_string(text_template, context)
+    html_content = render_to_string(html_template, context)
+
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=text_content,
+        # from_email = settings.DEFAULT_FROM_EMAIL,
+        from_email = None,
+        # to=[instance.created_by.email],
+        # to=["D.Ghaffary@hotmail.com"],
+        to=["daryaaa.ghaffary@gmail.com"],
+    )
+
+    email.attach_alternative(html_content, "text/html")
+    email.send(fail_silently=False)
 
 
 @receiver(post_delete, sender=Ticket)
@@ -129,14 +165,99 @@ def create_search_log(user, search_data):
     except Exception as e:
         print(f" Error creating search log: {e}")
 
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.utils import timezone
-from .models import Ticket, Assignment
 
 @receiver(post_save, sender=Assignment)
 def mark_assignment_seen(sender, instance, created, **kwargs):
-    """وقتی Assignment ایجاد می‌شود، seen_at را تنظیم کن"""
     if created:
         instance.seen_at = timezone.now()
         instance.save(update_fields=['seen_at'])
+
+@receiver(post_save, sender=get_user_model())
+def update_ticket_seen_by_display(sender, instance, **kwargs):
+    tickets = Ticket.objects.filter(seen_by=instance)
+    for ticket in tickets:
+        ticket.save()
+
+# Email ==> Example-2
+
+# @receiver(post_save, sender=Ticket)
+# def ticket_email_notification(sender, instance, created, **kwargs):
+#     recipient_list = []
+#     subject = ""
+#     message = ""
+#     if created:
+#         subject = f"New Ticket Created : #{instance.tracking_code}"
+#         message = (
+#             f"A new ticket has been created for {instance.tracking_code}. \n\n"
+#             f"Description : {instance.description}\n"
+#             f"Title  : {instance.subject}\n"
+#             f"Created by : {instance.created_by.username}\n"
+#             f"Created at : {instance.created_at}\n"
+#         )
+
+#         if instance.contact_email:
+#             recipient_list = [instance.contact_email]
+#         elif instance.created_by and instance.created_by.email:
+#             recipient_list = [instance.created_by.email]
+#         else:
+#             recipient_list = ['d.ghaffary@hotmail.com']
+#
+#     else:
+#         subject = f"Ticket Updated : #{instance.tracking_code}"
+#         message = (
+#             f"Ticket has been Updated : #{instance.tracking_code}\n\n"
+#             f"Description : {instance.description}\n"
+#             f"Title  : {instance.subject}\n"
+#             f"Last updated at : {instance.updated_at}\n"
+#         )
+#         # recipient_list = ['admin@yourdomain.com', 'support@yourdomain.com']
+#     if recipient_list and all(recipient_list):
+#         try:
+#             # from_email = settings.DEFAULT_FROM_EMAIL or 'noreply@yourdomain.com'
+#             from_email = settings.DEFAULT_FROM_EMAIL
+#
+#             send_mail(
+#                 subject=subject,
+#                 message=message,
+#                 from_email=from_email,
+#                 recipient_list=recipient_list,
+#                 fail_silently=True
+#             )
+#         except Exception as e:
+#             print(f"❌ خطا در ارسال ایمیل برای تیکت #{instance.tracking_code}: {e}")
+#     else:
+#         print(f"⚠️ آدرس ایمیل گیرنده معتبری برای تیکت #{instance.tracking_code} یافت نشد")
+#
+
+
+# Email ==> Example-1
+
+# @receiver(post_save, sender=Ticket)
+# def ticket_email_notification(sender, instance, created, **kwargs):
+#     if created:
+#         subject = f"New Ticket Created : #{instance.tracking_code}"
+#         message = (
+#             f"A new ticket has been created.\n\n"
+#             f"Description : {instance.description}\n"
+#             f"Title  : {instance.subject}\n"
+#             f"Created by : {instance.created_by.username}\n"
+#             f"Created at : {instance.created_at}\n"
+#         )
+#     else:
+#         subject = f"Ticket Updated from {instance.tracking_code}"
+#         message = (
+#             f"A new ticket has been Updated.\n\n"
+#             f"Description : {instance.description}\n"
+#             f"Title  : {instance.subject}\n"
+#             f"Created by : {instance.created_by.username}\n"
+#             f"Created at : {instance.created_at}\n"
+#         )
+#     send_mail(
+#         subject=subject,
+#         message=message,
+#         # خودش میره میخونه
+#         from_email=None,
+#         # recipient_list=[instance.created_by.username],
+#         recipient_list=["D.Ghaffary@hotmail.com"],
+#         fail_silently=False,
+#     )

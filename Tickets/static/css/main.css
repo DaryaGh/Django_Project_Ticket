@@ -544,3 +544,39 @@
 [data-bs-theme="dark"] .bg-light {
     background-color: #495057 !important;
 }
+
+/* انیمیشن برای تغییر smooth */
+#table-view-container, #card-view-container {
+    transition: opacity 0.3s ease;
+}
+
+/* استایل برای radio buttons در موبایل */
+@media (max-width: 900px) {
+    #table-view:checked + label {
+        background-color: #f8f9fa !important;
+        color: #6c757d !important;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    #table-view:checked + label i {
+        opacity: 0.5;
+    }
+
+    /* نمایش tooltip برای توضیح */
+    #table-view + label:hover::after {
+        content: "در موبایل غیرفعال است";
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1000;
+        margin-bottom: 5px;
+    }
+}
