@@ -1,0 +1,114 @@
+<!-- Modal Bulk Delete Confirmation -->
+<div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-labelledby="bulkDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="bulkDeleteModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirm Bulk Delete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    This action cannot be undone!
+                </div>
+
+                <div id="bulkDeleteDetails">
+                    <p id="bulkActionText">You are about to delete selected tickets.</p>
+                    <p class="text-danger fw-bold" id="selectedCountText">0 tickets selected</p>
+                </div>
+
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="confirmBulkDelete">
+                    <label class="form-check-label" for="confirmBulkDelete">
+                        I understand this action is irreversible
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmBulkDeleteBtn" disabled>
+                    <i class="fas fa-trash me-1"></i>
+                    Confirm Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// مدیریت modal bulk delete
+document.addEventListener('DOMContentLoaded', function() {
+    const bulkDeleteModal = document.getElementById('bulkDeleteModal');
+    const confirmCheckbox = document.getElementById('confirmBulkDelete');
+    const confirmBtn = document.getElementById('confirmBulkDeleteBtn');
+    const selectedCountText = document.getElementById('selectedCountText');
+    const bulkActionText = document.getElementById('bulkActionText');
+
+    if (bulkDeleteModal) {
+        const bsModal = new bootstrap.Modal(bulkDeleteModal);
+
+        // رویداد نمایش modal
+        bulkDeleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const action = button ? button.dataset.action : 'delete_selected';
+
+            // به‌روزرسانی متن بر اساس action
+            updateBulkModalText(action);
+
+            // ریست checkbox
+            confirmCheckbox.checked = false;
+            confirmBtn.disabled = true;
+        });
+
+        // فعال/غیرفعال کردن دکمه تأیید
+        confirmCheckbox.addEventListener('change', function() {
+            confirmBtn.disabled = !this.checked;
+        });
+
+        // رویداد کلیک روی دکمه تأیید
+        confirmBtn.addEventListener('click', function() {
+            const form = document.getElementById('bulkDeleteForm');
+            if (form) {
+                form.submit();
+            }
+        });
+    }
+
+    function updateBulkModalText(action) {
+        const selectedCount = getSelectedCount();
+
+        let actionText = '';
+        let countText = '';
+
+        switch(action) {
+            case 'delete_selected':
+                actionText = 'You are about to delete selected tickets.';
+                countText = `${selectedCount} ticket(s) will be deleted.`;
+                break;
+            case 'delete_all_tickets':
+                actionText = 'You are about to delete ALL tickets.';
+                countText = 'This will remove all tickets from the system.';
+                break;
+            case 'delete_filtered':
+                actionText = 'You are about to delete all tickets matching current filters.';
+                countText = 'All tickets in the current view will be deleted.';
+                break;
+            default:
+                actionText = 'You are about to perform a bulk delete action.';
+                countText = `${selectedCount} ticket(s) selected.`;
+        }
+
+        bulkActionText.textContent = actionText;
+        selectedCountText.textContent = countText;
+    }
+
+    function getSelectedCount() {
+        const tableSelected = document.querySelectorAll('#bulkDeleteForm .ticket-checkbox:checked').length;
+        const cardSelected = document.querySelectorAll('#cardBulkDeleteForm .card-ticket-checkbox:checked').length;
+        return Math.max(tableSelected, cardSelected);
+    }
+});
+</script>

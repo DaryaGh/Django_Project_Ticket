@@ -44,3 +44,4 @@ function sortTable(column, order) {
         tbody.appendChild(row);
     });
 }
+
