@@ -1,6 +1,7 @@
 from django.db.models import Q
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
+from Tickets.middleware import *
 from Tickets.models import *
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -177,6 +178,38 @@ def update_ticket_seen_by_display(sender, instance, **kwargs):
     tickets = Ticket.objects.filter(seen_by=instance)
     for ticket in tickets:
         ticket.save()
+
+
+@receiver(pre_save, sender=Ticket)
+def log_ticket_change(sender, instance, **kwargs):
+    if not instance.pk:
+        return
+
+    old = Ticket.objects.get(pk=instance.pk)
+    user = get_current_user()
+    ip = get_current_ip()
+
+    tracked_fields = ["subject" , "priority" , "description"]
+
+    for field in tracked_fields:
+        old_value = getattr(old, field)
+        new_value = getattr(instance, field)
+
+        if old_value != new_value:
+            ActivityLog.objects.create(
+                user=user,
+                ticket=instance,
+                # action="status_change" if field == "status" else "update",
+                action="update",
+                field=field,
+                old_value=str(old_value),
+                new_value=str(new_value),
+                ip_address=ip,
+            )
+
+
+
+
 
 # Email ==> Example-2
 

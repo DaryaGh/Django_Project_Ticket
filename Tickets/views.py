@@ -705,7 +705,6 @@ def ticket_details(request, id):
     # علامت‌گذاری تیکت به عنوان دیده شده اگر کاربر لاگین کرده باشد
     if request.user.is_authenticated:
         ticket.mark_as_seen(request.user)
-
         # همچنین Assignment مربوطه را هم mark_as_seen کن
         assignment = Assignment.objects.filter(
             assigned_ticket=ticket,
@@ -725,31 +724,15 @@ def ticket_details(request, id):
 
     attachments = ticket.ticket_attachments.all()
 
-    # گرفتن تاریخچه seen (حالا شامل خود ticket هم می‌شود)
-    seen_history = []
+    if not ActivityLog.objects.filter(ticket=ticket).filter(user=request.user).exists():
 
-    # اگر تیکت seen شده
-    if ticket.seen_at:
-        seen_history.append({
-            'user': ticket.seen_by,
-            'at': ticket.seen_at,
-            'type': 'ticket',
-            'message': f'تیکت توسط {ticket.seen_by.username if ticket.seen_by else "کاربر ناشناس"} مشاهده شد'
-        })
-
-    # گرفتن seenهای assignments
-    assignment_seens = Assignment.objects.filter(
-        assigned_ticket=ticket,
-        seen_at__isnull=False
-    ).select_related('assignee').order_by('-seen_at')
-
-    for assignment in assignment_seens:
-        seen_history.append({
-            'user': assignment.assignee,
-            'at': assignment.seen_at,
-            'type': 'assignment',
-            'message': f'انتساب توسط {assignment.assignee.username} مشاهده شد'
-        })
+        ActivityLog.objects.create(
+            user=request.user,
+            ticket=ticket,
+            action='view',
+            # ip_address=request.META['REMOTE_ADDR'],
+            ip_address=request.META.get('REMOTE_ADDR'),
+        )
 
     context = {
         'ticket': ticket,
@@ -760,8 +743,6 @@ def ticket_details(request, id):
         'seen_by': ticket.seen_by,
         'seen_by_display': ticket.seen_by_display,
         'seen_count': ticket.seen_count,
-        'assignment_seens': assignment_seens,
-        'seen_history': sorted(seen_history, key=lambda x: x['at'], reverse=True),
     }
 
     return render(request, 'ticket-details.html', context)

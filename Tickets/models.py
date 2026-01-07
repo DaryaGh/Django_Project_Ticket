@@ -379,7 +379,6 @@ class TicketAttachment(TimestampedModel):
             self.original_filename = self.file.name
         super().save(*args, **kwargs)
 
-
 class TicketSeenHistory(models.Model):
 
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='seen_history')
@@ -395,3 +394,22 @@ class TicketSeenHistory(models.Model):
 
     def __str__(self):
         return f"{self.user.username} saw ticket #{self.ticket.tracking_code} at {self.seen_at}"
+
+class ActivityLog(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE , null=True, blank=True)
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE,related_name='activities')
+    action = models.CharField(max_length=100,choices=ACTION_CHOICES)
+    field = models.CharField(max_length=100,blank=True)
+    # تغییر دادن از کم به زیاد مثلا
+    old_value = models.CharField(max_length=100,blank=True)
+    new_value = models.CharField(max_length=100,blank=True)
+
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    # اپدیت نداره چون رکورد این جدول فقط ثبت میشود و اپدیت نمیشود
+
+    class Meta:
+        verbose_name = 'ActivityLog'
+        verbose_name_plural = 'ActivityLogs'
+        db_table = 'Tickets-ActivityLogs'
+        ordering = ['-created_at']

@@ -196,34 +196,7 @@
                                 {% include 'attachment_preview.html' with attachments=attachments editable=False %}
                             </div>
                         {% endif %}
-
-{#                        <!-- Seen History (اگر وجود دارد) -->#}
-{#                        {% if seen_history %}#}
-{#                            <div class="mt-4 pt-3 border-top">#}
-{#                                <h5 class="text-muted mb-3">#}
-{#                                    <i class="bi bi-eye me-2"></i>Seen History#}
-{#                                </h5>#}
-{#                                <div class="list-group">#}
-{#                                    {% for seen in seen_history %}#}
-{#                                        <div class="list-group-item">#}
-{#                                            <div class="d-flex w-100 justify-content-between align-items-center">#}
-{#                                                <div>#}
-{#                                                    <strong>{{ seen.message }}</strong>#}
-{#                                                    <small class="d-block text-muted">#}
-{#                                                        {{ seen.user.username }} - {{ seen.at|date:"Y/m/d H:i" }}#}
-{#                                                    </small>#}
-{#                                                </div>#}
-{#                                                <span class="badge {% if seen.type == 'ticket' %}bg-success{% else %}bg-info{% endif %}">#}
-{#                                                    {{ seen.type|title }}#}
-{#                                                </span>#}
-{#                                            </div>#}
-{#                                        </div>#}
-{#                                    {% endfor %}#}
-{#                                </div>#}
-{#                            </div>#}
-{#                        {% endif %}#}
                     </div>
-
                     <div class="card-footer border-success">
                         <div class="d-flex justify-content-between align-items-center">
                             <a href="{% url 'tickets' %}" class="btn btn-success">
@@ -250,6 +223,20 @@
                             </div>
                         </div>
                     </div>
+                <ul class="list-group mt-5">
+{#                activities نام relation-name در model ticket است#}
+                    {% for log in ticket.activities.all %}
+                        <li class="list-group-item">
+                        <strong>{{ log.user }}</strong>
+                        {{ log.get_action_display }}
+                        {% if log.field %}
+                            ({{ log.field }} : "{{ log.old_value }}" -> "{{ log.new_value }}")
+                        {% endif %}
+                            <br>
+                        <small class="text-muted">{{ log.created_at }}</small>
+                        </li>
+                    {% endfor %}
+                </ul>
                 </div>
             </div>
         </div>

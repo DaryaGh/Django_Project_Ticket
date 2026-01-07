@@ -63,3 +63,11 @@ EMAIL_CHOICES = [
     ("gmail.com", "Gmail.com"),
     ("hotmail.com", "Hotmail.com"),
 ]
+
+ACTION_CHOICES = [
+    ("view" , "View"),
+    ("create" , "Create"),
+    ("update" , "Update"),
+    ("delete" , "Delete"),
+    # ("status_change" , "Change Status"),
+]

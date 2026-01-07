@@ -25,10 +25,6 @@ class AssignmentAdmin(admin.ModelAdmin):
     list_display = ('assignee_id','seen_at','status')
 
 admin.site.register(SearchLogSignal)
-# admin.site.register(Ticket)
 admin.site.register(Category)
-# admin.site.register(Tag)
-# admin.site.register(Assignment)
 admin.site.register(Swiper)
-# راه دوم برای ساخت logSearch
-# admin.site.register(LogSearch)
+admin.site.register(ActivityLog)
