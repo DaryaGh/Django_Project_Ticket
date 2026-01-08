@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h3 class="mb-3">My Assigned Tickets</h3>
+        <div class="card shadow-sm">
+            <table class="table table-hover mb-0">
+                <thead>
+                <tr>
+                    <th>Tracking</th>
+                    <th>Subject</th>
+                    <th>Category</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+
+                </tr>
+                </thead>
+                {% for assignment in page_obj %}
+                    <tr>
+                        <td>{{ assignment.assigned_ticket.tracking_code }}</td>
+                        <td>{{ assignment.assigned_ticket.subject }}</td>
+                        <td>{{ assignment.assigned_ticket.category }}</td>
+                        <td>
+                            <span class="badge" style="background: {{ assignment.assigned_ticket.get_priority_color }}">
+                                {{ assignment.assigned_ticket.priority }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge" style="background: {{ assignment.get_status_color }}">
+                                {{ assignment.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'assignee-detail' assignment.id %}" class="btn btn-sm btn-outline-primary">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">
+                            No Assigned Tickets
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+{% endblock %}

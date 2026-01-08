@@ -25,7 +25,7 @@
                         </a>
                     </li>
                 {% endif %}
-                {% if request.resolver_match.url_name != 'tickets' and request.resolver_match.url_name != 'tickets-create' and request.resolver_match.url_name != 'tickets-update' %}
+                {% if request.resolver_match.url_name != 'tickets' and request.resolver_match.url_name != 'tickets-create' and request.resolver_match.url_name != 'tickets-update' and request.resolver_match.url_name != 'assignee-list' and request.resolver_match.url_name != 'assignee-detail' %}
                     <li class="nav-item mx-2 text-white">
                         <a href="{% url 'search_logs' %}" class="nav-link">
                             <i class="bi bi-clock-history"></i>
@@ -38,9 +38,15 @@
                         <i class="bi bi-bell fs-4 text-white"></i>
                     </a>
                 </li>
-
+            {% if request.resolver_match.url_name != 'assignee-list' %}
+                <li class="nav-item mx-2 text-white">
+                    <a href="{% url 'assignee-list' %}" class="nav-link d-flex align-items-center">
+                        <i class="bi bi-list-stars me-1"></i>My Task
+                        Tickets
+                    </a>
+                </li>
+            {% endif %}
                 {% if user.is_authenticated %}
-
                     <li class="nav-item mx-2 dropdown text-white">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
                            role="button" data-bs-toggle="dropdown" aria-expanded="false">

@@ -268,11 +268,18 @@ def index(request):
         except Exception as e:
             print(f" Error in search logging: {e}")
 
+
+    tickets = Ticket.objects.filter(created_by=request.user)
     # پایه QuerySet بر اساس with_close
-    if with_close == "on":
-        tickets = Ticket.objects.all()
-    else:
-        tickets = Ticket.objects.is_open()
+    if not with_close == "on":
+        tickets = tickets.is_open()
+
+    # پایه QuerySet بر اساس with_close
+    # if with_close == "on":
+    #     tickets = Ticket.objects.all()
+    # else:
+    #     tickets = Ticket.objects.is_open()
+
 
     tickets = tickets.select_related('category', "created_by", "seen_by").prefetch_related(
         'tags',
@@ -1052,3 +1059,36 @@ def mark_ticket_seen(request, id):
             'success': False,
             'message': f'Server error: {str(e)}'
         }, status=500)
+
+@login_required
+def assignee_ticket_list(request):
+    assignments = (
+        Assignment.objects
+        .for_user(request.user)
+        .select_related('assigned_ticket',"assigned_ticket__category")
+        .order_by("-created_at")
+    )
+
+    paginator = Paginator(assignments, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    context = {
+        'page_obj': page_obj,
+    }
+    return render (request,"assignee/ticket_assignee_list.html",context=context)
+
+@login_required
+def assignee_ticket_detail(request, id):
+    assignment = get_object_or_404(Assignment, id=id,assignee=request.user)
+
+    if request.method == "POST":
+         assignment.status = request.POST.get('status')
+         assignment.description = request.POST.get('description')
+         assignment.save()
+         return redirect('assignee-list')
+    context = {
+        'status_choices':STATUS_CHOICES,
+        'assignment': assignment,
+        "ticket":assignment.assigned_ticket,
+    }
+    return render(request,"assignee/ticket_assignee_detail.html",context=context)

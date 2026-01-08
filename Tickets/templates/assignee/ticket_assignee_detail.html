@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="card shadow-sm p-4">
+            <h4>{{ ticket.subject }}</h4>
+            <p class="text-muted">{{ ticket.description }}</p>
+            <hr>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Status {{ assignment.status }}</label>
+                    <select name="status" class="form-select">
+                        {% for value , label in status_choices %}
+                            <option value="{{ value }}"
+                                    {% if assignment.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Report / Comment :</label>
+                    <textarea name="description" class="form-control" rows="4">
+                        {{ assignment.description }}
+                    </textarea>
+                </div>
+
+                <button class="btn btn-primary">Update</button>
+                <a href="{% url 'assignee-list' %}" class="btn btn-secondary">
+                    Back
+                </a>
+            </form>
+        </div>
+    </div>
+{% endblock %}

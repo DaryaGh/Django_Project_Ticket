@@ -10,13 +10,16 @@ urlpatterns = [
     path('Tickets/delete/<int:id>', ticket_delete, name='tickets-destroy'),
     # path('Change/mode',change_mode,name='change-mode'),
     path('Tickets/success/<int:id>', ticket_success, name='ticket_success'),
-    path('Tickets/search-logs/', search_logs, name='search_logs'),
+    path('Tickets/search-logs', search_logs, name='search_logs'),
     path('Tickets/Attachments/<int:id>/delete', ticket_attachment_delete, name='attachment_delete'),
     path('Tickets/Register', register, name='register'),
     path('Tickets/login', ticket_login, name='tickets-login'),
-    path('Tickets/logout/', ticket_logout, name='tickets-logout'),
+    path('Tickets/logout', ticket_logout, name='tickets-logout'),
     path('ticket/<int:ticket_id>/attachments/delete-all/', ticket_attachments_delete_all,name='ticket-attachments-delete-all'),
     path('ticket/<int:ticket_id>/attachments/download-all/', download_all_attachments,name='ticket-attachments-download-all'),
     path('ticket/<int:id>/seen/', mark_ticket_seen, name='mark_ticket_seen'),
     path('ticket/<int:ticket_id>/seen-details/', ticket_seen_details, name='ticket_seen_details'),
+
+    path("assignee",assignee_ticket_list , name="assignee-list"),
+    path("assignee/<int:id>",assignee_ticket_detail,name="assignee-detail"),
 ]

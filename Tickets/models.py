@@ -283,6 +283,13 @@ class TicketResponse(TimestampedModel):
     def __str__(self):
         return f"Response #{self.id} for {self.ticket.tracking_code}"
 
+class AssignmentQuerySet(models.QuerySet):
+    def for_user(self, user):
+        return self.filter(assignee=user)
+
+    def open(self):
+        return self.filter(status_in=["new", "in_progress"])
+
 class Assignment(TimestampedModel):
     assigned_ticket = models.ForeignKey(Ticket, related_name='assignments_tickets', on_delete=models.CASCADE,
                                         help_text="The ticket that will be assigned to this assignment")
@@ -315,6 +322,8 @@ class Assignment(TimestampedModel):
     def __str__(self):
         return f"#{self.assigned_ticket.subject} assigned to {self.assignee.username}"
 
+    objects = AssignmentQuerySet.as_manager()
+    
 class SearchLogSignal(TimestampedModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='search_logs')
     search_query = models.CharField(max_length=200)
