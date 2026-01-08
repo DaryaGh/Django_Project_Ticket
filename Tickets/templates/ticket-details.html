@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load ticket-filter %}
 
 {% block  title %}
     {{ ticket.subject }} - {{ ticket.tracking_code }}
@@ -49,7 +50,8 @@
                                         {% if ticket.is_seen %}
                                             <strong>دیده شده توسط:</strong> {{ ticket.seen_by_display }}<br>
                                             <strong>زمان مشاهده:</strong> {{ ticket.seen_at|date:"Y/m/d H:i" }}<br>
-                                            <strong>بعد از ایجاد:</strong> {{ ticket.created_at|timesince:ticket.seen_at }} بعد
+                                            <strong>بعد از ایجاد:</strong>
+                                            {{ ticket.created_at|timesince:ticket.seen_at }} بعد
                                         {% else %}
                                             شما اولین نفری هستید که این تیکت را مشاهده می‌کنید.
                                             تیکت به طور خودکار به عنوان "دیده شده" علامت‌گذاری خواهد شد.
@@ -223,20 +225,38 @@
                             </div>
                         </div>
                     </div>
-                <ul class="list-group mt-5">
-{#                activities نام relation-name در model ticket است#}
-                    {% for log in ticket.activities.all %}
-                        <li class="list-group-item">
-                        <strong>{{ log.user }}</strong>
-                        {{ log.get_action_display }}
-                        {% if log.field %}
-                            ({{ log.field }} : "{{ log.old_value }}" -> "{{ log.new_value }}")
-                        {% endif %}
-                            <br>
-                        <small class="text-muted">{{ log.created_at }}</small>
-                        </li>
-                    {% endfor %}
-                </ul>
+                    {#                ------------------------------------------------------------------------------------------------------#}
+                    {#                    <ul class="list-group mt-5">#}
+                    {#                activities نام relation-name در model ticket است#}
+                    {#                        {% for log in ticket.activities.all %}#}
+                    {#                            <li class="list-group-item">#}
+                    {#                                <strong>{{ log.user }}</strong>#}
+                    {#                                {{ log.get_action_display }}#}
+                    {#                                {% if log.field %}#}
+                    {#                                    ({{ log.field }} : "{{ log.old_value }}" -> "{{ log.new_value }}")#}
+                    {#                                {% endif %}#}
+                    {#                                <br>#}
+                    {#                                <small class="text-muted">{{ log.created_at }}</small>#}
+                    {#                            </li>#}
+                    {#                        {% endfor %}#}
+                    {#                    </ul>#}
+                    {#                ------------------------------------------------------------------------------------------------------#}
+                    <ul class="list-group mt-5">
+                        {% for log in ticket.activities.all %}
+                            <li class="list-group-item">
+                                <strong>{{ log.user }}</strong>
+                                {{ log.get_action_display }}
+                                {% if log.field %}
+                                    <small class="ms-2">
+                                        ({{ log.field }} :
+                                        {{ log.old_value|format_with_highlight:log.new_value }}
+                                    </small>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">{{ log.created_at }}</small>
+                            </li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
         </div>
@@ -244,70 +264,105 @@
 
     <!-- Modal Delete Confirmation -->
     {% include 'ModelDeleteConformationTicketDetails.html' %}
-
     <!-- JavaScript for Mark as Seen -->
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Mark as Seen button functionality
-        const markSeenBtn = document.querySelector('.mark-seen-btn');
-        if (markSeenBtn) {
-            markSeenBtn.addEventListener('click', function() {
-                const ticketId = this.dataset.ticketId;
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mark as Seen button functionality
+            const markSeenBtn = document.querySelector('.mark-seen-btn');
+            if (markSeenBtn) {
+                markSeenBtn.addEventListener('click', function () {
+                    const ticketId = this.dataset.ticketId;
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-                fetch(`/ticket/${ticketId}/seen/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken,
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Reload the page to show updated status
-                        location.reload();
-                    } else {
-                        alert('خطا: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('خطایی رخ داد. لطفاً دوباره تلاش کنید.');
+                    fetch(`/ticket/${ticketId}/seen/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Reload the page to show updated status
+                                location.reload();
+                            } else {
+                                alert('خطا: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('خطایی رخ داد. لطفاً دوباره تلاش کنید.');
+                        });
                 });
-            });
-        }
+            }
 
-        // Auto-refresh page after 30 seconds if ticket is unseen
-        {% if not ticket.is_seen and request.user.is_authenticated %}
-            setTimeout(function() {
-                location.reload();
-            }, 30000); // 30 seconds
-        {% endif %}
-    });
+            // Auto-refresh page after 30 seconds if ticket is unseen
+            {% if not ticket.is_seen and request.user.is_authenticated %}
+                setTimeout(function () {
+                    location.reload();
+                }, 30000); // 30 seconds
+            {% endif %}
+        });
     </script>
 
     <style>
-    .card {
-        border-width: 2px;
-    }
-    .badge {
-        font-size: 0.9em;
-    }
-    .alert {
-        border-radius: 10px;
-        border: none;
-    }
-    .list-group-item {
-        border-left: none;
-        border-right: none;
-        border-radius: 0;
-    }
-    .list-group-item:first-child {
-        border-top: none;
-    }
-    .list-group-item:last-child {
-        border-bottom: none;
-    }
+        .char-removed {
+            background-color: #fff3cd;
+            color: #856404;
+            text-decoration: line-through;
+            padding: 0 2px;
+            border-radius: 2px;
+            margin: 0 1px;
+        }
+
+        .char-added {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 0 2px;
+            border-radius: 2px;
+            margin: 0 1px;
+            font-weight: bold;
+        }
+
+        .old-text {
+            color: #6c757d;
+        }
+
+        .new-text {
+            color: #198754;
+        }
+
+        .fas.fa-arrow-right {
+            font-size: 0.8em;
+            vertical-align: middle;
+        }
+
+        .card {
+            border-width: 2px;
+        }
+
+        .badge {
+            font-size: 0.9em;
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+
+        .list-group-item {
+            border-left: none;
+            border-right: none;
+            border-radius: 0;
+        }
+
+        .list-group-item:first-child {
+            border-top: none;
+        }
+
+        .list-group-item:last-child {
+            border-bottom: none;
+        }
     </style>
 {% endblock %}
