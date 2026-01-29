@@ -6,6 +6,7 @@ from django.utils.timesince import timesince
 from Tickets.forms import *
 from Tickets.models import *
 from .Choices import *
+from .notification import *
 from .validators import validate
 from django.core.paginator import Paginator
 from django.contrib.auth import authenticate, login, logout
@@ -625,36 +626,19 @@ def index(request):
     return render(request, template_name='index-table-card-assignment-BulkDelete-new-seen.html', context=context)
 
 def ticket_create(request):
-    if not request.user.is_authenticated:  #  چک کردن لاگین بودن کاربر
+    if not request.user.is_authenticated:
         messages.error(request, 'You must be logged in to create a ticket.')
         return redirect('tickets-login')
 
     if request.method == 'POST':
-        # form = TicketForm(request.POST)
         form = TicketForm(request.POST, request.FILES)
-        # برای پاک کردن فیلدهای اجباری در جنگو است
         form.errors.clear()
 
-        priority_values = ",".join([choice[0] for choice in PRIORITY_CHOICES])
-        department_values = ",".join([choice[0] for choice in DEPARTMENT_CHOICES])
-
+        # validation برای فیلدهای جدید
         rules = {
-            "category": ["required"],
-            "priority": ["required", f"in:{priority_values}"],
-            "department": ["required", f"in:{department_values}"],
-            "subject": ["required", "min:5", "max:200"],
-            "description": ["required", "min:20", "max:2000"],
-            "max_replay_date": ["required", "future_date"],
-            "tags": ["min_items:1", "max_items:5"],
-            "users":["required","min_items:1", "max_items:5"],
-            "contact_email": ["required", "email"],
-            "contact_name": ["required", "min:2", "max:100"],
-            "contact_phone": ["required", "phone"],
-            "due_date": ["required", "future_date"],
-            "attachments": [
-                "required",
-                "file_type:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png",
-                "max_size:5", "max_files:10"]
+            "send_notification": ["boolean"],
+            "send_email": ["boolean"],
+            "send_sms": ["boolean"],
         }
 
         errors = validate(request.POST, request.FILES, rules)
@@ -669,12 +653,18 @@ def ticket_create(request):
             new_ticket.save()
             files = request.FILES.getlist("attachments")
             for file in files:
-                TicketAttachment.objects.create(ticket=new_ticket, file=file,uploaded_by_id=request.user.id)
+                TicketAttachment.objects.create(
+                    ticket=new_ticket,
+                    file=file,
+                    uploaded_by_id=request.user.id
+                )
 
             form.save_m2m()
 
+            # ارسال نوتیفیکیشن بر اساس انتخاب کاربر
             selected_users = form.cleaned_data['users']
             assignments = []
+
             for user in selected_users:
                 assignments.append(
                     Assignment(
@@ -684,15 +674,32 @@ def ticket_create(request):
                         assigned_by_id=request.user.id
                     )
                 )
+
+                # ارسال نوتیفیکیشن بر اساس تنظیمات کاربر
+                if form.cleaned_data.get('send_notification'):
+                    # کد ارسال نوتیفیکیشن درون اپلیکیشن
+                    send_in_app_notification(user, new_ticket)
+
+                if form.cleaned_data.get('send_email'):
+                    # کد ارسال ایمیل
+                    send_ticket_email(user, new_ticket)
+
+                if form.cleaned_data.get('send_sms'):
+                    # کد ارسال SMS
+                    send_ticket_sms(user, new_ticket)
+
             Assignment.objects.bulk_create(assignments)
 
             messages.success(request, 'Your ticket has been created successfully!')
-            # return redirect('ticket_details', ticket_id=new_ticket.id)
-            messages.success(request, 'Your Ticket was successfully !')
             return redirect('ticket_success', id=new_ticket.id)
 
     else:
-        form = TicketForm(initial={'priority': ''})
+        form = TicketForm(initial={
+            'priority': '',
+            'send_notification': True,
+            'send_email': False,
+            'send_sms': False
+        })
 
     return render(request, 'ticket_create.html', {
         'form': form,
