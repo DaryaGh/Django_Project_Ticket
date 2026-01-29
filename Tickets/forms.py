@@ -38,7 +38,11 @@ class TicketForm(forms.ModelForm):
                   'users',
                   'description',
                   'due_date',
+                  # داینامیک کردن چکباکس
+                  'attachments',
+                  'send_notification', 'send_email', 'send_sms'
                   ]
+
         exclude = ['created_by', 'closed_at', 'tracking_code', 'status']
 
         widgets = {
@@ -58,6 +62,10 @@ class TicketForm(forms.ModelForm):
             'department': forms.Select(attrs={'class': 'form-select'}),
             # 'users': forms.ModelMultipleChoiceField(attrs={'class': 'form-select'}),
             'users': forms.SelectMultiple(attrs={'class': 'form-select'}),
+            # داینامیک کردن چکباکس
+            'send_notification': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'send_email': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'send_sms': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
         labels = {
@@ -84,7 +92,6 @@ class TicketForm(forms.ModelForm):
             self.fields['users'].initial = ticket.assignments_tickets.values_list(
                 'assigned_ticket_id', flat=True
             )
-
 
 class RegisterForm(forms.ModelForm):
     password1 = forms.CharField(

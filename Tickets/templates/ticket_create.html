@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
+
 {% block content %}
     <div class="container-lg mt-5">
         <div class="card shadow-sm p-4">
             <h2 class="mb-4 text-success">
                 {% if ticket %}Edit Ticket{% else %}Submit a Ticket{% endif %}
             </h2>
-            {# نمایش خطاهای غیر فیلدی #}
             {% if form.non_field_errors %}
                 <div class="alert alert-danger mt-3">
                     {% for error in form.non_field_errors %}
@@ -17,26 +17,76 @@
                 {% csrf_token %}
                 <div class="row">
                     {% for field in form %}
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ field.id_for_label }}" class="form-label">
-                                {{ field.label }}
-                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                            </label>
-                            {{ field }}
-                            {% if field.help_text %}
-                                <small class="form-text text-primary">{{ field.help_text }}</small>
-                            {% endif %}
-                            {% for error in field.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                            {% endfor %}
-                        </div>
+                        {% if field.name not in "send_notification send_email send_sms" %}
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <small class="form-text text-primary">{{ field.help_text }}</small>
+                                {% endif %}
+                                {% for error in field.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     {% endfor %}
+                {% include "components/alert-component-create.html" %}
                 </div>
+
                 <div id="file-preview-container" class="mt-4" style="display: none;">
                     <h5 class="h6 text-muted mb-3">Selected Files Preview:</h5>
-                    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3" id="file-preview">
+                    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3" id="file-preview"></div>
+                </div>
+
+                {# بخش تنظیمات نوتیفیکیشن - داینامیک از فرم #}
+                <div class="mt-4 pt-3 border-top">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <p class="mb-2 fw-medium">Notification Options:</p>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="d-flex flex-wrap gap-3">
+                                {# نمایش فیلد send_notification #}
+                                <div class="form-check">
+                                    {{ form.send_notification }}
+                                    <label class="form-check-label" for="{{ form.send_notification.id_for_label }}">
+                                        Send Notification
+                                    </label>
+                                    {% if form.send_notification.errors %}
+                                        <div class="text-danger small">{{ form.send_notification.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+
+                                {# نمایش فیلد send_email #}
+                                <div class="form-check">
+                                    {{ form.send_email }}
+                                    <label class="form-check-label" for="{{ form.send_email.id_for_label }}">
+                                        Send Email
+                                    </label>
+                                    {% if form.send_email.errors %}
+                                        <div class="text-danger small">{{ form.send_email.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+
+                                {# نمایش فیلد send_sms #}
+                                <div class="form-check">
+                                    {{ form.send_sms }}
+                                    <label class="form-check-label" for="{{ form.send_sms.id_for_label }}">
+                                        Send SMS
+                                    </label>
+                                    {% if form.send_sms.errors %}
+                                        <div class="text-danger small">{{ form.send_sms.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                {# دکمه‌های عملیاتی #}
                 <div class="d-flex justify-content-between mt-4">
                     <div>
                         <a href="{% url 'tickets' %}" class="btn btn-secondary me-2">
@@ -50,7 +100,6 @@
                     </div>
                     <div>
                         {% if ticket %}
-                            {#                             فقط در حالت Edit دکمه Delete را نشان بده #}
                             <button type="button"
                                     class="btn btn-danger me-2"
                                     data-bs-toggle="modal"
@@ -65,25 +114,21 @@
                     </div>
                 </div>
             </form>
-{#            {% if ticket and attachments %}#}
-{#                <div class="mt-5 pt-4 border-top">#}
-{#                    <h5 class="h6 text-muted mb-3">Current Attachments:</h5>#}
-{#                    {% include 'attachment_preview.html' with attachments=attachments editable=True %}#}
-{#                </div>#}
-{#            {% endif %}#}
 
-        {% if ticket and attachments %}
-    <div class="mt-5 pt-4 border-top">
-        <h5 class="h6 text-muted mb-3">Current Attachments:</h5>
-        {% include 'attachment_preview.html' with attachments=attachments editable=True %}
-    </div>
-{% endif %}
+            {% if ticket and attachments %}
+                <div class="mt-5 pt-4 border-top">
+                    <h5 class="h6 text-muted mb-3">Current Attachments:</h5>
+                    {% include 'attachment_preview.html' with attachments=attachments editable=True %}
+                </div>
+            {% endif %}
+
         </div>
     </div>
-    {#     فقط در حالت Edit (وقتی ticket وجود دارد) Modal  را نمایش بدهد  #}
+
     {% if ticket %}
         {% include 'ModelDeleteConformationTicketDetails.html' %}
     {% endif %}
+
     {% block js %}
         <script>
             {% include 'Js/preview.js' %}

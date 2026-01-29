@@ -15,21 +15,78 @@ from django.template.loader import render_to_string
 from django.conf import settings
 
 
+# @receiver(post_save, sender=Ticket)
+# def ticket_email_notification(sender, instance, created, **kwargs):
+#     if created:
+#         subject = f"New Ticket Created : #{instance.tracking_code}"
+#         html_template = 'emails/ticket-email-create.html'
+#         text_template = 'emails/ticket-email-create.txt'
+#     else:
+#         subject = f"New Ticket Updated : #{instance.tracking_code}"
+#         html_template = 'emails/ticket-email-update.html'
+#         text_template = 'emails/ticket-email-update.txt'
+#
+#     context = {
+#         'ticket' : instance,
+#         'creator' : instance.created_by,
+#         'ticket_url' : f'http://127.0.0.1:8000/Tickets/#{instance.tracking_code}/',
+#     }
+#
+#     text_content = render_to_string(text_template, context)
+#     html_content = render_to_string(html_template, context)
+#
+#     email = EmailMultiAlternatives(
+#         subject=subject,
+#         body=text_content,
+#         # from_email = settings.DEFAULT_FROM_EMAIL,
+#         from_email = None,
+#         # to=[instance.created_by.email],
+#         # to=["D.Ghaffary@hotmail.com"],
+#         to=["daryaaa.ghaffary@gmail.com"],
+#     )
+#
+#     email.attach_alternative(html_content, "text/html")
+#     email.send(fail_silently=False)
+
+
 @receiver(post_save, sender=Ticket)
 def ticket_email_notification(sender, instance, created, **kwargs):
-    if created:
-        subject = f"New Ticket Created : #{instance.tracking_code}"
-        html_template = 'emails/ticket-email-create.html'
-        text_template = 'emails/ticket-email-create.txt'
-    else:
-        subject = f"New Ticket Updated : #{instance.tracking_code}"
-        html_template = 'emails/ticket-email-update.html'
-        text_template = 'emails/ticket-email-update.txt'
+    """
+    فقط اگر تیکت send_email=True داشته باشد ایمیل ارسال کن
+    """
+    # بررسی flag ایمیل
+    if not hasattr(instance, 'send_email') or not instance.send_email:
+        return
+
+    # فقط برای ایجاد تیکت جدید ایمیل بزن
+    if not created:
+        return
+
+    subject = f"New Ticket Created : #{instance.tracking_code}"
+    html_template = 'emails/ticket-email-create.html'
+    text_template = 'emails/ticket-email-create.txt'
+
+    # دریافت کاربران از طریق relation
+    try:
+        # فرض می‌کنیم relation به اسم 'assigned_users' دارید
+        assigned_users = instance.assigned_users.all()
+        recipient_emails = [user.email for user in assigned_users if user.email]
+
+        # اگر کاربری ایمیل نداشت، به ایجادکننده ایمیل بزن
+        if not recipient_emails and instance.created_by and instance.created_by.email:
+            recipient_emails = [instance.created_by.email]
+
+    except AttributeError:
+        # اگر relation وجود نداشت
+        if instance.created_by and instance.created_by.email:
+            recipient_emails = [instance.created_by.email]
+        else:
+            return
 
     context = {
-        'ticket' : instance,
-        'creator' : instance.created_by,
-        'ticket_url' : f'http://127.0.0.1:8000/Tickets/#{instance.tracking_code}/',
+        'ticket': instance,
+        'creator': instance.created_by,
+        'ticket_url': f'http://127.0.0.1:8000/Tickets/{instance.id}/',
     }
 
     text_content = render_to_string(text_template, context)
@@ -38,16 +95,13 @@ def ticket_email_notification(sender, instance, created, **kwargs):
     email = EmailMultiAlternatives(
         subject=subject,
         body=text_content,
-        # from_email = settings.DEFAULT_FROM_EMAIL,
-        from_email = None,
-        # to=[instance.created_by.email],
-        # to=["D.Ghaffary@hotmail.com"],
+        from_email=None,
+        # to=recipient_emails,
         to=["daryaaa.ghaffary@gmail.com"],
     )
 
     email.attach_alternative(html_content, "text/html")
-    email.send(fail_silently=False)
-
+    email.send(fail_silently=True)
 
 @receiver(post_delete, sender=Ticket)
 def ticket_deleted(sender, instance, **kwargs):
@@ -206,10 +260,6 @@ def log_ticket_change(sender, instance, **kwargs):
                 new_value=str(new_value),
                 ip_address=ip,
             )
-
-
-
-
 
 # Email ==> Example-2
 
