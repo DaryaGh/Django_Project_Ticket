@@ -17,7 +17,9 @@
                         </a>
                     </li>
                 {% endif %}
-                {% if request.resolver_match.url_name != 'tickets' and request.resolver_match.url_name != 'tickets-create' %}
+{#برای عدم دسترسی کارمند نوشته شده است #}
+{#                {% if request.resolver_match.url_name != 'tickets' and request.resolver_match.url_name != 'tickets-create' or request.session.role == "Admin" or request.session.role == "Super Admin"%}#}
+                {% if request.session.role == "Admin" or request.session.role == "Super Admin"%}
                     <li class="nav-item mx-2 text-white">
                         <a href="{% url 'tickets-create' %}" class="nav-link d-flex align-items-center">
                             <i class="bi bi-plus-circle me-1"></i>
@@ -51,7 +53,8 @@
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle fs-4 me-1"></i>
-                            <span class="small">{{ user.username }}</span>
+{#                            برای نمایش role #}
+                            <span class="small">{{ user.username }} - {{ request.session.role }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li>

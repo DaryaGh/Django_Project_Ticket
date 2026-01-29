@@ -1,5 +1,3 @@
-import uuid
-
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import models
@@ -9,6 +7,7 @@ from django.utils.text import slugify, capfirst
 from django.utils.timezone import now
 from .Choices import *
 from django.contrib.auth.models import User
+import uuid
 
 
 class TimestampedModel(models.Model):
@@ -131,16 +130,13 @@ class Ticket(TimestampedModel):
     contact_phone = models.CharField(max_length=15, blank=True)
     department = models.CharField(max_length=100, choices=DEPARTMENT_CHOICES)
     due_date = models.DateTimeField(null=True, blank=True)
-
-    seen_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='seen_tickets',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
+    seen_by = models.ForeignKey(settings.AUTH_USER_MODEL,related_name='seen_tickets',on_delete=models.SET_NULL,null=True,blank=True)
     seen_at = models.DateTimeField(null=True, blank=True)
     seen_count = models.PositiveIntegerField(default=0)
+# داینامیک برای فعال چکباکس
+    send_notification = models.BooleanField(default=True)
+    send_email = models.BooleanField(default=False)
+    send_sms = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Ticket'
@@ -389,7 +385,6 @@ class TicketAttachment(TimestampedModel):
         super().save(*args, **kwargs)
 
 class TicketSeenHistory(models.Model):
-
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='seen_history')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     seen_at = models.DateTimeField(auto_now_add=True)
@@ -421,4 +416,29 @@ class ActivityLog(models.Model):
         verbose_name = 'ActivityLog'
         verbose_name_plural = 'ActivityLogs'
         db_table = 'Tickets-ActivityLogs'
+        ordering = ['-created_at']
+
+class Role(models.Model):
+    title = models.CharField(max_length=100) #English
+    persian_title = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.title}"
+
+    class Meta:
+        verbose_name = 'Role'
+        verbose_name_plural = 'Roles'
+        db_table = 'Tickets-Roles'
+
+class UserRole(TimestampedModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,related_name='user_roles',blank=True)
+    role = models.ForeignKey(Role, on_delete=models.CASCADE,blank=True)
+
+    def __str__(self):
+        return f"{self.user.username} role #{self.role.title}"
+
+    class Meta:
+        verbose_name = 'UserRole'
+        verbose_name_plural = 'UserRoles'
+        db_table = 'Tickets-UserRoles'
         ordering = ['-created_at']

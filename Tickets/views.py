@@ -11,7 +11,7 @@ from .validators import validate
 from django.core.paginator import Paginator
 from django.contrib.auth import authenticate, login, logout
 # نصب دانلود زیپ
-from django.http import HttpResponse,HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 import zipfile
 import os
 from io import BytesIO
@@ -19,8 +19,25 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+# برای 403
+from django.core.exceptions import PermissionDenied
 
+@login_required()
 def dashboard(request):
+    # print(request.user.id)
+    user_id = request.user.id
+    # print(UserRole.objects.filter(user_id=user_id))
+    # user_role = UserRole.objects.filter(user_id=user_id).get()
+    # user_role = UserRole.objects.filter(user_id=user_id).first()
+    user_role = UserRole.objects.filter(user=user_id).first()
+    # print(user_role.role)
+    # print(user_role.role_id)
+    print(Role.objects.filter(id=user_role.role_id).first())
+    # print(Role.objects.filter(id=user_role.role_id).first().title)
+    role_title = Role.objects.filter(id=user_role.role_id).first().title
+    request.session['role'] = role_title
+
+
     total_tickets = Ticket.objects.all().count()
 
     # آمار جدید برای seen
@@ -200,6 +217,7 @@ def dashboard(request):
 
     return render(request, 'dashboard-templatetags-btn-PERCENTAGE-seen.html', context)
 
+@login_required()
 def index(request):
     # اگر پارامتر clear وجود داشت، session را پاک کن
     if request.GET.get('clear'):
@@ -626,6 +644,15 @@ def index(request):
     return render(request, template_name='index-table-card-assignment-BulkDelete-new-seen.html', context=context)
 
 def ticket_create(request):
+    # برای عدم دسترسی کارمند نوشته شده است
+    # user_role = request.session.get('role')
+    # if user_role == "Employee":
+    #     # برای این روش باید صفحه HTML ساخته شود
+    #     raise PermissionDenied
+    #     # برای این روش نیاز به ساخت HTML نیست
+    #     # return HttpResponseForbidden("Access Denied")
+
+
     if not request.user.is_authenticated:
         messages.error(request, 'You must be logged in to create a ticket.')
         return redirect('tickets-login')
