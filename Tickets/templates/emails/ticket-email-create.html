@@ -14,33 +14,33 @@
 
         <div class="ticket-details">
             <div class="detail-row" style="display: flex; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #eee;">
-                <div class="detail-label" style="flex: 0 0 140px; font-weight: bold; color: #555;">کد پیگیری:</div>
+                <div class="detail-label" style="flex: 0 0 140px; font-weight: bold; color: #555;">Tracking Code :</div>
                 <div class="detail-value" style="flex: 1; color: #333;">{{ticket.tracking_code}}</div>
             </div>
 
             <div class="detail-row" style="display: flex; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #eee;">
-                <div class="detail-label" style="flex: 0 0 140px; font-weight: bold; color: #555;">دسته‌بندی:</div>
+                <div class="detail-label" style="flex: 0 0 140px; font-weight: bold; color: #555;">Category :</div>
                 <div class="detail-value" style="flex: 1; color: #333;">{{ticket.category}}</div>
             </div>
 
             <div class="detail-row" style="display: flex; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #eee;">
-                <div class="detail-label" style="flex: 0 0 140px; font-weight: bold; color: #555;">موضوع:</div>
+                <div class="detail-label" style="flex: 0 0 140px; font-weight: bold; color: #555;">Subject :</div>
                 <div class="detail-value" style="flex: 1; color: #333;">{{ticket.subject}}</div>
             </div>
 
             <div class="detail-row" style="display: flex; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #eee;">
-                <div class="detail-label" style="flex: 0 0 140px; font-weight: bold; color: #555;">کاربر:</div>
+                <div class="detail-label" style="flex: 0 0 140px; font-weight: bold; color: #555;">User :</div>
                 <div class="detail-value" style="flex: 1; color: #333;">{{ticket.created_by.get_full_name|default:ticket.created_by.username}}</div>
             </div>
 
             <div class="detail-row" style="display: flex; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #eee;">
-                <div class="detail-label" style="flex: 0 0 140px; font-weight: bold; color: #555;">تاریخ ایجاد:</div>
+                <div class="detail-label" style="flex: 0 0 140px; font-weight: bold; color: #555;">Created Date :</div>
                 <div class="detail-value" style="flex: 1; color: #333;">{{ticket.created_at}}</div>
             </div>
         </div>
 
         <div class="description-container" style="background-color: #f8f9fa; border: 1px solid #eaeaea; border-radius: 6px; padding: 20px; margin-top: 10px;">
-            <h3 style="margin-top: 0; color: #2c3e50;">شرح درخواست:</h3>
+            <h3 style="margin-top: 0; color: #2c3e50;">Description :</h3>
             <div class="description-content" style="white-space: pre-line; line-height: 1.8;">{{ticket.description}}</div>
         </div>
 
