@@ -25,11 +25,19 @@
                     <i class="bi bi-grid-3x3-gap"></i>
                 </label>
             </div>
+{#به خاطر عدم نمایش در صفحه employee در if قرار گرفته است #}
+            {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
+                <a href="{% url 'tickets-create' %}" class="btn btn-success">
+                    <i class="fas fa-plus me-1"></i>
+                    New Ticket
+                </a>
+            {% endif %}
 
-            <a href="{% url 'tickets-create' %}" class="btn btn-success">
-                <i class="fas fa-plus me-1"></i>
-                New Ticket
-            </a>
+{#            <a href="{% url 'tickets-create' %}" class="btn btn-success">#}
+{#                <i class="fas fa-plus me-1"></i>#}
+{#                New Ticket#}
+{#            </a>#}
+
         </div>
 
         {# Alert messages #}
@@ -246,6 +254,8 @@
                                                           data-bs-custom-class="tooltip-tags-more"
                                                           data-bs-title="Additional tags:
 
+
+
                                                                   {% for tag in ticket.tags.all|slice:'2:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                                                     +{{ ticket.tags.all|length|add:"-2" }}
                                                 </span>
@@ -279,6 +289,8 @@
                                                               data-bs-toggle="tooltip"
                                                               data-bs-custom-class="tooltip-assignees-more"
                                                               data-bs-title="Additional assignees:
+
+
 
                                                                       {% for assignment in assignees|slice:'2:' %}{{ assignment.assignee.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                                                         +{{ assignees|length|add:"-2" }}
@@ -532,6 +544,8 @@
                                                           data-bs-custom-class="tooltip-tags-more"
                                                           data-bs-title="Additional tags:
 
+
+
                                                                   {% for tag in ticket.tags.all|slice:'3:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                                                         +{{ ticket.tags.all|length|add:"-3" }}
                                                     </span>
@@ -700,14 +714,14 @@
         </script>
 
         <script>
-         {% include 'Js/alert.js' %}
-        {% include 'Js/delete(confirm).js' %}
-        {% include 'Js/TooltipSubject.js' %}
-        {% include 'Js/mark-seen.js' %}
+            {% include 'Js/alert.js' %}
+            {% include 'Js/delete(confirm).js' %}
+            {% include 'Js/TooltipSubject.js' %}
+            {% include 'Js/mark-seen.js' %}
 
-        {% include 'Js/seen-history.js' %}
-        {% include 'Js/bulk-delete-modal.js' %}
-        {% include 'Js/view-manager.js' %}
+            {% include 'Js/seen-history.js' %}
+            {% include 'Js/bulk-delete-modal.js' %}
+            {% include 'Js/view-manager.js' %}
         </script>
 
     {% endblock %}
