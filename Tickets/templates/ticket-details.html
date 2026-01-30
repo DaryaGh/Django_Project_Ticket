@@ -241,6 +241,38 @@
                     {#                        {% endfor %}#}
                     {#                    </ul>#}
                     {#                ------------------------------------------------------------------------------------------------------#}
+                    {#                    <div class="list-group my-3">#}
+                    {#                        {% for a in ticket.assignments.all %}#}
+                    {#                            <div class="list-group-item">#}
+                    {#                            {{ a.assignee.username }}#}
+                    {#                            <span class="badge bg-primary">#}
+                    {#                                {{ a.status }}#}
+                    {#                            </span>#}
+                    {#                            <div class="alert alert-info my-2" role="alert">#}
+                    {#                               {{ a.description }}#}
+                    {#                            </div>#}
+                    {#                            </div>#}
+                    {#                        {% endfor %}#}
+                    {#                    </div>#}
+                    <div class="list-group my-3">
+                        {% for assignment in assignments %}
+                            <div class="list-group-item">
+                                {{ assignment.assignee.username|default:"بدون نام" }}
+                                <span class="badge bg-primary">
+                                    {{ assignment.status|default:"—" }}
+                                </span>
+                                {% if assignment.description %}
+                                    <div class="alert alert-info my-2" role="alert">
+                                        {{ assignment.description|linebreaksbr }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <div class="list-group-item text-muted">
+                                هنوز کاربری به این تیکت اختصاص داده نشده است.
+                            </div>
+                        {% endfor %}
+                    </div>
                     <ul class="list-group mt-5">
                         {% for log in ticket.activities.all %}
                             <li class="list-group-item">

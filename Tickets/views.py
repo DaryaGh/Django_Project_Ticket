@@ -287,8 +287,13 @@ def index(request):
         except Exception as e:
             print(f" Error in search logging: {e}")
 
+    tickets = Ticket.objects
+    #Admin
+    user_role = request.session.get("role")
+    if user_role in ["Admin" , "Employee"]:
+        tickets = Ticket.objects.filter(created_by=request.user)
 
-    tickets = Ticket.objects.filter(created_by=request.user)
+
     # پایه QuerySet بر اساس with_close
     if not with_close == "on":
         tickets = tickets.is_open()
@@ -752,8 +757,8 @@ def ticket_details(request, id):
             assignee=request.user
         ).first()
 
-        if assignment and not assignment.seen_at:
-            assignment.mark_as_seen()
+        # if assignment and not assignment.seen_at:
+        #     assignment.mark_as_seen()
 
 
     all_tickets = Ticket.objects.all().order_by('-created_at')
@@ -784,8 +789,8 @@ def ticket_details(request, id):
         'seen_by': ticket.seen_by,
         'seen_by_display': ticket.seen_by_display,
         'seen_count': ticket.seen_count,
+        'assignments': ticket.assignments_tickets.select_related('assignee').all(),
     }
-
     return render(request, 'ticket-details.html', context)
 
 def ticket_update(request, id):
@@ -795,26 +800,33 @@ def ticket_update(request, id):
         if form.is_valid():
             form.save()
 
+            # Handle new attachment on EDIT
             files = request.FILES.getlist("attachments")
             for file in files:
                 TicketAttachment.objects.create(ticket=ticket, file=file)
 
+            # Handel Assignment
+            # set تکراری ها را پاک میکند
             selected_users = set(form.cleaned_data['users'])
 
             current_users = set(
                 ticket.assignments_tickets.values_list('assignee_id', flat=True)
             )
 
+            # Remove unassigned users
             Assignment.objects.filter(
                 assigned_ticket=ticket,
                 assignee_id__in=(current_users - set(u.id for u in selected_users)),
             ).delete()
 
+            # Add New Assignments
             new_assignments = [Assignment(assigned_ticket=ticket, assignee=user)
                                for user in selected_users
                                if user.id not in current_users
                                ]
             Assignment.objects.bulk_create(new_assignments)
+
+
 
             messages.info(request, f'Ticket #{ticket.id} has been updated Successfully !!!')
             return redirect('tickets-details', id=ticket.id)

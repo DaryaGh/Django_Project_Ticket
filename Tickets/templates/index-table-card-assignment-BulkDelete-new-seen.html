@@ -25,7 +25,7 @@
                     <i class="bi bi-grid-3x3-gap"></i>
                 </label>
             </div>
-{#به خاطر عدم نمایش در صفحه employee در if قرار گرفته است #}
+            {#به خاطر عدم نمایش در صفحه employee در if قرار گرفته است #}
             {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
                 <a href="{% url 'tickets-create' %}" class="btn btn-success">
                     <i class="fas fa-plus me-1"></i>
@@ -33,10 +33,10 @@
                 </a>
             {% endif %}
 
-{#            <a href="{% url 'tickets-create' %}" class="btn btn-success">#}
-{#                <i class="fas fa-plus me-1"></i>#}
-{#                New Ticket#}
-{#            </a>#}
+            {#            <a href="{% url 'tickets-create' %}" class="btn btn-success">#}
+            {#                <i class="fas fa-plus me-1"></i>#}
+            {#                New Ticket#}
+            {#            </a>#}
 
         </div>
 
@@ -256,6 +256,7 @@
 
 
 
+
                                                                   {% for tag in ticket.tags.all|slice:'2:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                                                     +{{ ticket.tags.all|length|add:"-2" }}
                                                 </span>
@@ -289,6 +290,7 @@
                                                               data-bs-toggle="tooltip"
                                                               data-bs-custom-class="tooltip-assignees-more"
                                                               data-bs-title="Additional assignees:
+
 
 
 
@@ -351,10 +353,13 @@
                                                                class="btn btn-outline-success btn-sm text-start mb-1 border-0">
                                                                 <i class="bi bi-eye me-1"></i>View
                                                             </a>
-                                                            <a href="{% url 'tickets-update' ticket.pk %}"
-                                                               class="btn btn-outline-warning btn-sm text-start mb-1 border-0">
-                                                                <i class="bi bi-pencil-square me-1"></i>Edit
-                                                            </a>
+                                                            {#برای بستن دسترسی ها از این روش استفاده میکنیم مثلا برای کارمند که نمیخواهیم بتواند edit انجام دهد #}
+                                                            {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
+                                                                <a href="{% url 'tickets-update' ticket.pk %}"
+                                                                   class="btn btn-outline-warning btn-sm text-start mb-1 border-0">
+                                                                    <i class="bi bi-pencil-square me-1"></i>Edit
+                                                                </a>
+                                                            {% endif %}
                                                             <!-- دکمه mark as seen - فقط اگر دسترسی دارید -->
                                                             {% if ticket.user_has_access %}
                                                                 {% if not ticket.seen_by_current_user %}
@@ -364,7 +369,9 @@
                                                                     </button>
                                                                 {% endif %}
                                                             {% endif %}
-                                                            {% button label="Delete" icon="bi-trash3" color="outline-danger" size="sm" extra_class="border-0 text-start delete-btn" modal_target="#deleteModal" data_ticket_id=ticket.id data_ticket_number=ticket.id %}
+                                                            {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
+                                                                {% button label="Delete" icon="bi-trash3" color="outline-danger" size="sm" extra_class="border-0 text-start delete-btn" modal_target="#deleteModal" data_ticket_id=ticket.id data_ticket_number=ticket.id %}
+                                                            {% endif %}
                                                         </div>
                                                     </li>
                                                 </ul>
@@ -546,6 +553,7 @@
 
 
 
+
                                                                   {% for tag in ticket.tags.all|slice:'3:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                                                         +{{ ticket.tags.all|length|add:"-3" }}
                                                     </span>
@@ -571,13 +579,14 @@
                                                data-bs-title="View Ticket">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <a href="{% url 'tickets-update' ticket.pk %}"
-                                               class="btn btn-outline-warning btn-sm border-0"
-                                               data-bs-toggle="tooltip"
-                                               data-bs-title="Edit Ticket">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-
+                                            {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
+                                                <a href="{% url 'tickets-update' ticket.pk %}"
+                                                   class="btn btn-outline-warning btn-sm border-0"
+                                                   data-bs-toggle="tooltip"
+                                                   data-bs-title="Edit Ticket">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                            {% endif %}
                                             <!-- دکمه mark as seen در footer card - فقط اگر دسترسی دارید -->
                                             {% if ticket.user_has_access %}
                                                 {% if not ticket.seen_by_current_user %}
@@ -589,14 +598,15 @@
                                                     </button>
                                                 {% endif %}
                                             {% endif %}
-
-                                            <a href="#" class="btn btn-outline-danger btn-sm border-0 delete-btn"
-                                               data-bs-toggle="tooltip"
-                                               data-bs-title="Delete Ticket"
-                                               data-ticket-id="{{ ticket.id }}"
-                                               data-ticket-number="{{ ticket.id }}">
-                                                <i class="bi bi-trash3"></i>
-                                            </a>
+                                            {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
+                                                <a href="#" class="btn btn-outline-danger btn-sm border-0 delete-btn"
+                                                   data-bs-toggle="tooltip"
+                                                   data-bs-title="Delete Ticket"
+                                                   data-ticket-id="{{ ticket.id }}"
+                                                   data-ticket-number="{{ ticket.id }}">
+                                                    <i class="bi bi-trash3"></i>
+                                                </a>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
