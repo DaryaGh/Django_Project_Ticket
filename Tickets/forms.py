@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from Tickets.models import Ticket
+from Tickets.models import Ticket, UserRole
 from django.core.exceptions import ValidationError
 import re
 
@@ -76,12 +76,17 @@ class TicketForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)  # ★ این خط رو اضافه کن
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.required = False
             field.widget.attrs.update({
                 'class': 'form-control'
             })
+
+            # ★ این ۲ خط رو اضافه کن (محدود کردن لیست کاربران)
+        if self.request and self.request.user.is_authenticated:
+            self.fields['users'].queryset = self.get_allowed_users()
 
         ticket = kwargs.get("instance")
         # if ticket:
@@ -92,6 +97,16 @@ class TicketForm(forms.ModelForm):
             self.fields['users'].initial = ticket.assignments_tickets.values_list(
                 'assigned_ticket_id', flat=True
             )
+
+    def get_allowed_users(self):
+        """فقط کاربران پایین‌تر از سطح کاربر فعلی"""
+        current_role = UserRole.objects.filter(user=self.request.user).first()
+        if current_role:
+            # کاربران با level بالاتر یا مساوی (عدد کمتر = سطح بالاتر)
+            return User.objects.filter(
+                user_roles__role__level__gte=current_role.role.level
+            ).exclude(id=self.request.user.id).distinct()
+        return User.objects.none()
 
 class RegisterForm(forms.ModelForm):
     password1 = forms.CharField(

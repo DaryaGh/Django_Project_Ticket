@@ -663,7 +663,7 @@ def ticket_create(request):
         return redirect('tickets-login')
 
     if request.method == 'POST':
-        form = TicketForm(request.POST, request.FILES)
+        form = TicketForm(request.POST, request.FILES,request=request)
         form.errors.clear()
 
         # validation برای فیلدهای جدید
@@ -726,12 +726,13 @@ def ticket_create(request):
             return redirect('ticket_success', id=new_ticket.id)
 
     else:
-        form = TicketForm(initial={
-            'priority': '',
-            'send_notification': True,
-            'send_email': False,
-            'send_sms': False
-        })
+        # form = TicketForm(initial={
+        #     'priority': '',
+        #     'send_notification': True,
+        #     'send_email': False,
+        #     'send_sms': False,
+        # })
+        form = TicketForm(request=request)  # ★
 
     return render(request, 'ticket_create.html', {
         'form': form,
@@ -741,6 +742,60 @@ def ticket_create(request):
         'STATUS_COLORS': STATUS_COLORS,
     })
 
+# def ticket_details(request, id):
+#     ticket = get_object_or_404(
+#         Ticket.objects.select_related('category', 'created_by', 'seen_by')
+#         .prefetch_related('tags', 'ticket_attachments'),
+#         id=id
+#     )
+#
+#     # علامت‌گذاری تیکت به عنوان دیده شده اگر کاربر لاگین کرده باشد
+#     if request.user.is_authenticated:
+#         ticket.mark_as_seen(request.user)
+#         # همچنین Assignment مربوطه را هم mark_as_seen کن
+#         assignment = Assignment.objects.filter(
+#             assigned_ticket=ticket,
+#             assignee=request.user
+#         ).first()
+#
+#         # if assignment and not assignment.seen_at:
+#         #     assignment.mark_as_seen()
+#
+#
+#     all_tickets = Ticket.objects.all().order_by('-created_at')
+#     row_number = 0
+#     for i, t in enumerate(all_tickets, start=1):
+#         if t.id == ticket.id:
+#             row_number = i
+#             break
+#
+#     attachments = ticket.ticket_attachments.all()
+#
+#     if not ActivityLog.objects.filter(ticket=ticket).filter(user=request.user).exists():
+#
+#         ActivityLog.objects.create(
+#             user=request.user,
+#             ticket=ticket,
+#             action='view',
+#             # ip_address=request.META['REMOTE_ADDR'],
+#             ip_address=request.META.get('REMOTE_ADDR'),
+#         )
+#
+#     context = {
+#         'ticket': ticket,
+#         'attachments': attachments,
+#         'row_number': row_number,
+#         'is_seen': ticket.is_seen,
+#         'seen_at': ticket.seen_at,
+#         'seen_by': ticket.seen_by,
+#         'seen_by_display': ticket.seen_by_display,
+#         'seen_count': ticket.seen_count,
+#         'assignments': ticket.assignments_tickets.select_related('assignee').all(),
+#     }
+#     return render(request, 'ticket-details.html', context)
+
+
+@login_required()
 def ticket_details(request, id):
     ticket = get_object_or_404(
         Ticket.objects.select_related('category', 'created_by', 'seen_by')
@@ -748,20 +803,48 @@ def ticket_details(request, id):
         id=id
     )
 
+    # بررسی دسترسی کاربر
+    user_has_access = False
+
+    # 1. اگر کاربر staff یا superuser است
+    if request.user.is_staff or request.user.is_superuser:
+        user_has_access = True
+
+    # 2. اگر کاربر ایجادکننده تیکت است
+    elif ticket.created_by == request.user:
+        user_has_access = True
+
+    # 3. اگر کاربر به تیکت assign شده است
+    elif ticket.assignments_tickets.filter(assignee=request.user).exists():
+        user_has_access = True
+
+    if not user_has_access:
+        messages.error(request, 'شما دسترسی به این تیکت را ندارید.')
+        return redirect('tickets')
+
     # علامت‌گذاری تیکت به عنوان دیده شده اگر کاربر لاگین کرده باشد
     if request.user.is_authenticated:
-        ticket.mark_as_seen(request.user)
-        # همچنین Assignment مربوطه را هم mark_as_seen کن
-        assignment = Assignment.objects.filter(
-            assigned_ticket=ticket,
-            assignee=request.user
-        ).first()
+        # فقط اگر کاربر assignee یا creator است، mark_as_seen کند
+        if ticket.created_by == request.user or ticket.assignments_tickets.filter(assignee=request.user).exists():
+            ticket.mark_as_seen(request.user)
 
-        # if assignment and not assignment.seen_at:
-        #     assignment.mark_as_seen()
+    # اطلاعات دیده شدن‌ها
+    seen_info = ticket.get_all_seen_info()
 
+    # اولین بار دیده شدن توسط کاربر جاری
+    first_seen_by_current_user = ticket.get_first_seen_by_user(request.user)
 
-    all_tickets = Ticket.objects.all().order_by('-created_at')
+    # آیا کاربر جاری فرستنده تیکت است؟
+    is_creator = ticket.created_by == request.user
+
+    # اطلاعات Assignments
+    assignments = ticket.assignments_tickets.select_related('assignee').all()
+
+    # تاریخچه Activity
+    activities = ticket.activities.all()
+
+    # شماره ردیف
+    all_tickets = Ticket.objects.filter(created_by=request.user).order_by('-created_at')
     row_number = 0
     for i, t in enumerate(all_tickets, start=1):
         if t.id == ticket.id:
@@ -770,13 +853,12 @@ def ticket_details(request, id):
 
     attachments = ticket.ticket_attachments.all()
 
-    if not ActivityLog.objects.filter(ticket=ticket).filter(user=request.user).exists():
-
+    # ثبت Activity Log اگر قبلاً ثبت نشده
+    if not ActivityLog.objects.filter(ticket=ticket, user=request.user, action='view').exists():
         ActivityLog.objects.create(
             user=request.user,
             ticket=ticket,
             action='view',
-            # ip_address=request.META['REMOTE_ADDR'],
             ip_address=request.META.get('REMOTE_ADDR'),
         )
 
@@ -789,8 +871,16 @@ def ticket_details(request, id):
         'seen_by': ticket.seen_by,
         'seen_by_display': ticket.seen_by_display,
         'seen_count': ticket.seen_count,
-        'assignments': ticket.assignments_tickets.select_related('assignee').all(),
+        'assignments': assignments,
+        'activities': activities,
+        # اطلاعات جدید
+        'seen_info': seen_info,
+        'first_seen_by_current_user': first_seen_by_current_user,
+        'is_creator': is_creator,
+        'user_has_access': user_has_access,
+        'current_user': request.user,
     }
+
     return render(request, 'ticket-details.html', context)
 
 def ticket_update(request, id):
