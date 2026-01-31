@@ -418,17 +418,36 @@ class ActivityLog(models.Model):
         db_table = 'Tickets-ActivityLogs'
         ordering = ['-created_at']
 
+# class Role(models.Model):
+#     title = models.CharField(max_length=100) #English
+#     persian_title = models.CharField(max_length=100)
+#     # sort = models.PositiveIntegerField(default=0)
+#
+#     def __str__(self):
+#         return f"{self.title}"
+#
+#     class Meta:
+#         verbose_name = 'Role'
+#         verbose_name_plural = 'Roles'
+#         db_table = 'Tickets-Roles'
+
+
+# در فایل models.py (بخش Role)
+
 class Role(models.Model):
-    title = models.CharField(max_length=100) #English
+    title = models.CharField(max_length=100)  # English
     persian_title = models.CharField(max_length=100)
+    level = models.IntegerField(default=0)  # سطح دسترسی (عدد کمتر = سطح بالاتر)
+    sort = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f"{self.title}"
+        return f"{self.persian_title} ({self.title})"
 
     class Meta:
         verbose_name = 'Role'
         verbose_name_plural = 'Roles'
         db_table = 'Tickets-Roles'
+        ordering = ['level']  # مرتب‌سازی بر اساس سطح
 
 class UserRole(TimestampedModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,related_name='user_roles',blank=True)
