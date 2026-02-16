@@ -601,7 +601,7 @@ class TicketNote(models.Model):
         return user == self.created_by
 
     def can_user_delete(self, user):
-        """بررسی آیا کاربر می‌تواند این یادداشت را حذف کند"""
+
         # فقط ایجادکننده اصلی می‌تواند حذف کند
         # حتی ادمین‌ها هم نمی‌توانند حذف کنند
         return user == self.created_by
