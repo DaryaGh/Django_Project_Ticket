@@ -87,7 +87,7 @@
     {% endif %}
 </div>
 
-<!-- Modal حذف کلی attachment ها -->
+
 {% if attachments and editable %}
     <div class="modal fade" id="deleteAllAttachmentsModal" tabindex="-1"
          aria-labelledby="deleteAllAttachmentsModalLabel" aria-hidden="true">
@@ -133,7 +133,7 @@
     </div>
 {% endif %}
 
-<!-- Modals حذف تکی attachment ها -->
+
 {% if attachments %}
     {% for attachment in attachments %}
         <div class="modal fade" id="deleteAttachmentModal{{ attachment.id }}" tabindex="-1"

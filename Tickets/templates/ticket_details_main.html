@@ -1,0 +1,486 @@
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card border-info h-100">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-eye me-2"></i>Ticket View Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <!-- وضعیت کلی -->
+                <div class="mb-3">
+                    <strong>Overall Status :</strong>
+                    {% if ticket.is_seen %}
+                        <span class="badge bg-success">Viewed</span>
+                    {% else %}
+                        <span class="badge bg-warning">Unviewed</span>
+                    {% endif %}
+                </div>
+
+                <!-- آخرین مشاهده -->
+                {% if ticket.seen_at %}
+                    <div class="mb-3">
+                        <strong>Last Viewed::</strong><br>
+                        <span class="text-muted">
+                            By{{ ticket.seen_by_display }}<br>
+                            in {{ ticket.seen_at|date:"Y/m/d H:i" }}<br>
+                            ({{ ticket.seen_at|timesince }} Ago)
+                        </span>
+                    </div>
+                {% endif %}
+
+
+                <div class="mb-3">
+                    <strong>Total Views:</strong>
+                    <span class="badge bg-secondary"> {{ seen_history_count }} </span>
+                </div>
+
+                <!-- اولین مشاهده توسط کاربر جاری -->
+                {% if first_seen_by_current_user %}
+                    <div class="mt-3 p-2 bg-light rounded">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <strong>You first viewed this ticket on:</strong><br>
+                            {{ first_seen_by_current_user|date:"Y/m/d ساعت H:i" }} Viewed.
+                        </small>
+                    </div>
+                {% endif %}
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="btn-group">
+                        {% if not is_seen_by_current_user %}
+                            <button class="btn btn-info mark-seen-btn"
+                                    data-ticket-id="{{ ticket.id }}">
+                                <i class="bi bi-eye me-1"></i> Mark as Seen
+                            </button>
+                        {% endif %}
+
+                        <button class="btn btn-outline-secondary seen-history-btn"
+                                data-ticket-id="{{ ticket.id }}"
+                                data-bs-toggle="modal"
+                                data-bs-target="#seenHistoryModal">
+                            <i class="bi bi-clock-history me-1"></i> Seen History
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- اطلاعات اصلی تیکت -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <strong class="text-muted d-block mb-1">
+                <i class="bi bi-hash me-1"></i>شماره ردیف:
+            </strong>
+            <span class="badge bg-info fs-6">{{ row_number }}</span>
+        </div>
+
+        <div class="mb-3">
+            <strong class="text-muted d-block mb-1">
+                <i class="bi bi-chat-left-text me-1"></i>موضوع:
+            </strong>
+            <p class="fs-5 fw-semibold mt-1 text-dark">{{ ticket.subject }}</p>
+        </div>
+
+        <div class="mb-3">
+            <strong class="text-muted d-block mb-1">
+                <i class="bi bi-person-circle me-1"></i>فرستنده:
+            </strong>
+            <div class="d-flex align-items-center mt-1">
+                <i class="bi bi-person me-2"></i>
+                <span>
+                    {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}
+                    {% if is_creator %}
+                        <span class="badge bg-primary ms-2">شما</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <strong class="text-muted d-block mb-1">
+                <i class="bi bi-flag me-1"></i>اولویت:
+            </strong>
+            <span class="badge text-white mt-1 px-3 py-2"
+                  style="background-color: {{ ticket.get_priority_color }}">
+                <i class="bi bi-flag-fill me-1"></i>
+                {{ ticket.get_priority_display }}
+            </span>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="mb-3">
+            <strong class="text-muted d-block mb-1">
+                <i class="bi bi-calendar-plus me-1"></i>تاریخ ایجاد:
+            </strong>
+            <div class="d-flex align-items-center mt-1">
+                <i class="bi bi-clock-history me-2"></i>
+                <span>{{ ticket.created_at|date:"Y/m/d H:i" }}</span>
+                <small class="text-muted ms-2">({{ ticket.created_at|timesince }} پیش)</small>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <strong class="text-muted d-block mb-1">
+                <i class="bi bi-calendar-check me-1"></i>آخرین بروزرسانی:
+            </strong>
+            <div class="d-flex align-items-center mt-1">
+                <i class="bi bi-clock me-2"></i>
+                <span>{{ ticket.updated_at|date:"Y/m/d H:i" }}</span>
+                <small class="text-muted ms-2">({{ ticket.updated_at|timesince }} پیش)</small>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <strong class="text-muted d-block mb-1">
+                <i class="bi bi-clock me-1"></i>مهلت پاسخ:
+            </strong>
+            <div class="d-flex align-items-center mt-1">
+                <i class="bi bi-calendar-x me-2"></i>
+                <span class="{% if ticket.is_expired %}text-danger{% endif %}">
+                    {{ ticket.max_replay_date|date:"Y/m/d H:i" }}
+                    {% if ticket.is_expired %}
+                        <span class="badge bg-danger ms-2">منقضی شده</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <strong class="text-muted d-block mb-1">
+                <i class="bi bi-tag me-1"></i>دسته‌بندی:
+            </strong>
+            <p class="mt-1">
+                {% if ticket.category %}
+                    <span class="badge bg-secondary">
+                        {{ ticket.category.name }}
+                    </span>
+                {% else %}
+                    <span class="text-muted">بدون دسته‌بندی</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- توضیحات تیکت -->
+{% if ticket.description %}
+    <div class="mt-4 pt-3 border-top">
+        <h5 class="text-muted mb-3">
+            <i class="bi bi-card-text me-2"></i>توضیحات
+        </h5>
+        <div class="mt-2 p-3 bg-light rounded">
+            {{ ticket.description|linebreaks }}
+        </div>
+    </div>
+{% endif %}
+
+<!-- افراد Assign شده -->
+<div class="mt-4 pt-3 border-top">
+    <h5 class="text-muted mb-3">
+        <i class="bi bi-people me-2"></i>افراد مسئول
+    </h5>
+    <div class="list-group">
+        {% for assignment in assignments %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    {{ assignment.assignee.get_full_name|default:assignment.assignee.username }}
+                    {% if assignment.seen_at %}
+                        <small class="text-muted ms-2">
+                            <i class="bi bi-eye text-success"></i>
+                            مشاهده شده در {{ assignment.seen_at|date:"H:i" }}
+                        </small>
+                    {% else %}
+                        <small class="text-muted ms-2">
+                            <i class="bi bi-eye-slash text-warning"></i>
+                            هنوز مشاهده نکرده
+                        </small>
+                    {% endif %}
+                </div>
+                <span class="badge" style="background: {{ assignment.get_status_color }}">
+                    {{ assignment.get_status_display }}
+                </span>
+            </div>
+        {% empty %}
+            <div class="list-group-item text-muted text-center">
+                هنوز فردی به این تیکت اختصاص داده نشده است.
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- تاریخچه فعالیت‌ها -->
+<div class="mt-4 pt-3 border-top">
+    <h5 class="text-muted mb-3">
+        <i class="bi bi-clock-history me-2"></i>تاریخچه فعالیت‌ها
+    </h5>
+    <div class="timeline">
+        {% for activity in activities|slice:":5" %}
+            <div class="timeline-item mb-3">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <div class="timeline-title">
+                        <strong>{{ activity.user.get_full_name|default:activity.user.username }}</strong>
+                        {{ activity.get_action_display }}
+                        {% if activity.field %}
+                            <small class="text-muted">
+                                ({{ activity.field }}:
+                                {{ activity.old_value|default:"—" }} →
+                                {{ activity.new_value|default:"—" }})
+                            </small>
+                        {% endif %}
+                    </div>
+                    <div class="timeline-date">
+                        {{ activity.created_at|date:"Y/m/d H:i" }}
+                        <small class="text-muted">({{ activity.created_at|timesince }} پیش)</small>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="text-center text-muted py-3">
+                هیچ فعالیتی ثبت نشده است.
+            </div>
+        {% endfor %}
+
+        {% if activities.count > 5 %}
+            <div class="text-center mt-3">
+                <a href="#" class="btn btn-sm btn-outline-secondary view-more-activities">
+                    مشاهده فعالیت‌های بیشتر ({{ activities.count|add:"-5" }})
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 40px;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 15px;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -40px;
+        top: 5px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #007bff;
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px #007bff;
+    }
+
+    .timeline-content {
+        background: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 8px;
+        border-left: 3px solid #007bff;
+    }
+
+    .timeline-title {
+        font-weight: 500;
+        margin-bottom: 5px;
+        font-size: 0.95rem;
+    }
+
+    .timeline-date {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    .card {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('🎯 Mark as Seen System Loading...');
+
+        // تابع برای دریافت CSRF token با روش ایمن‌تر
+        function getCSRFToken() {
+            // روش اول: از کوکی
+            const cookieValue = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+
+            if (cookieValue) return cookieValue;
+
+            // روش دوم: از تگ متا
+            const metaToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (metaToken) return metaToken;
+
+            // روش سوم: از فیلد hidden
+            const inputToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+            if (inputToken) return inputToken;
+
+            console.warn('⚠️ CSRF token پیدا نشد!');
+            return '';
+        }
+
+        // تابع اصلی mark as seen
+        function handleMarkAsSeen(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const button = event.currentTarget;
+            const ticketId = button.dataset.ticketId;
+
+            console.log('🎯 دکمه کلیک شد برای تیکت:', ticketId);
+
+            // تایید از کاربر
+            if (!confirm('آیا می‌خواهید این تیکت را به عنوان دیده شده علامت‌گذاری کنید؟')) {
+                return;
+            }
+
+            // ذخیره متن اصلی
+            const originalText = button.innerHTML;
+            const originalClasses = button.className;
+
+            // تغییر حالت دکمه
+            button.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> در حال پردازش...';
+            button.className = 'btn btn-secondary';
+            button.disabled = true;
+
+            // دریافت CSRF token
+            const csrfToken = getCSRFToken();
+
+            if (!csrfToken) {
+                showErrorMessage('❌ خطای امنیتی: CSRF token یافت نشد');
+                resetButton(button, originalText, originalClasses);
+                return;
+            }
+
+            // ارسال درخواست AJAX
+            fetch(`/ticket/${ticketId}/mark-seen/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+                .then(response => {
+                    console.log('📡 وضعیت پاسخ:', response.status);
+
+                    if (response.status === 403) {
+                        throw new Error('دسترسی غیرمجاز. لطفا مجدد لاگین کنید.');
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('📡 پاسخ سرور:', data);
+
+                    if (data.success) {
+                        // نمایش پیام موفقیت
+                        showSuccessMessage('✅ تیکت با موفقیت علامت‌گذاری شد!');
+
+                        // تغییر ظاهر تمام دکمه‌های mark-seen این تیکت
+                        document.querySelectorAll(`.mark-seen-btn[data-ticket-id="${ticketId}"]`).forEach(btn => {
+                            btn.innerHTML = '<i class="bi bi-eye-fill me-1"></i> دیده شد';
+                            btn.className = 'btn btn-success';
+                            btn.disabled = true;
+                        });
+
+                        // به‌روزرسانی وضعیت در صفحه بدون رفرش کامل
+                        setTimeout(() => {
+                            updateTicketStatus();
+                        }, 1000);
+                    } else {
+                        throw new Error(data.message || 'عملیات ناموفق بود');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ خطا:', error);
+
+                    // بازگرداندن دکمه به حالت اول
+                    resetButton(button, originalText, originalClasses);
+
+                    // نمایش خطا
+                    showErrorMessage('❌ خطا: ' + error.message);
+                });
+        }
+
+        // تابع بازگرداندن دکمه
+        function resetButton(button, originalText, originalClasses) {
+            button.innerHTML = originalText;
+            button.className = originalClasses;
+            button.disabled = false;
+        }
+
+        // تابع به‌روزرسانی وضعیت تیکت
+        function updateTicketStatus() {
+            // می‌توانید با AJAX بخش‌های مورد نیاز را به‌روز کنید
+            // یا به سادگی رفرش کنید:
+            window.location.reload();
+        }
+
+        // توابع نمایش پیام
+        function showSuccessMessage(message) {
+            showMessage(message, 'success');
+        }
+
+        function showErrorMessage(message) {
+            showMessage(message, 'danger');
+        }
+
+        function showMessage(message, type) {
+            // استفاده از toast bootstrap به جای alert
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) {
+                const container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+            `;
+                document.body.appendChild(container);
+            }
+
+            const toastId = 'toast-' + Date.now();
+            const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+
+            document.getElementById('toast-container').insertAdjacentHTML('afterbegin', toastHtml);
+
+            // فعال کردن toast
+            const toastElement = new bootstrap.Toast(document.getElementById(toastId));
+            toastElement.show();
+        }
+
+        // اضافه کردن event listener به دکمه‌ها
+        const markSeenButtons = document.querySelectorAll('.mark-seen-btn');
+        console.log('🔍 تعداد دکمه‌های mark-seen پیدا شده:', markSeenButtons.length);
+
+        markSeenButtons.forEach(button => {
+            button.addEventListener('click', handleMarkAsSeen);
+        });
+
+        console.log('🎯 Mark as Seen System Loaded Successfully');
+    });
+</script>

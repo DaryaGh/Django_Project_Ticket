@@ -1,400 +1,170 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load ticket-filter %}
+{% load humanize %}
 
-{% block  title %}
+{% block title %}
     {{ ticket.subject }} - {{ ticket.tracking_code }}
 {% endblock %}
 
 {% block content %}
     <div class="container-lg mt-4">
         <div class="row justify-content-center">
-            <div class="col-md-10 col-lg-8">
-                <div class="card shadow-lg border-success">
-                    <div class="card-header bg-success text-white border-success">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h4 class="mb-0">
-                                <i class="bi bi-ticket-detailed-fill me-2"></i>
-                                Ticket Details
-                            </h4>
+            <div class="col-md-12 col-lg-10">
+                <div class="card shadow-lg">
+                    <div class="card-header bg-primary text-white p-0">
+                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                            <div>
+                                <h4 class="mb-0">
+                                    <i class="bi bi-ticket-detailed-fill me-2"></i>
+                                    Ticket Details
+                                </h4>
+                                <small class="opacity-75">#{{ ticket.tracking_code }}</small>
+                            </div>
                             <div class="d-flex align-items-center gap-2">
-                                <span class="badge bg-light text-dark fs-6">#{{ ticket.tracking_code }}</span>
                                 {% if ticket.is_seen %}
                                     <span class="badge bg-success">
-                                        <i class="bi bi-eye-fill me-1"></i>Seen
-                                        <small class="ms-1">by {{ ticket.seen_by_display }}</small>
-                                    </span>
+                                    <i class="bi bi-eye-fill me-1"></i>Seen
+                                </span>
                                 {% else %}
                                     <span class="badge bg-warning">
-                                        <i class="bi bi-eye-slash me-1"></i>Unseen
-                                    </span>
+                                    <i class="bi bi-eye-slash me-1"></i>Un Seen
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+
+                        <ul class="nav nav-tabs border-bottom-0" id="ticketTabs">
+                            <li class="nav-item">
+                                <button class="nav-link active text-white" id="details-tab"
+                                        data-bs-toggle="tab" data-bs-target="#details-tab-pane"
+                                        type="button">
+                                    <i class="bi bi-info-circle me-1"></i>Ticket Details
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link text-white" id="notes-tab"
+                                        data-bs-toggle="tab" data-bs-target="#notes-tab-pane"
+                                        type="button">
+                                    <i class="bi bi-journal-text me-1"></i>Notes
+                                    {% if notes %}
+                                        <span class="badge bg-light text-dark ms-1">{{ notes|length }}</span>
+                                    {% endif %}
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link text-white" id="attachments-tab"
+                                        data-bs-toggle="tab" data-bs-target="#attachments-tab-pane"
+                                        type="button">
+                                    <i class="bi bi-paperclip me-1"></i>Attachment
+                                    {% if attachments %}
+                                        <span class="badge bg-light text-dark ms-1">{{ attachments|length }}</span>
+                                    {% endif %}
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div class="tab-content" id="ticketTabContent">
+                            <div class="tab-pane fade show active p-4" id="details-tab-pane"
+                                 role="tabpanel" tabindex="0">
+                                {% include 'ticket_details_main.html' %}
+                            </div>
+
+                            <div class="tab-pane fade p-4" id="notes-tab-pane"
+                                 role="tabpanel" tabindex="0">
+                                {% if user_has_access %}
+                                    {% include 'ticket_notes_details.html' %}
+                                {% else %}
+                                    <div class="alert alert-warning text-center">
+                                        <i class="bi bi-shield-lock fs-4"></i>
+                                        <h5 class="mt-3">دسترسی محدود</h5>
+                                        <p>شما دسترسی مشاهده یادداشت‌های این تیکت را ندارید.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="tab-pane fade p-4" id="attachments-tab-pane"
+                                 role="tabpanel" tabindex="0">
+                                {% if attachments %}
+                                    {% include 'attachment_preview.html' with attachments=attachments editable=False %}
+                                {% else %}
+                                    <div class="text-center text-muted py-5">
+                                        <i class="bi bi-paperclip display-4"></i>
+                                        <h5 class="mt-3">No Attachment</h5>
+                                        <p>No Attachment in Ticket</p>
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
 
-                    <div class="card-body border-success">
-                        <!-- Seen Information Banner -->
-                        <div class="alert {% if ticket.is_seen %}alert-success{% else %}alert-warning{% endif %} mb-4">
-                            <div class="d-flex align-items-center">
-                                <i class="bi {% if ticket.is_seen %}bi-eye-fill{% else %}bi-eye-slash-fill{% endif %} me-3 fs-4"></i>
-                                <div>
-                                    <h6 class="mb-1">
-                                        {% if ticket.is_seen %}
-                                            ✅ این تیکت دیده شده است
-                                        {% else %}
-                                            ⚠️ این تیکت هنوز دیده نشده است
-                                        {% endif %}
-                                    </h6>
-                                    <p class="mb-0">
-                                        {% if ticket.is_seen %}
-                                            <strong>دیده شده توسط:</strong> {{ ticket.seen_by_display }}<br>
-                                            <strong>زمان مشاهده:</strong> {{ ticket.seen_at|date:"Y/m/d H:i" }}<br>
-                                            <strong>بعد از ایجاد:</strong>
-                                            {{ ticket.created_at|timesince:ticket.seen_at }} بعد
-                                        {% else %}
-                                            شما اولین نفری هستید که این تیکت را مشاهده می‌کنید.
-                                            تیکت به طور خودکار به عنوان "دیده شده" علامت‌گذاری خواهد شد.
-                                        {% endif %}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Basic Information -->
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <strong class="text-muted d-block mb-1">
-                                        <i class="bi bi-hash me-1"></i>Row Number:
-                                    </strong>
-                                    <span class="badge bg-info fs-6">{{ row_number }}</span>
-                                </div>
-
-                                <div class="mb-3">
-                                    <strong class="text-muted d-block mb-1">
-                                        <i class="bi bi-chat-left-text me-1"></i>Subject:
-                                    </strong>
-                                    <p class="fs-5 fw-semibold mt-1 text-dark">{{ ticket.subject }}</p>
-                                </div>
-
-                                <div class="mb-3">
-                                    <strong class="text-muted d-block mb-1">
-                                        <i class="bi bi-person-circle me-1"></i>Created By:
-                                    </strong>
-                                    <div class="d-flex align-items-center mt-1">
-                                        <i class="bi bi-person me-2"></i>
-                                        <span>{{ ticket.created_by.username }}</span>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <strong class="text-muted d-block mb-1">
-                                        <i class="bi bi-flag me-1"></i>Priority:
-                                    </strong>
-                                    <span class="badge text-white mt-1 px-3 py-2"
-                                          style="background-color: {{ ticket.get_priority_color }}">
-                                        <i class="bi bi-flag-fill me-1"></i>
-                                        {{ ticket.get_priority_display }}
-                                    </span>
-                                </div>
-
-                                <div class="mb-3">
-                                    <strong class="text-muted d-block mb-1">
-                                        <i class="bi bi-tag me-1"></i>Category:
-                                    </strong>
-                                    <p class="mt-1">
-                                        {% if ticket.category %}
-                                            <span class="badge bg-secondary">
-                                                {{ ticket.category.name }}
-                                            </span>
-                                        {% else %}
-                                            <span class="text-muted">بدون دسته‌بندی</span>
-                                        {% endif %}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <strong class="text-muted d-block mb-1">
-                                        <i class="bi bi-calendar-plus me-1"></i>Created At:
-                                    </strong>
-                                    <div class="d-flex align-items-center mt-1">
-                                        <i class="bi bi-clock-history me-2"></i>
-                                        <span>{{ ticket.created_at|date:"Y/m/d H:i" }}</span>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <strong class="text-muted d-block mb-1">
-                                        <i class="bi bi-calendar-check me-1"></i>Updated At:
-                                    </strong>
-                                    <div class="d-flex align-items-center mt-1">
-                                        <i class="bi bi-clock me-2"></i>
-                                        <span>{{ ticket.updated_at|timesince }} ago</span>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <strong class="text-muted d-block mb-1">
-                                        <i class="bi bi-clock me-1"></i>Max Reply Date:
-                                    </strong>
-                                    <div class="d-flex align-items-center mt-1">
-                                        <i class="bi bi-calendar-x me-2"></i>
-                                        <span class="{% if ticket.is_expired %}text-danger{% endif %}">
-                                            {{ ticket.max_replay_date|date:"Y/m/d" }}
-                                            {% if ticket.is_expired %}
-                                                <span class="badge bg-danger ms-2">Expired</span>
-                                            {% endif %}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <strong class="text-muted d-block mb-1">
-                                        <i class="bi bi-tags me-1"></i>Tags:
-                                    </strong>
-                                    <div class="mt-1">
-                                        {% if ticket.tags.all %}
-                                            {% for tag in ticket.tags.all %}
-                                                <span class="badge bg-info me-1 mb-1">
-                                                    <i class="bi bi-tag-fill me-1"></i>{{ tag.name }}
-                                                </span>
-                                            {% endfor %}
-                                        {% else %}
-                                            <span class="text-muted">بدون تگ</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <strong class="text-muted d-block mb-1">
-                                        <i class="bi bi-fingerprint me-1"></i>Ticket ID:
-                                    </strong>
-                                    <code class="bg-light p-2 rounded d-inline-block mt-1">{{ ticket.id }}</code>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Description -->
-                        {% if ticket.description %}
-                            <div class="mt-4 pt-3 border-top">
-                                <h5 class="text-muted mb-3">
-                                    <i class="bi bi-card-text me-2"></i>Description
-                                </h5>
-                                <div class="mt-2 p-3 bg-light rounded">
-                                    {{ ticket.description|linebreaks }}
-                                </div>
-                            </div>
-                        {% endif %}
-
-                        <!-- Attachments -->
-                        {% if attachments %}
-                            <div class="mt-4 pt-3 border-top">
-                                <h5 class="text-muted mb-3">
-                                    <i class="bi bi-paperclip me-2"></i>Attachments
-                                </h5>
-                                {% include 'attachment_preview.html' with attachments=attachments editable=False %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="card-footer border-success">
+                    <div class="card-footer bg-light">
                         <div class="d-flex justify-content-between align-items-center">
-                            <a href="{% url 'tickets' %}" class="btn btn-success">
-                                <i class="bi bi-arrow-left me-1"></i> Back to Tickets List
+                            <a href="{% url 'tickets' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Back to List
                             </a>
                             <div class="btn-group">
-                                <a href="{% url 'tickets-update' ticket.id %}" class="btn btn-warning">
-                                    <i class="bi bi-pencil-square me-1"></i> Edit
-                                </a>
-
-                                {% if not ticket.is_seen and request.user.is_authenticated %}
-                                    <button type="button" class="btn btn-info mark-seen-btn"
-                                            data-ticket-id="{{ ticket.id }}">
-                                        <i class="bi bi-eye me-1"></i> Mark as Seen
+                                {% if user_has_access %}
+                                    <a href="{% url 'tickets-update' ticket.id %}"
+                                       class="btn btn-warning">
+                                        <i class="bi bi-pencil-square me-1"></i> Edit
+                                    </a>
+                                {% endif %}
+                                {% if user_has_access %}
+                                    <button type="button"
+                                            class="btn btn-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteModal">
+                                        <i class="bi bi-trash3 me-1"></i> Delete
                                     </button>
                                 {% endif %}
-
-                                <button type="button"
-                                        class="btn btn-danger"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#deleteModal">
-                                    <i class="bi bi-trash3 me-1"></i> Delete
-                                </button>
                             </div>
                         </div>
                     </div>
-                    {#                ------------------------------------------------------------------------------------------------------#}
-                    {#                    <ul class="list-group mt-5">#}
-                    {#                activities نام relation-name در model ticket است#}
-                    {#                        {% for log in ticket.activities.all %}#}
-                    {#                            <li class="list-group-item">#}
-                    {#                                <strong>{{ log.user }}</strong>#}
-                    {#                                {{ log.get_action_display }}#}
-                    {#                                {% if log.field %}#}
-                    {#                                    ({{ log.field }} : "{{ log.old_value }}" -> "{{ log.new_value }}")#}
-                    {#                                {% endif %}#}
-                    {#                                <br>#}
-                    {#                                <small class="text-muted">{{ log.created_at }}</small>#}
-                    {#                            </li>#}
-                    {#                        {% endfor %}#}
-                    {#                    </ul>#}
-                    {#                ------------------------------------------------------------------------------------------------------#}
-                    {#                    <div class="list-group my-3">#}
-                    {#                        {% for a in ticket.assignments.all %}#}
-                    {#                            <div class="list-group-item">#}
-                    {#                            {{ a.assignee.username }}#}
-                    {#                            <span class="badge bg-primary">#}
-                    {#                                {{ a.status }}#}
-                    {#                            </span>#}
-                    {#                            <div class="alert alert-info my-2" role="alert">#}
-                    {#                               {{ a.description }}#}
-                    {#                            </div>#}
-                    {#                            </div>#}
-                    {#                        {% endfor %}#}
-                    {#                    </div>#}
-                    <div class="list-group my-3">
-                        {% for assignment in assignments %}
-                            <div class="list-group-item">
-                                {{ assignment.assignee.username|default:"بدون نام" }}
-                                <span class="badge bg-primary">
-                                    {{ assignment.status|default:"—" }}
-                                </span>
-                                {% if assignment.description %}
-                                    <div class="alert alert-info my-2" role="alert">
-                                        {{ assignment.description|linebreaksbr }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        {% empty %}
-                            <div class="list-group-item text-muted">
-                                هنوز کاربری به این تیکت اختصاص داده نشده است.
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <ul class="list-group mt-5">
-                        {% for log in ticket.activities.all %}
-                            <li class="list-group-item">
-                                <strong>{{ log.user }}</strong>
-                                {{ log.get_action_display }}
-                                {% if log.field %}
-                                    <small class="ms-2">
-                                        ({{ log.field }} :
-                                        {{ log.old_value|format_with_highlight:log.new_value }}
-                                    </small>
-                                {% endif %}
-                                <br>
-                                <small class="text-muted">{{ log.created_at }}</small>
-                            </li>
-                        {% endfor %}
-                    </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Delete Confirmation -->
     {% include 'ModelDeleteConformationTicketDetails.html' %}
-    <!-- JavaScript for Mark as Seen -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Mark as Seen button functionality
-            const markSeenBtn = document.querySelector('.mark-seen-btn');
-            if (markSeenBtn) {
-                markSeenBtn.addEventListener('click', function () {
-                    const ticketId = this.dataset.ticketId;
-                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-                    fetch(`/ticket/${ticketId}/seen/`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': csrfToken,
-                            'Content-Type': 'application/json',
-                        }
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                // Reload the page to show updated status
-                                location.reload();
-                            } else {
-                                alert('خطا: ' + data.message);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('خطایی رخ داد. لطفاً دوباره تلاش کنید.');
-                        });
-                });
-            }
-
-            // Auto-refresh page after 30 seconds if ticket is unseen
-            {% if not ticket.is_seen and request.user.is_authenticated %}
-                setTimeout(function () {
-                    location.reload();
-                }, 30000); // 30 seconds
-            {% endif %}
-        });
-    </script>
+    {% include 'seen_history_modal.html' %}
 
     <style>
-        .char-removed {
-            background-color: #fff3cd;
-            color: #856404;
-            text-decoration: line-through;
-            padding: 0 2px;
-            border-radius: 2px;
-            margin: 0 1px;
-        }
 
-        .char-added {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 0 2px;
-            border-radius: 2px;
-            margin: 0 1px;
-            font-weight: bold;
-        }
-
-        .old-text {
-            color: #6c757d;
-        }
-
-        .new-text {
-            color: #198754;
-        }
-
-        .fas.fa-arrow-right {
-            font-size: 0.8em;
-            vertical-align: middle;
-        }
-
-        .card {
-            border-width: 2px;
-        }
-
-        .badge {
-            font-size: 0.9em;
-        }
-
-        .alert {
-            border-radius: 10px;
+        .nav-tabs .nav-link {
+            color: rgba(255, 255, 255, 0.8);
             border: none;
-        }
-
-        .list-group-item {
-            border-left: none;
-            border-right: none;
             border-radius: 0;
+            padding: 12px 20px;
+            transition: all 0.3s;
         }
 
-        .list-group-item:first-child {
-            border-top: none;
+        .nav-tabs .nav-link:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
         }
 
-        .list-group-item:last-child {
-            border-bottom: none;
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            background: white;
+            border-bottom: 3px solid #0d6efd;
+        }
+
+        .nav-tabs .nav-link.active:hover {
+            color: #0d6efd;
+        }
+
+
+        .nav-tabs .nav-item {
+            margin-bottom: -1px;
+        }
+
+        .tab-content {
+            min-height: 500px;
         }
     </style>
 {% endblock %}

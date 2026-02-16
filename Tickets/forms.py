@@ -1,8 +1,10 @@
 from django import forms
 from django.contrib.auth.models import User
-from Tickets.models import Ticket, UserRole
+# from Tickets.models import Ticket, UserRole, TicketNote
+from Tickets.models import Ticket, TicketNote
 from django.core.exceptions import ValidationError
 import re
+from Tickets.services.permissions import get_assignees
 
 class MultiFileInput(forms.ClearableFileInput):
     allow_multiple_selected = True
@@ -76,37 +78,63 @@ class TicketForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop('request', None)  # ★ این خط رو اضافه کن
+        self.request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
+
+
         for field in self.fields.values():
             field.required = False
             field.widget.attrs.update({
-                'class': 'form-control'
+                    'class': 'form-control'
             })
 
-            # ★ این ۲ خط رو اضافه کن (محدود کردن لیست کاربران)
+
         if self.request and self.request.user.is_authenticated:
             self.fields['users'].queryset = self.get_allowed_users()
 
+
+        if self.instance and self.instance.pk:
+                # اگر در حال ویرایش هستیم، کاربران assign شده فعلی را بگیر
+            current_assignees = self.instance.assignments_tickets.values_list(
+                'assignee_id', flat=True
+            )
+            self.fields['users'].initial = list(current_assignees)
         ticket = kwargs.get("instance")
-        # if ticket:
-        #     self.fields['users'].initial = ticket.assignments.values_list(
-        #         'assigned_id', flat=True
-        #     )
+
         if ticket:
             self.fields['users'].initial = ticket.assignments_tickets.values_list(
                 'assigned_ticket_id', flat=True
             )
+        # if self.request and self.request.user.is_authenticated:
+        #     allowed_users = get_assignees(self.request.user)
+        #
+        #     if isinstance(allowed_users, list):
+        #         user_ids = [user.id if hasattr(user , 'id') else user for user in allowed_users]
+        #         self.fields['users'].queryset = User.objects.filter(id__in=user_ids)
+        #     else :
+        #         self.fields['users'].queryset = allowed_users
+        # else:
+        #     self.fields['users'].querset = User.objects.none()
+
+    # def get_allowed_users(self):
+    #     """فقط کاربران پایین‌تر از سطح کاربر فعلی"""
+    #     current_role = UserRole.objects.filter(user=self.request.user).first()
+    #     if current_role:
+    #         # کاربران با level بالاتر یا مساوی (عدد کمتر = سطح بالاتر)
+    #         return User.objects.filter(
+    #             user_roles__role__level__gte=current_role.role.level
+    #         ).exclude(id=self.request.user.id).distinct()
+    #     return User.objects.none()
+
+    # def get_allowed_users(self):
+    #     """فقط کاربران پایین‌تر از سطح کاربر فعلی"""
+    #     from services.permissions import get_assignees
+    #
+    #     return get_assignees(self.request.user)
 
     def get_allowed_users(self):
         """فقط کاربران پایین‌تر از سطح کاربر فعلی"""
-        current_role = UserRole.objects.filter(user=self.request.user).first()
-        if current_role:
-            # کاربران با level بالاتر یا مساوی (عدد کمتر = سطح بالاتر)
-            return User.objects.filter(
-                user_roles__role__level__gte=current_role.role.level
-            ).exclude(id=self.request.user.id).distinct()
-        return User.objects.none()
+        return get_assignees(self.request.user)
 
 class RegisterForm(forms.ModelForm):
     password1 = forms.CharField(
@@ -177,3 +205,28 @@ class RegisterForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+class TicketNoteForm(forms.ModelForm):
+    class Meta:
+        model = TicketNote
+        fields = ['content', 'is_private']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Write your note here...'
+            }),
+            'is_private': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            })
+        }
+        labels = {
+            'content': 'Note text',
+            'is_private': 'Private (staff only)'
+        }
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # اطمینان از اینکه فیلدها required هستند
+        self.fields['content'].required = True

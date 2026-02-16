@@ -1,0 +1,1151 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load highlight %}
+{% load button_tags %}
+{% load alert_tags %}
+
+{% block title %}
+    Index
+{% endblock %}
+
+{% block content %}
+    <div class="container-lg">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>All Tickets</h2>
+
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="view-mode" id="table-view" autocomplete="off" checked>
+                <label class="btn btn-outline-secondary" for="table-view">
+                    <i class="bi bi-table"></i>
+                </label>
+
+                <input type="radio" class="btn-check" name="view-mode" id="card-view" autocomplete="off">
+                <label class="btn btn-outline-secondary" for="card-view">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                </label>
+            </div>
+
+            {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
+                <a href="{% url 'tickets-create' %}" class="btn btn-success">
+                    <i class="fas fa-plus me-1"></i>
+                    New Ticket
+                </a>
+            {% endif %}
+        </div>
+
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% include 'ticket-search.html' %}
+
+        <form method="post" action="{% url 'tickets' %}" id="mainBulkForm">
+            {% csrf_token %}
+
+
+            <div class="card shadow-sm mb-3">
+                <div class="card-body py-2">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="selectAllBtn">
+                            <i class="fas fa-check-square me-1"></i>All Choose
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="deselectAllBtn">
+                            <i class="fas fa-square me-1"></i>Cancel
+                        </button>
+
+
+                        <div class="dropdown d-inline-block">
+                            <button class="btn btn-danger btn-sm dropdown-toggle" type="button"
+                                    id="bulkActionBtn" data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                <i class="fas fa-trash me-1"></i> Group operations
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="bulkActionBtn">
+                                <li>
+                                    <button class="dropdown-item text-danger bulk-delete-btn" type="button"
+                                            data-action="delete_selected">
+                                        <i class="fas fa-trash me-2"></i>Delete Selected
+                                    </button>
+                                </li>
+                                <li>
+                                    {% if request.user.is_superuser or request.user.is_staff %}
+                                        <button class="dropdown-item text-danger bulk-delete-btn" type="button"
+                                                data-action="delete_all_tickets">
+                                            <i class="fas fa-bomb me-2"></i> Clear all tickets
+                                        </button>
+                                    {% endif %}
+                                </li>
+                                {% if has_active_filters %}
+                                    <li>
+                                        <button class="dropdown-item text-warning bulk-delete-btn" type="button"
+                                                data-action="delete_filtered">
+                                            <i class="fas fa-filter me-2"></i> Clear search results
+                                        </button>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+
+                        <span class="badge bg-info ms-2" id="selectedCountBadge" style="display: none;">
+                    <span id="selectedCount">0</span> Selected item
+                </span>
+                    </div>
+                </div>
+            </div>
+
+            {# Table View #}
+            <div id="table-view-container">
+                <div class="card shadow">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped text-center align-middle table-hover mb-0">
+                                <thead class="table-secondary">
+                                <tr>
+                                    <th scope="col" width="50">
+                                        <input type="checkbox" id="selectAll" class="form-check-input">
+                                    </th>
+                                    {% for col,label in columns %}
+                                        <th scope="col" class="
+                                                {% if col == 'row' or col == 'id' or col == 'created_at' %}d-none d-md-table-cell
+                                                {% elif col == 'priority' %}d-none d-sm-table-cell
+                                                {% elif col == 'category__name' or col == 'tags' or col == 'assignees' %}d-none d-lg-table-cell
+                                                {% elif col == 'max_replay_date' %}d-none d-xl-table-cell
+                                                {% endif %}
+                                        ">
+                                            <div class="table-header-content">
+                                                {% if col == 'row' %}<i class="bi bi-list-ol"></i>
+                                                {% elif col == 'id' %}<i class="bi bi-sort-down"></i>
+                                                {% elif col == 'tracking_code' %}<i class="bi bi-hash"></i>
+                                                {% elif col == 'subject' %}<i class="bi bi-search"></i>
+                                                {% elif col == 'created_by' %}<i class="bi bi-person"></i>
+                                                {% elif col == 'priority' %}<i class="bi bi-flag"></i>
+                                                {% elif col == 'category__name' %}<i class="bi bi-tags"></i>
+                                                {% elif col == 'tags' or col == 'assignees' %}
+                                                    <i class="bi bi-circle-fill"></i>
+                                                {% elif col == 'max_replay_date' or col == 'created_at' %}
+                                                    <i class="bi bi-calendar"></i>
+                                                {% endif %}
+
+                                                {% if col == 'row' %}
+                                                    <span class="text-success">{{ label }}</span>
+                                                {% else %}
+                                                    <a href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&sort={{ col }}&dir={% if sort == col and direction == 'asc' %}desc{% else %}asc{% endif %}"
+                                                       class="text-decoration-none text-success">
+                                                        {{ label }}
+                                                        {% if sort == col %}
+                                                            {% if direction == 'asc' %}
+                                                                <i class="bi bi-arrow-up-short"></i>
+                                                            {% else %}
+                                                                <i class="bi bi-arrow-down-short"></i>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </th>
+                                    {% endfor %}
+                                    <th scope="col" class="d-none d-sm-table-cell">
+                                        <div class="table-header-content">
+                                            <i class="bi bi-eye"></i>
+                                            <a href="?q={{ search_query }}&category={{ selected_category }}&priority={{ selected_priority }}&sort=seen_at&dir={% if sort == 'seen_at' and direction == 'asc' %}desc{% else %}asc{% endif %}"
+                                               class="text-decoration-none text-success">
+                                                Seen Status
+                                                {% if sort == 'seen_at' %}
+                                                    {% if direction == 'asc' %}
+                                                        <i class="bi bi-arrow-up-short"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-arrow-down-short"></i>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </a>
+                                        </div>
+                                    </th>
+                                    <th scope="col">
+                                        <div class="table-header-content text-success">
+                                            <i class="bi bi-gear"></i>
+                                            <span>Actions</span>
+                                        </div>
+                                    </th>
+                                </tr>
+                                </thead>
+                                <tbody class="table-group-divider">
+                                {% for item in ticket_extra_info %}
+                                    <tr class="{% if item.is_unseen_for_current_user %}table-warning{% endif %}">
+                                        <td>
+                                            <input type="checkbox" name="selected_tickets"
+                                                   value="{{ item.ticket.id }}"
+                                                   class="form-check-input ticket-checkbox">
+                                        </td>
+
+                                        <td class="d-none d-md-table-cell">{{ forloop.counter }}</td>
+                                        <td>{{ item.ticket.tracking_code|highlight:search_query }}</td>
+
+
+                                        <td class="text-start">
+                                            <a href="{% url 'tickets-details' item.ticket.pk %}"
+                                               class="btn-link text-decoration-none"
+                                               data-bs-toggle="tooltip"
+                                               data-bs-custom-class="tooltip-subject"
+                                               data-bs-title="{{ item.ticket.subject }}"
+                                               data-bs-placement="top">
+                                                {{ item.ticket.subject|truncatewords:5|highlight:search_query }}
+                                            </a>
+                                            {% if item.is_unseen_for_current_user %}
+                                                <span class="badge bg-success ms-1">New</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>{{ item.ticket.created_by.username }}</td>
+
+                                        <td class="d-none d-sm-table-cell">
+                                            <span class="badge text-white"
+                                                  style="background-color: {{ item.ticket.get_priority_color }}">
+                                                {{ item.ticket.get_priority_display }}
+                                            </span>
+                                        </td>
+
+                                        <td class="d-none d-lg-table-cell">
+                                            {% if item.ticket.category %}
+                                                {{ item.ticket.category.name }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td class="d-none d-lg-table-cell">
+                                            {% if item.ticket.tags.all %}
+                                                <span class="badge bg-warning"
+                                                      data-bs-toggle="tooltip"
+                                                      data-bs-title="Total tags: {{ item.ticket.tags.all|length }}">
+                                                    {{ item.ticket.tags.all|length }}
+                                                </span>
+
+                                                {% for tag in item.ticket.tags.all|slice:"2" %}
+                                                    <span class="badge bg-secondary"
+                                                          data-bs-toggle="tooltip"
+                                                          data-bs-title="{{ tag.name }}">
+                                                        {{ tag.name }}
+                                                    </span>
+                                                {% endfor %}
+
+                                                {% if item.ticket.tags.all|length > 2 %}
+                                                    <span class="badge bg-light text-dark"
+                                                          data-bs-toggle="tooltip"
+                                                          data-bs-title="Additional tags:
+
+
+                                                                  {% for tag in item.ticket.tags.all|slice:'2:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                        +{{ item.ticket.tags.all|length|add:"-2" }}
+                                                    </span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td class="d-none d-lg-table-cell">
+                                            {% with assignees=item.ticket.assignments_tickets.all %}
+                                                {% if assignees %}
+                                                    <span class="badge bg-info"
+                                                          data-bs-toggle="tooltip"
+                                                          data-bs-title="Total assignees: {{ assignees|length }}">
+                                                        {{ assignees|length }}
+                                                    </span>
+
+                                                    {% for assignment in assignees|slice:"2" %}
+                                                        <span class="badge bg-primary"
+                                                              data-bs-toggle="tooltip"
+                                                              data-bs-title="{{ assignment.assignee.username }}">
+                                                            {{ assignment.assignee.username|truncatechars:10 }}
+                                                        </span>
+                                                    {% endfor %}
+
+                                                    {% if assignees|length > 2 %}
+                                                        <span class="badge bg-light text-dark"
+                                                              data-bs-toggle="tooltip"
+                                                              data-bs-title="Additional assignees:
+
+                                                                      {% for assignment in assignees|slice:'2:' %}{{ assignment.assignee.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                            +{{ assignees|length|add:"-2" }}
+                                                        </span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </td>
+
+                                        <td class="d-none d-xl-table-cell">{{ item.ticket.max_replay_date|date:"Y/m/d" }}</td>
+                                        <td class="d-none d-md-table-cell">{{ item.ticket.created_at|date:"Y/m/d H:i" }}</td>
+
+
+
+                                        <td class="d-none d-sm-table-cell">
+                                            <div class="d-flex flex-column align-items-center">
+                                                {% if item.is_seen_by_current_user %}
+                                                    <span class="badge bg-success mb-1">
+                <i class="bi bi-eye me-1"></i>Seen by you
+            </span>
+                                                    {% if item.ticket.seen_at %}
+                                                        <small class="text-muted" data-bs-toggle="tooltip"
+                                                               data-bs-title="Seen at {{ item.ticket.seen_at|date:'Y/m/d H:i' }}">
+                                                            {{ item.ticket.seen_at|timesince }} ago
+                                                        </small>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge bg-secondary mb-1">
+                <i class="bi bi-eye-slash me-1"></i>Unseen by you
+            </span>
+                                                    <small class="text-danger">Never seen by you</small>
+                                                {% endif %}
+
+
+                                                {% if item.seen_history_count > 0 %}
+                                                    <div class="mt-2">
+                                                        <button class="btn btn-sm btn-outline-info seen-history-btn"
+                                                                type="button"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#seenHistoryModal"
+                                                                data-ticket-id="{{ item.ticket.id }}"
+                                                                data-ticket-code="{{ item.ticket.tracking_code }}">
+                                                            <i class="bi bi-clock-history me-1"></i>
+                                                            History ({{ item.seen_history_count }})
+                                                        </button>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="mt-2">
+                <span class="badge bg-light text-dark">
+                    <i class="bi bi-eye-slash me-1"></i>
+                    No history
+                </span>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="action-cell" id="action-{{ item.ticket.id }}">
+                                            <div class="dropdown-center">
+                                                <button class="btn border-0 p-1" type="button"
+                                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="bi bi-three-dots-vertical fs-5"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-dark p-2">
+                                                    <li>
+                                                        <div class="d-grid">
+                                                            <a href="{% url 'tickets-details' item.ticket.pk %}"
+                                                               class="btn btn-outline-success btn-sm text-start mb-1 border-0">
+                                                                <i class="bi bi-eye me-1"></i>View
+                                                            </a>
+
+                                                            {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
+                                                                <a href="{% url 'tickets-update' item.ticket.pk %}"
+                                                                   class="btn btn-outline-warning btn-sm text-start mb-1 border-0">
+                                                                    <i class="bi bi-pencil-square me-1"></i>Edit
+                                                                </a>
+                                                            {% endif %}
+
+
+                                                            {% if item.user_has_access %}
+                                                                {% if not item.is_seen_by_current_user %}
+                                                                    <button class="btn btn-outline-info btn-sm text-start mb-1 border-0 mark-seen-btn"
+                                                                            data-ticket-id="{{ item.ticket.id }}">
+                                                                        <i class="bi bi-eye me-1"></i>Mark as Seen
+                                                                    </button>
+                                                                {% endif %}
+                                                            {% endif %}
+
+                                                            {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
+                                                                <button class="btn btn-outline-danger btn-sm text-start mb-1 border-0 delete-btn"
+                                                                        data-ticket-id="{{ item.ticket.id }}"
+                                                                        data-ticket-number="{{ item.ticket.id }}"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#deleteModal">
+                                                                    <i class="bi bi-trash3 me-1"></i>Delete
+                                                                </button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="13" class="text-center py-4">No Tickets Found!!!</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div id="card-view-container" style="display: none;">
+            <div class="row mt-3">
+                {% for item in ticket_extra_info %}
+                    <div class="col-12 col-md-6 col-lg-4 mb-4">
+                        <div class="card shadow-sm h-100 {% if item.is_unseen_for_current_user %}border-warning border-2{% endif %}">
+
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <div class="form-check m-0">
+                                    <input type="checkbox" name="selected_tickets"
+                                           value="{{ item.ticket.id }}"
+                                           class="form-check-input ticket-checkbox"
+                                           id="card-check-{{ item.ticket.id }}">
+                                    <label class="form-check-label" for="card-check-{{ item.ticket.id }}">
+                                        <span class="badge bg-primary">#{{ item.ticket.tracking_code|highlight:search_query }}</span>
+                                        {% if item.is_unseen_for_current_user %}
+                                            <span class="badge bg-danger ms-1">New</span>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary border-0" type="button"
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="{% url 'tickets-details' item.ticket.pk %}">
+                                                <i class="bi bi-eye me-2"></i>View
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="{% url 'tickets-update' item.ticket.pk %}">
+                                                <i class="bi bi-pencil-square me-2"></i>Edit
+                                            </a>
+                                        </li>
+
+
+                                        {% if item.user_has_access %}
+                                            {% if not item.is_seen_by_current_user %}
+                                                <li>
+                                                    <a class="dropdown-item mark-seen-btn" href="#"
+                                                       data-ticket-id="{{ item.ticket.id }}">
+                                                        <i class="bi bi-eye me-2"></i>Mark as Seen
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                        {% endif %}
+
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger delete-btn" href="#"
+                                               data-ticket-id="{{ item.ticket.id }}"
+                                               data-ticket-number="{{ item.ticket.id }}"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#deleteModal">
+                                                <i class="bi bi-trash3 me-2"></i>Delete
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <a href="{% url 'tickets-details' item.ticket.pk %}"
+                                       class="text-decoration-none text-dark"
+                                       data-bs-toggle="tooltip"
+                                       data-bs-title="{{ item.ticket.subject }}"
+                                       data-bs-placement="top">
+                                        {{ item.ticket.subject|truncatewords:8|highlight:search_query }}
+                                    </a>
+                                </h6>
+
+                                {% if item.seen_history_count > 0 %}
+                                    <div class="mt-2">
+                                        <button class="btn btn-outline-secondary btn-sm w-100 seen-history-btn"
+                                                type="button"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#seenHistoryModal"
+                                                data-ticket-id="{{ item.ticket.id }}"
+                                                data-ticket-code="{{ item.ticket.tracking_code }}">
+                                            <i class="bi bi-clock-history me-1"></i>
+                                            View history ({{ item.seen_history_count }})
+                                        </button>
+                                    </div>
+                                {% endif %}
+
+                                <div class="ticket-meta mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-person me-2 text-muted"></i>
+                                        <small class="text-muted">{{ item.ticket.created_by.username }}</small>
+                                    </div>
+
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-flag me-2 text-muted"></i>
+                                        <span class="badge text-white"
+                                              style="background-color: {{ item.ticket.get_priority_color }}">
+                                                {{ item.ticket.get_priority_display }}
+                                            </span>
+                                    </div>
+
+                                    {% if item.ticket.category %}
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-tags me-2 text-muted"></i>
+                                            <small class="text-muted">{{ item.ticket.category.name }}</small>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-calendar me-2 text-muted"></i>
+                                        <small class="text-muted">Due: {{ item.ticket.max_replay_date|date:"Y/m/d" }}</small>
+                                    </div>
+
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-clock me-2 text-muted"></i>
+                                        <small class="text-muted">Created: {{ item.ticket.created_at|date:"Y/m/d H:i" }}</small>
+                                    </div>
+                                </div>
+
+                                {% if item.ticket.tags.all %}
+                                    <div class="tags-section mt-3">
+                                        <div class="d-flex flex-wrap gap-1">
+                                            {% for tag in item.ticket.tags.all|slice:"3" %}
+                                                <span class="badge bg-secondary bg-opacity-25 text-dark"
+                                                      data-bs-toggle="tooltip"
+                                                      data-bs-title="{{ tag.name }}">
+                                                        {{ tag.name }}
+                                                    </span>
+                                            {% endfor %}
+                                            {% if item.ticket.tags.all|length > 3 %}
+                                                <span class="badge bg-light text-dark"
+                                                      data-bs-toggle="tooltip"
+                                                      data-bs-title="Additional tags:
+
+                                                              {% for tag in item.ticket.tags.all|slice:'3:' %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                        +{{ item.ticket.tags.all|length|add:"-3" }}
+                                                    </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="card-footer bg-transparent">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted">ID: {{ item.ticket.id }}</small>
+                                        {% if item.ticket.seen_count > 0 %}
+                                            <small class="text-muted ms-2">Seen: {{ item.ticket.seen_count }}
+                                                times</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'tickets-details' item.ticket.pk %}"
+                                           class="btn btn-outline-primary btn-sm border-0"
+                                           data-bs-toggle="tooltip"
+                                           data-bs-title="View Ticket">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
+                                            <a href="{% url 'tickets-update' item.ticket.pk %}"
+                                               class="btn btn-outline-warning btn-sm border-0"
+                                               data-bs-toggle="tooltip"
+                                               data-bs-title="Edit Ticket">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                        {% endif %}
+                                        <!-- دکمه mark as seen در footer card -->
+                                        {% if item.user_has_access %}
+                                            {% if not item.is_seen_by_current_user %}
+                                                <button class="btn btn-outline-info btn-sm border-0 mark-seen-btn"
+                                                        data-ticket-id="{{ item.ticket.id }}"
+                                                        data-bs-toggle="tooltip"
+                                                        data-bs-title="Mark as Seen">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
+                                            <a href="#" class="btn btn-outline-danger btn-sm border-0 delete-btn"
+                                               data-bs-toggle="tooltip"
+                                               data-bs-title="Delete Ticket"
+                                               data-ticket-id="{{ item.ticket.id }}"
+                                               data-ticket-number="{{ item.ticket.id }}"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#deleteModal">
+                                                <i class="bi bi-trash3"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center py-5">
+                                <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                                <h5 class="text-muted">No Tickets Found</h5>
+                                <p class="text-muted mb-0">There are no tickets matching your criteria.</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+        </div>
+
+        <div class="container mt-3 mb-5">
+            <div class="d-none d-md-block">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1 me-3">
+                        {% include 'pagination-showing-result-dee.html' %}
+                    </div>
+                    <div class="flex-shrink-0">
+                        {% include 'pagination-dee.html' %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-block d-md-none">
+                {% include 'pagination-mobile-dee.html' %}
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="modal fade" id="seenHistoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Seen History
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="seenHistoryContent">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading history...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-bs-dismiss="modal">Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    {% include 'ModelDeleteConformationIndex.html' %}
+    {% include 'ModalBulkDeleteConformation.html' %}
+
+    {% block js %}
+        <script>
+            {% include 'Js/alert.js' %}
+            {% include 'Js/delete(confirm).js' %}
+            {% include 'Js/TooltipSubject.js' %}
+        </script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // مدیریت تغییر view بین table و card
+                const tableViewRadio = document.getElementById('table-view');
+                const cardViewRadio = document.getElementById('card-view');
+                const tableViewContainer = document.getElementById('table-view-container');
+                const cardViewContainer = document.getElementById('card-view-container');
+
+                // مدیریت view modes
+                tableViewRadio.addEventListener('change', function () {
+                    if (this.checked) {
+                        tableViewContainer.style.display = 'block';
+                        cardViewContainer.style.display = 'none';
+                    }
+                });
+
+                cardViewRadio.addEventListener('change', function () {
+                    if (this.checked) {
+                        tableViewContainer.style.display = 'none';
+                        cardViewContainer.style.display = 'block';
+                    }
+                });
+
+                // مدیریت انتخاب تیکت‌ها
+                const selectAllCheckbox = document.getElementById('selectAll');
+                const ticketCheckboxes = document.querySelectorAll('.ticket-checkbox');
+                const selectedCountBadge = document.getElementById('selectedCountBadge');
+                const selectedCountSpan = document.getElementById('selectedCount');
+                const selectAllBtn = document.getElementById('selectAllBtn');
+                const deselectAllBtn = document.getElementById('deselectAllBtn');
+                const bulkDeleteBtns = document.querySelectorAll('.bulk-delete-btn');
+
+                // انتخاب همه
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.addEventListener('change', function () {
+                        const isChecked = this.checked;
+                        ticketCheckboxes.forEach(checkbox => {
+                            checkbox.checked = isChecked;
+                        });
+                        updateSelectedCount();
+                    });
+                }
+
+                // دکمه انتخاب همه
+                if (selectAllBtn) {
+                    selectAllBtn.addEventListener('click', function () {
+                        ticketCheckboxes.forEach(checkbox => {
+                            checkbox.checked = true;
+                        });
+                        if (selectAllCheckbox) selectAllCheckbox.checked = true;
+                        updateSelectedCount();
+                    });
+                }
+
+                // دکمه لغو انتخاب
+                if (deselectAllBtn) {
+                    deselectAllBtn.addEventListener('click', function () {
+                        ticketCheckboxes.forEach(checkbox => {
+                            checkbox.checked = false;
+                        });
+                        if (selectAllCheckbox) selectAllCheckbox.checked = false;
+                        updateSelectedCount();
+                    });
+                }
+
+                // بروزرسانی شمارش انتخاب‌ها
+                function updateSelectedCount() {
+                    let count = 0;
+                    ticketCheckboxes.forEach(checkbox => {
+                        if (checkbox.checked) count++;
+                    });
+
+                    selectedCountSpan.textContent = count;
+
+                    if (count > 0) {
+                        selectedCountBadge.style.display = 'inline-flex';
+                    } else {
+                        selectedCountBadge.style.display = 'none';
+                    }
+
+                    // بروزرسانی وضعیت checkbox اصلی
+                    if (selectAllCheckbox) {
+                        const allChecked = count === ticketCheckboxes.length;
+                        const someChecked = count > 0 && count < ticketCheckboxes.length;
+                        selectAllCheckbox.checked = allChecked;
+                        selectAllCheckbox.indeterminate = someChecked;
+                    }
+                }
+
+                // بروزرسانی اولیه
+                if (ticketCheckboxes.length > 0) {
+                    ticketCheckboxes.forEach(checkbox => {
+                        checkbox.addEventListener('change', updateSelectedCount);
+                    });
+                    updateSelectedCount();
+                }
+
+                // مدیریت bulk delete actions
+                if (bulkDeleteBtns.length > 0) {
+                    bulkDeleteBtns.forEach(button => {
+                        button.addEventListener('click', function (e) {
+                            e.preventDefault(); // جلوگیری از ارسال فرم به صورت پیش‌فرض
+
+                            const action = this.getAttribute('data-action');
+
+                            // پیدا کردن فرم فعال
+                            let activeForm;
+                            if (tableViewContainer.style.display !== 'none') {
+                                activeForm = document.getElementById('mainBulkForm');
+                            } else {
+                                // برای card view، یک فرم موقت ایجاد می‌کنیم
+                                activeForm = createTemporaryFormForCards();
+                            }
+
+                            if (!activeForm) {
+                                console.error('Form not found');
+                                return;
+                            }
+
+                            // تنظیم action در hidden input
+                            let actionInput = activeForm.querySelector('input[name="action"]');
+                            if (!actionInput) {
+                                actionInput = document.createElement('input');
+                                actionInput.type = 'hidden';
+                                actionInput.name = 'action';
+                                activeForm.appendChild(actionInput);
+                            }
+                            actionInput.value = action;
+
+                            // تابع کمکی برای ایجاد فرم موقت برای کارت‌ها
+                            function createTemporaryFormForCards() {
+                                const form = document.createElement('form');
+                                form.method = 'POST';
+                                form.action = "{% url 'tickets' %}";
+
+                                // اضافه کردن CSRF token
+                                const csrfInput = document.createElement('input');
+                                csrfInput.type = 'hidden';
+                                csrfInput.name = 'csrfmiddlewaretoken';
+                                csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                                form.appendChild(csrfInput);
+
+                                // اضافه کردن تیکت‌های انتخاب شده در کارت‌ها
+                                const selectedCardCheckboxes = document.querySelectorAll('.ticket-checkbox:checked');
+                                selectedCardCheckboxes.forEach(checkbox => {
+                                    const input = document.createElement('input');
+                                    input.type = 'hidden';
+                                    input.name = 'selected_tickets';
+                                    input.value = checkbox.value;
+                                    form.appendChild(input);
+                                });
+
+                                return form;
+                            }
+
+                            // برای delete_all_tickets و delete_filtered نیاز به تایید داریم
+                            if (action === 'delete_all_tickets' || action === 'delete_filtered') {
+                                const message = action === 'delete_all_tickets'
+                                    ? 'Are you sure you want to delete all tickets'
+                                    : 'Are you sure you want to delete the filtered tickets';
+
+                                if (!confirm(message)) {
+                                    return;
+                                }
+                            }
+
+                            // برای delete_selected باید حداقل یک تیکت انتخاب شده باشد
+                            if (action === 'delete_selected') {
+                                const selectedCount = document.querySelectorAll('.ticket-checkbox:checked').length;
+                                if (selectedCount === 0) {
+                                    alert('Please select at least one ticket.');
+                                    return;
+                                }
+
+                                if (!confirm(`Are you sure you want to delete the ${selectedCount} selected tickets`)) {
+                                    return;
+                                }
+                            }
+
+
+                            activeForm.submit();
+                        });
+                    });
+                }
+
+                // مدیریت دکمه‌های mark as seen
+                document.addEventListener('click', function (e) {
+                    if (e.target.closest('.mark-seen-btn')) {
+                        e.preventDefault();
+                        const button = e.target.closest('.mark-seen-btn');
+                        const ticketId = button.dataset.ticketId;
+
+                        if (!confirm('Do you want to mark this ticket as seen?')) {
+                            return;
+                        }
+
+                        const originalText = button.innerHTML;
+                        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> در حال پردازش...';
+                        button.disabled = true;
+
+                        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                        fetch(`/ticket/${ticketId}/mark-seen/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrfToken,
+                                'Content-Type': 'application/json',
+                            }
+                        })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (data.success) {
+                                    alert('✅ Ticket successfully flagged!');
+                                    // به‌روزرسانی صفحه پس از 1 ثانیه
+                                    setTimeout(() => {
+                                        location.reload();
+                                    }, 1000);
+                                } else {
+                                    alert('❌ ' + (data.message || 'Operation error'));
+                                    button.innerHTML = originalText;
+                                    button.disabled = false;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('❌Error communicating with server');
+                                button.innerHTML = originalText;
+                                button.disabled = false;
+                            });
+                    }
+                });
+
+                // تابع محاسبه زمان گذشته
+                function timeSince(date) {
+                    const seconds = Math.floor((new Date() - date) / 1000);
+
+                    if (seconds < 60) return "Right now";
+
+                    let interval = seconds / 31536000;
+                    if (interval > 1) return Math.floor(interval) + "Year";
+
+                    interval = seconds / 2592000;
+                    if (interval > 1) return Math.floor(interval) + " Month";
+
+                    interval = seconds / 86400;
+                    if (interval > 1) return Math.floor(interval) + " Day";
+
+                    interval = seconds / 3600;
+                    if (interval > 1) return Math.floor(interval) + " Hours";
+
+                    interval = seconds / 60;
+                    if (interval > 1) return Math.floor(interval) + " Minute";
+
+                    return Math.floor(seconds) + " Second";
+                }
+
+                // تابع بارگذاری تاریخچه دیده شدن‌ها
+                function loadSeenHistory(ticketId, ticketCode) {
+                    const content = document.getElementById('seenHistoryContent');
+                    content.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading history...</p>
+            </div>
+        `;
+
+                    fetch(`/ticket/${ticketId}/seen-history/`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Seen history data:', data);
+
+                            if (data.success) {
+                                let html = `
+                    <h6 class="mb-3">Ticket viewing history ${ticketCode || '#' + ticketId}</h6>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>View Date</th>
+                                    <th>Past Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                                if (!data.seen_history || data.seen_history.length === 0) {
+                                    html += `
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="bi bi-eye-slash display-6 mb-3"></i>
+                                <p class="mb-0">No one has seen this ticket yet.</p>
+                            </td>
+                        </tr>
+                    `;
+                                } else {
+                                    data.seen_history.forEach(item => {
+                                        const seenDate = new Date(item.seen_at);
+                                        const timeAgo = timeSince(seenDate);
+                                        const seenAtDisplay = item.seen_at_display ||
+                                            new Date(item.seen_at).toLocaleDateString('fa-IR') + ' ' +
+                                            new Date(item.seen_at).toLocaleTimeString('fa-IR');
+
+                                        html += `
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="bi bi-person text-dark"></i>
+                                        </div>
+                                        <div>
+                                            <strong>${item.user?.full_name || item.user?.username || 'Anonymous'}</strong><br>
+                                            <small class="text-muted">${item.user?.username || ''}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">${item.role || 'User'}</span>
+                                </td>
+                                <td>
+                                    ${seenAtDisplay}
+                                </td>
+                                <td>
+                                    <span class="text-muted">${timeAgo} Ago</span>
+                                </td>
+                            </tr>
+                        `;
+                                    });
+                                }
+
+                                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Total number of views: <strong>${data.total_views || data.seen_history?.length || 0}</strong>
+                    </div>
+                `;
+
+                                content.innerHTML = html;
+                            } else {
+                                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        ${data.message || 'Error retrieving history information'}
+                    </div>
+                `;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading seen history:', error);
+                            content.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Error retrieving history information
+                    <br><small>${error.message}</small>
+                </div>
+            `;
+                        });
+                }
+
+                // مدیریت Modal تاریخچه دیده شدن‌ها
+                const seenHistoryModal = document.getElementById('seenHistoryModal');
+                if (seenHistoryModal) {
+                    seenHistoryModal.addEventListener('show.bs.modal', function (event) {
+                        const button = event.relatedTarget;
+                        const ticketId = button.getAttribute('data-ticket-id');
+                        const ticketCode = button.getAttribute('data-ticket-code');
+
+                        console.log(`Loading history for ticket: ${ticketId}`);
+
+                        // بارگذاری تاریخچه
+                        loadSeenHistory(ticketId, ticketCode);
+                    });
+
+                    // وقتی modal بسته می‌شود، محتوا را پاک کن
+                    seenHistoryModal.addEventListener('hidden.bs.modal', function () {
+                        const content = document.getElementById('seenHistoryContent');
+                        content.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading history...</p>
+                </div>
+            `;
+                    });
+                }
+
+                // فعال‌سازی tooltip‌های Bootstrap
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+
+                // مدیریت نمایش/عدم نمایش کارت‌ها بر اساس انتخاب
+                const cardCheckboxes = document.querySelectorAll('.card-ticket-checkbox');
+                cardCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function () {
+                        const card = this.closest('.card');
+                        if (this.checked) {
+                            card.classList.add('border-primary', 'border-2');
+                        } else {
+                            card.classList.remove('border-primary', 'border-2');
+                        }
+                    });
+                });
+
+                // مدیریت لودینگ state برای عملیات‌ها
+                const createLoadingState = (element) => {
+                    const originalHTML = element.innerHTML;
+                    element.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+                    element.disabled = true;
+                    return () => {
+                        element.innerHTML = originalHTML;
+                        element.disabled = false;
+                    };
+                };
+
+                // مدیریت خطاهای شبکه
+                window.addEventListener('offline', function () {
+                    alert('⚠️ You are offline. Please check your internet connection.');
+                });
+
+                // مدیریت خطاهای کلی fetch
+                const originalFetch = window.fetch;
+                window.fetch = function (...args) {
+                    return originalFetch.apply(this, args)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            }
+                            return response;
+                        })
+                        .catch(error => {
+                            console.error('Fetch error:', error);
+                            throw error;
+                        });
+                };
+
+                // مدیریت کلیدهای کیبورد برای دکمه‌ها (دسترسی‌پذیری)
+                document.addEventListener('keydown', function (e) {
+                    // Enter روی دکمه‌ها
+                    if (e.target.matches('.mark-seen-btn, .seen-history-btn, .bulk-delete-btn') && e.key === 'Enter') {
+                        e.target.click();
+                    }
+
+                    // Escape برای بستن modal
+                    if (e.key === 'Escape' && seenHistoryModal && seenHistoryModal.classList.contains('show')) {
+                        const closeBtn = seenHistoryModal.querySelector('.btn-close');
+                        if (closeBtn) closeBtn.click();
+                    }
+                });
+
+                // مدیریت responsive table در موبایل
+                function handleResponsiveTable() {
+                    const table = document.querySelector('.table-responsive');
+                    if (window.innerWidth < 768 && table) {
+                        table.classList.add('table-responsive-sm');
+                    } else {
+                        table.classList.remove('table-responsive-sm');
+                    }
+                }
+
+                window.addEventListener('resize', handleResponsiveTable);
+                handleResponsiveTable();
+            });
+        </script>
+
+    {% endblock %}
+
+{% endblock %}

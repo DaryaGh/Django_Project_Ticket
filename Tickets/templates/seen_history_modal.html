@@ -1,0 +1,73 @@
+<div class="modal fade" id="seenHistoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-clock-history me-2"></i>
+                    تاریخچه مشاهده تیکت
+                </h5>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="seenHistoryContent">
+                    {% if seen_history_data %}
+                        <h6 class="mb-3">تاریخچه دیده شدن تیکت #{{ ticket.tracking_code }}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>کاربر</th>
+                                        <th>نقش</th>
+                                        <th>تاریخ مشاهده</th>
+                                        <th>زمان گذشته</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in seen_history_data %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                    <i class="bi bi-person text-dark"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>{{ item.user.get_full_name|default:item.user.username }}</strong><br>
+                                                    <small class="text-muted">{{ item.user.username }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ item.role }}</span>
+                                        </td>
+                                        <td>
+                                            {{ item.seen_at|date:"Y/m/d H:i" }}
+                                        </td>
+                                        <td>
+                                            <span class="text-muted">{{ item.seen_at|timesince }} پیش</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="alert alert-info mt-3">
+                            <i class="bi bi-info-circle me-2"></i>
+                            تعداد کل مشاهده‌ها: <strong>{{ seen_history_count }}</strong>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-eye-slash display-1 text-muted mb-3"></i>
+                            <h5 class="text-muted">تاریخچه‌ای موجود نیست</h5>
+                            <p class="text-muted mb-0">هنوز کسی این تیکت را ندیده است</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>

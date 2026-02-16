@@ -1,10 +1,12 @@
 from django.contrib import messages
+from django.contrib.auth.models import Group
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.timesince import timesince
 from Tickets.forms import *
 from Tickets.models import *
+from Tickets.services import *
 from .Choices import *
 from .notification import *
 from .validators import validate
@@ -21,175 +23,249 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 # برای 403
 from django.core.exceptions import PermissionDenied
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+import json
+
 
 @login_required()
 def dashboard(request):
-    # print(request.user.id)
-    user_id = request.user.id
-    # print(UserRole.objects.filter(user_id=user_id))
-    # user_role = UserRole.objects.filter(user_id=user_id).get()
-    # user_role = UserRole.objects.filter(user_id=user_id).first()
-    user_role = UserRole.objects.filter(user=user_id).first()
-    # print(user_role.role)
-    # print(user_role.role_id)
-    print(Role.objects.filter(id=user_role.role_id).first())
-    # print(Role.objects.filter(id=user_role.role_id).first().title)
-    role_title = Role.objects.filter(id=user_role.role_id).first().title
+    user = request.user
+    # دریافت نقش کاربر از Group
+    if user.is_superuser:
+        role_title = "Super Admin"
+    else:
+        group = user.groups.first()
+        role_title = group.name if group else "User"
+
     request.session['role'] = role_title
 
 
-    total_tickets = Ticket.objects.all().count()
+    if role_title == "Super Admin":
+        base_queryset = Ticket.objects.all()
+        assignments_base = Assignment.objects.all()
+        all_groups = Group.objects.all()
+    else:
+        #  **برای همه کاربران غیر Super Admin: فقط تیکت‌های ایجاد شده توسط خودشان**
+        base_queryset = Ticket.objects.filter(created_by=request.user)
+        assignments_base = Assignment.objects.filter(
+            Q(assignee=request.user) |
+            Q(assigned_by=request.user)
+        ).distinct()
+        all_groups = Group.objects.filter(user=request.user)
 
-    # آمار جدید برای seen
-    seen_tickets = Ticket.objects.filter(seen_at__isnull=False).count()
+
+    total_tickets = base_queryset.count()
+    seen_tickets = base_queryset.filter(seen_at__isnull=False).count()
     unseen_tickets = total_tickets - seen_tickets
 
-    # محاسبه درصدها (جلوگیری از خطای تقسیم بر صفر)
+
     if total_tickets > 0:
-        low_percentage = (Ticket.objects.with_priority('low').count() / total_tickets) * 100
-        high_percentage = (Ticket.objects.with_priority('high').count() / total_tickets) * 100
-        middle_percentage = (Ticket.objects.with_priority('middle').count() / total_tickets) * 100
-        secret_percentage = (Ticket.objects.with_priority('secret').count() / total_tickets) * 100
-        critical_percentage = (Ticket.objects.with_priority('critical').count() / total_tickets) * 100
-        expired_percentage = (Ticket.objects.is_expired().count() / total_tickets) * 100
-        open_percentage = (Ticket.objects.is_open().count() / total_tickets) * 100
-        close_percentage = (Ticket.objects.is_close().count() / total_tickets) * 100
-        status_new_percentage = (Ticket.objects.by_status('new').count() / total_tickets) * 100
-        status_in_progress_percentage = (Ticket.objects.by_status('in-progress').count() / total_tickets) * 100
-        status_solved_percentage = (Ticket.objects.by_status('solved').count() / total_tickets) * 100
-        status_impossible_percentage = (Ticket.objects.by_status('impossible').count() / total_tickets) * 100
+        low_percentage = (base_queryset.with_priority('low').count() / total_tickets) * 100
+        high_percentage = (base_queryset.with_priority('high').count() / total_tickets) * 100
+        middle_percentage = (base_queryset.with_priority('middle').count() / total_tickets) * 100
+        secret_percentage = (base_queryset.with_priority('secret').count() / total_tickets) * 100
+        critical_percentage = (base_queryset.with_priority('critical').count() / total_tickets) * 100
+        expired_percentage = (base_queryset.is_expired().count() / total_tickets) * 100
+        open_percentage = (base_queryset.is_open().count() / total_tickets) * 100
+        close_percentage = (base_queryset.is_close().count() / total_tickets) * 100
+        status_new_percentage = (base_queryset.by_status('new').count() / total_tickets) * 100
+        status_in_progress_percentage = (base_queryset.by_status('in-progress').count() / total_tickets) * 100
+        status_solved_percentage = (base_queryset.by_status('solved').count() / total_tickets) * 100
+        status_impossible_percentage = (base_queryset.by_status('impossible').count() / total_tickets) * 100
         seen_percentage = (seen_tickets / total_tickets) * 100
+        unseen_percentage = 100 - seen_percentage
     else:
         # اگر تیکتی وجود ندارد، همه درصدها صفر هستند
         low_percentage = high_percentage = middle_percentage = secret_percentage = critical_percentage = 0
         expired_percentage = open_percentage = close_percentage = 0
         status_new_percentage = status_in_progress_percentage = status_solved_percentage = status_impossible_percentage = 0
         seen_percentage = 0
+        unseen_percentage = 0
 
-    active_categories = Category.objects.active().annotate(
-        ticket_count=models.Count('tickets')
-    )
+    low_tickets = base_queryset.with_priority('low').count()
+    high_tickets = base_queryset.with_priority('high').count()
+    middle_tickets = base_queryset.with_priority('middle').count()
+    secret_tickets = base_queryset.with_priority('secret').count()
+    critical_tickets = base_queryset.with_priority('critical').count()
+    expired_tickets = base_queryset.is_expired().count()
+    open_tickets = base_queryset.is_open().count()
+    close_tickets = base_queryset.is_close().count()
+    status_new_tickets = base_queryset.by_status('new').count()
+    status_in_progress_tickets = base_queryset.by_status('in-progress').count()
+    status_solved_tickets = base_queryset.by_status('solved').count()
+    status_impossible_tickets = base_queryset.by_status('impossible').count()
 
-    # آمار پیشرفته‌تر برای Seen
-    from django.db.models import Count, Avg
-    from django.utils import timezone
-    from datetime import timedelta
 
-    # میانگین زمان دیده شدن - روش سازگار با SQLite
-    avg_see_time = None
-    if seen_tickets > 0:
-        try:
-            # روش ساده‌تر: محاسبه در پایتون
-            from django.db import connection
-            if connection.vendor == 'sqlite':
-                # برای SQLite: محاسبه دستی
-                seen_tickets_list = Ticket.objects.filter(seen_at__isnull=False)
-                total_hours = 0
-                count = 0
-                for ticket in seen_tickets_list:
-                    if ticket.created_at and ticket.seen_at:
-                        duration = ticket.seen_at - ticket.created_at
-                        total_hours += duration.total_seconds() / 3600
-                        count += 1
+    if role_title == "Super Admin":
+        user_categories = Category.objects.filter(
+            tickets__isnull=False
+        ).distinct().count()
+        categories_with_tickets = Category.objects.filter(
+            tickets__isnull=False
+        ).distinct().count()
+    else:
+        user_categories = Category.objects.filter(
+            tickets__created_by=request.user
+        ).distinct().count()
+        categories_with_tickets = Category.objects.filter(
+            tickets__isnull=False
+        ).distinct().count()
 
-                if count > 0:
-                    avg_hours = total_hours / count
-                    if avg_hours < 1:
-                        avg_see_time = f"< 1 hour"
-                    else:
-                        avg_see_time = f"{avg_hours:.1f} hours"
+
+    if role_title == "Super Admin":
+        user_category_list = Category.objects.filter(
+            tickets__isnull=False
+        ).distinct().annotate(
+            ticket_count=models.Count('tickets')
+        )
+    else:
+        user_category_list = Category.objects.filter(
+            tickets__created_by=request.user
+        ).distinct().annotate(
+            ticket_count=models.Count('tickets', filter=models.Q(tickets__created_by=request.user))
+        )
+
+
+    sent_tasks = assignments_base.filter(assigned_by=request.user).count()
+    received_tasks = assignments_base.filter(assignee=request.user).count()
+
+    if role_title == "Super Admin":
+        total_tasks = assignments_base.count()
+    else:
+        total_tasks = sent_tasks + received_tasks
+
+    open_sent_tasks = assignments_base.filter(
+        assigned_by=request.user,
+        status__in=['new', 'in-progress']
+    ).count() if assignments_base.exists() else 0
+
+    open_received_tasks = assignments_base.filter(
+        assignee=request.user,
+        status__in=['new', 'in-progress']
+    ).count() if assignments_base.exists() else 0
+
+    closed_sent_tasks = assignments_base.filter(
+        assigned_by=request.user,
+        status__in=['solved', 'closed']
+    ).count() if assignments_base.exists() else 0
+
+    closed_received_tasks = assignments_base.filter(
+        assignee=request.user,
+        status__in=['solved', 'closed']
+    ).count() if assignments_base.exists() else 0
+
+
+    if total_tasks > 0:
+        sent_tasks_percentage = round((sent_tasks / total_tasks) * 100, 1)
+        received_tasks_percentage = round((received_tasks / total_tasks) * 100, 1)
+        open_tasks_percentage = round(((open_sent_tasks + open_received_tasks) / total_tasks) * 100, 1)
+    else:
+        sent_tasks_percentage = received_tasks_percentage = open_tasks_percentage = 0
+
+
+    group_statistics = []
+
+    if role_title == "Super Admin":
+        for group in all_groups:
+            users_in_group = User.objects.filter(groups=group)
+            group_tickets = Ticket.objects.filter(created_by__in=users_in_group)
+
+            group_stats = {
+                'group': group,
+                'user_count': users_in_group.count(),
+                'total_tickets': group_tickets.count(),
+                'open_tickets': group_tickets.filter(closed_at__isnull=True).count(),
+                'closed_tickets': group_tickets.filter(closed_at__isnull=False).count(),
+                'seen_tickets': group_tickets.filter(seen_at__isnull=False).count(),
+                'sent_tasks': Assignment.objects.filter(assigned_by__in=users_in_group).count(),
+                'received_tasks': Assignment.objects.filter(assignee__in=users_in_group).count(),
+                'tickets_by_priority': {
+                    'low': group_tickets.filter(priority='low').count(),
+                    'middle': group_tickets.filter(priority='middle').count(),
+                    'high': group_tickets.filter(priority='high').count(),
+                    'critical': group_tickets.filter(priority='critical').count(),
+                    'secret': group_tickets.filter(priority='secret').count(),
+                },
+                'tickets_by_status': {
+                    'new': group_tickets.filter(status='new').count(),
+                    'in_progress': group_tickets.filter(status='in_progress').count(),
+                    'solved': group_tickets.filter(status='solved').count(),
+                    'impossible': group_tickets.filter(status='impossible').count(),
+                }
+            }
+
+            if group_stats['total_tickets'] > 0:
+                group_stats['open_percentage'] = round(
+                    (group_stats['open_tickets'] / group_stats['total_tickets']) * 100, 1)
+                group_stats['seen_percentage'] = round(
+                    (group_stats['seen_tickets'] / group_stats['total_tickets']) * 100, 1)
             else:
-                # برای PostgreSQL/MySQL: استفاده از ExtractHour
-                from django.db.models.functions import ExtractHour
-                from django.db.models import F, ExpressionWrapper, DurationField
+                group_stats['open_percentage'] = 0
+                group_stats['seen_percentage'] = 0
 
-                seen_tickets_with_diff = Ticket.objects.filter(
-                    seen_at__isnull=False
-                ).annotate(
-                    see_duration=ExpressionWrapper(
-                        F('seen_at') - F('created_at'),
-                        output_field=DurationField()
-                    )
-                )
+            group_statistics.append(group_stats)
+    else:
 
-                avg_hours = seen_tickets_with_diff.aggregate(
-                    avg_hours=Avg(ExtractHour(F('see_duration')))
-                )['avg_hours']
+        for group in all_groups:
 
-                if avg_hours:
-                    if avg_hours < 1:
-                        avg_see_time = f"< 1 hour"
-                    else:
-                        avg_see_time = f"{avg_hours:.1f} hours"
+            users_in_group = User.objects.filter(groups=group)
+            group_tickets = base_queryset.filter(created_by__in=users_in_group)
 
-        except Exception as e:
-            print(f"Error calculating average see time: {e}")
-            avg_see_time = "N/A"
-    # فعال‌ترین کاربر در مشاهده تیکت‌ها
-    most_active_viewer = None
-    if seen_tickets > 0:
-        try:
-            viewer_stats = Ticket.objects.filter(
-                seen_by__isnull=False
-            ).values(
-                'seen_by__username'
-            ).annotate(
-                count=Count('id')
-            ).order_by('-count').first()
+            group_stats = {
+                'group': group,
+                'user_count': 1,
+                'total_tickets': group_tickets.count(),
+                'open_tickets': group_tickets.filter(closed_at__isnull=True).count(),
+                'closed_tickets': group_tickets.filter(closed_at__isnull=False).count(),
+                'seen_tickets': group_tickets.filter(seen_at__isnull=False).count(),
+                'sent_tasks': assignments_base.filter(assigned_by=request.user).count(),
+                'received_tasks': assignments_base.filter(assignee=request.user).count(),
+                'tickets_by_priority': {
+                    'low': group_tickets.filter(priority='low').count(),
+                    'middle': group_tickets.filter(priority='middle').count(),
+                    'high': group_tickets.filter(priority='high').count(),
+                    'critical': group_tickets.filter(priority='critical').count(),
+                    'secret': group_tickets.filter(priority='secret').count(),
+                },
+                'tickets_by_status': {
+                    'new': group_tickets.filter(status='new').count(),
+                    'in-progress': group_tickets.filter(status='in-progress').count(),
+                    'solved': group_tickets.filter(status='solved').count(),
+                    'impossible': group_tickets.filter(status='impossible').count(),
+                }
+            }
 
-            if viewer_stats:
-                most_active_viewer = viewer_stats['seen_by__username']
-        except Exception as e:
-            print(f"Error getting most active viewer: {e}")
-            most_active_viewer = "N/A"
+            if group_stats['total_tickets'] > 0:
+                group_stats['open_percentage'] = round(
+                    (group_stats['open_tickets'] / group_stats['total_tickets']) * 100, 1)
+                group_stats['seen_percentage'] = round(
+                    (group_stats['seen_tickets'] / group_stats['total_tickets']) * 100, 1)
+            else:
+                group_stats['open_percentage'] = 0
+                group_stats['seen_percentage'] = 0
 
-    # آخرین تیکت دیده شده
-    last_seen_date = None
-    try:
-        last_seen_ticket = Ticket.objects.filter(
-            seen_at__isnull=False
-        ).order_by('-seen_at').first()
-
-        last_seen_date = last_seen_ticket.seen_at if last_seen_ticket else None
-    except Exception as e:
-        print(f"Error getting last seen ticket: {e}")
-
-    # تعداد تیکت‌های High Priority که unseen هستند
-    unseen_high_priority = 0
-    try:
-        unseen_high_priority = Ticket.objects.filter(
-            seen_at__isnull=True,
-            priority='high'
-        ).count()
-    except Exception as e:
-        print(f"Error counting unseen high priority: {e}")
-    # تیکت‌های دیده شده در 7 روز گذشته
-    seen_last_7_days = 0
-    try:
-        seven_days_ago = timezone.now() - timedelta(days=7)
-        seen_last_7_days = Ticket.objects.filter(
-            seen_at__gte=seven_days_ago
-        ).count()
-    except Exception as e:
-        print(f"Error counting seen last 7 days: {e}")
+            group_statistics.append(group_stats)
 
     context = {
         'total_tickets': total_tickets,
-        # تعدادها (برای استفاده در صورت نیاز)
-        'low_tickets': Ticket.objects.with_priority('low').count(),
-        'high_tickets': Ticket.objects.with_priority('high').count(),
-        'middle_tickets': Ticket.objects.with_priority('middle').count(),
-        'secret_tickets': Ticket.objects.with_priority('secret').count(),
-        'critical_tickets': Ticket.objects.with_priority('critical').count(),
-        'expired_tickets': Ticket.objects.is_expired().count(),
-        'open_tickets': Ticket.objects.is_open().count(),
-        'close_tickets': Ticket.objects.is_close().count(),
-        'status_new_tickets': Ticket.objects.by_status('new').count(),
-        'status_in_progress_tickets': Ticket.objects.by_status('in-progress').count(),
-        'status_solved_tickets': Ticket.objects.by_status('solved').count(),
-        'status_impossible_tickets': Ticket.objects.by_status('impossible').count(),
-
-        # درصدها
+        'seen_tickets': seen_tickets,
+        'unseen_tickets': unseen_tickets,
+        'seen_percentage': round(seen_percentage, 1),
+        'unseen_percentage': round(unseen_percentage, 1),
+        'low_tickets': low_tickets,
+        'high_tickets': high_tickets,
+        'middle_tickets': middle_tickets,
+        'secret_tickets': secret_tickets,
+        'critical_tickets': critical_tickets,
+        'expired_tickets': expired_tickets,
+        'open_tickets': open_tickets,
+        'close_tickets': close_tickets,
+        'status_new_tickets': status_new_tickets,
+        'status_in_progress_tickets': status_in_progress_tickets,
+        'status_solved_tickets': status_solved_tickets,
+        'status_impossible_tickets': status_impossible_tickets,
         'low_percentage': round(low_percentage, 1),
         'high_percentage': round(high_percentage, 1),
         'middle_percentage': round(middle_percentage, 1),
@@ -202,17 +278,22 @@ def dashboard(request):
         'status_in_progress_percentage': round(status_in_progress_percentage, 1),
         'status_solved_percentage': round(status_solved_percentage, 1),
         'status_impossible_percentage': round(status_impossible_percentage, 1),
-        'active_categories': active_categories,
-        # آمار Seen
-        'seen_tickets': seen_tickets,
-        'unseen_tickets': unseen_tickets,
-        'seen_percentage': round(seen_percentage, 1),
-        # آمار پیشرفته Seen
-        'avg_see_time': avg_see_time,
-        'most_active_viewer': most_active_viewer,
-        'last_seen_date': last_seen_date,
-        'unseen_high_priority': unseen_high_priority,
-        'seen_last_7_days': seen_last_7_days,
+        'user_categories_count': user_categories,
+        'categories_with_tickets': categories_with_tickets,
+        'user_category_list': user_category_list,
+        'total_tasks': total_tasks,
+        'sent_tasks': sent_tasks,
+        'received_tasks': received_tasks,
+        'open_sent_tasks': open_sent_tasks,
+        'open_received_tasks': open_received_tasks,
+        'closed_sent_tasks': closed_sent_tasks,
+        'closed_received_tasks': closed_received_tasks,
+        'sent_tasks_percentage': sent_tasks_percentage,
+        'received_tasks_percentage': received_tasks_percentage,
+        'open_tasks_percentage': open_tasks_percentage,
+        'group_statistics': group_statistics,
+        'user_role': role_title,
+        'is_super_admin': role_title == "Super Admin",
     }
 
     return render(request, 'dashboard-templatetags-btn-PERCENTAGE-seen.html', context)
@@ -225,7 +306,7 @@ def index(request):
             del request.session['search_params']
         return redirect('tickets')
 
-    # دریافت پارامترها از GET یا session
+        # دریافت پارامترها از GET یا session
     if request.GET:
         search_params = {
             'q': request.GET.get('q', "").strip(),
@@ -247,8 +328,6 @@ def index(request):
         request.session['search_params'] = search_params
     else:
         search_params = request.session.get('search_params', {})
-
-    # مقادیر پیش‌فرض برای پارامترها
     search_query = search_params.get('q', "")
     category_id = search_params.get('category')
     priority = search_params.get('priority')
@@ -265,7 +344,6 @@ def index(request):
     max_replay_date_to = search_params.get('max_replay_date_to')
     seen = search_params.get('seen')
 
-    # لاگ جستجو
     if search_query or category_id or priority or status or department or response_status or created_at_from or created_at_to or max_replay_date_from or max_replay_date_to or seen:
         try:
             from Tickets.signals import create_search_log
@@ -287,33 +365,31 @@ def index(request):
         except Exception as e:
             print(f" Error in search logging: {e}")
 
-    tickets = Ticket.objects
-    #Admin
-    user_role = request.session.get("role")
-    if user_role in ["Admin" , "Employee"]:
-        tickets = Ticket.objects.filter(created_by=request.user)
+
+    user_role = request.session.get("role", "User")
 
 
-    # پایه QuerySet بر اساس with_close
-    if not with_close == "on":
-        tickets = tickets.is_open()
+    if user_role == "Super Admin":
+        base_queryset = Ticket.objects.all()
+        print(f"INDEX: 👑 SUPER ADMIN sees ALL tickets")
+    elif user_role == "Admin":
 
-    # پایه QuerySet بر اساس with_close
-    # if with_close == "on":
-    #     tickets = Ticket.objects.all()
-    # else:
-    #     tickets = Ticket.objects.is_open()
+        base_queryset = Ticket.objects.filter(created_by=request.user)
+        print(f"INDEX: 🔧 ADMIN sees ONLY OWN created tickets")
+    elif user_role == "Employee":
+
+        base_queryset = Ticket.objects.filter(created_by=request.user)
+        print(f"INDEX: 👨‍💼 EMPLOYEE sees ONLY OWN created tickets")
+    else:
+        base_queryset = Ticket.objects.filter(created_by=request.user)
+        print(f"INDEX: 👤 USER sees only OWN created tickets")
 
 
-    tickets = tickets.select_related('category', "created_by", "seen_by").prefetch_related(
-        'tags',
-        'responses',
-        'assignments_tickets__assignee'
-    )
+    if with_close != 'on':
+        base_queryset = base_queryset.filter(closed_at__isnull=True)
 
     filter_conditions = []
 
-    # شرط جستجو
     if search_query:
         search_q = Q(
             Q(subject__icontains=search_query)
@@ -323,228 +399,251 @@ def index(request):
         )
         filter_conditions.append(search_q)
 
-    # شرط دسته‌بندی
     if category_id and category_id not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(category_id=category_id))
-        else:  # AND
-            tickets = tickets.filter(category_id=category_id)
-
-    # شرط اولویت
+        else:
+            base_queryset = base_queryset.filter(category_id=category_id)
     if priority and priority not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(priority=priority))
-        else:  # AND
-            tickets = tickets.with_priority(priority)
-
-    # شرط وضعیت تیکت
+        else:
+            base_queryset = base_queryset.filter(priority=priority)
     if status and status not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(status=status))
-        else:  # AND
-            tickets = tickets.by_status(status)
-
-    # شرط دپارتمان
+        else:
+            base_queryset = base_queryset.filter(status=status)
     if department and department not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(department=department))
         else:
-            tickets = tickets.filter(department=department)
-
-    # شرط وضعیت پاسخ
+            base_queryset = base_queryset.filter(department=department)
     if response_status and response_status not in ["", "None"]:
         if search_mode == 'or':
             filter_conditions.append(Q(responses__response_status=response_status))
         else:
-            tickets = tickets.filter(responses__response_status=response_status)
-
-    # تاریخ ایجاد تیکت
+            base_queryset = base_queryset.filter(responses__response_status=response_status)
     if created_at_from:
         if search_mode == 'or':
             filter_conditions.append(Q(created_at__date__gte=created_at_from))
         else:
-            tickets = tickets.filter(created_at__date__gte=created_at_from)
-
+            base_queryset = base_queryset.filter(created_at__date__gte=created_at_from)
     if created_at_to:
         if search_mode == 'or':
             filter_conditions.append(Q(created_at__date__lte=created_at_to))
         else:
-            tickets = tickets.filter(created_at__date__lte=created_at_to)
-
-    # تاریخ مهلت پاسخ
+            base_queryset = base_queryset.filter(created_at__date__lte=created_at_to)
     if max_replay_date_from:
         if search_mode == 'or':
             filter_conditions.append(Q(max_replay_date__date__gte=max_replay_date_from))
         else:
-            tickets = tickets.filter(max_replay_date__date__gte=max_replay_date_from)
-
+            base_queryset = base_queryset.filter(max_replay_date__date__gte=max_replay_date_from)
     if max_replay_date_to:
         if search_mode == 'or':
             filter_conditions.append(Q(max_replay_date__date__lte=max_replay_date_to))
         else:
-            tickets = tickets.filter(max_replay_date__date__lte=max_replay_date_to)
+            base_queryset = base_queryset.filter(max_replay_date__date__lte=max_replay_date_to)
 
-    # شرط Seen
     if seen and seen not in ["", "None"]:
         if seen == 'yes':
             if search_mode == 'or':
                 filter_conditions.append(Q(seen_at__isnull=False))
-            else:  # AND
-                tickets = tickets.filter(seen_at__isnull=False)
+            else:
+                base_queryset = base_queryset.filter(seen_at__isnull=False)
         elif seen == 'no':
             if search_mode == 'or':
                 filter_conditions.append(Q(seen_at__isnull=True))
-            else:  # AND
-                tickets = tickets.filter(seen_at__isnull=True)
+            else:
+                base_queryset = base_queryset.filter(seen_at__isnull=True)
 
-    # اعمال فیلترها بر اساس حالت جستجو
     if filter_conditions:
         if search_mode == 'or':
             combined_q = Q()
             for condition in filter_conditions:
                 combined_q |= condition
-            tickets = tickets.filter(combined_q).distinct()
+            base_queryset = base_queryset.filter(combined_q).distinct()
         else:
             # حالت AND: فقط شرط جستجو اعمال می‌شود (بقیه قبلاً اعمال شده‌اند)
             if search_query:
-                tickets = tickets.filter(search_q)
+                base_queryset = base_queryset.filter(search_q)
 
-    # اگر حالت AND است و هیچ جستجویی نیست، اما فیلترهای دیگر وجود دارند
-    elif search_mode == 'and' and not search_query and (
-            category_id or priority or status or department or response_status or created_at_from or
-            created_at_to or max_replay_date_from or max_replay_date_to or seen):
-        # در حالت AND بدون جستجو، فیلترها قبلاً اعمال شده‌اند
-        pass
 
-    categories = Category.objects.active()
-    priorities = Ticket._meta.get_field('priority').choices
-    statuses = Ticket._meta.get_field('status').choices
-    departments = Ticket._meta.get_field('department').choices
+    from django.db.models import Exists, OuterRef
 
-    # choices برای وضعیت پاسخ
-    response_statuses = [
-        ('sent', 'Sent'),
-        ('seen', 'Seen'),
-        ('read', 'Read'),
-        ('replied', 'Replied'),
-    ]
+    tickets_with_access = base_queryset.annotate(
+        is_assignee=Exists(
+            Assignment.objects.filter(
+                assigned_ticket=OuterRef('pk'),
+                assignee=request.user
+            )
+        )
+    ).select_related('category', 'created_by', 'seen_by') \
+        .prefetch_related('tags', 'responses', 'assignments_tickets__assignee')
 
-    # choices برای فیلتر Seen
-    seen_choices = [
-        ('yes', 'Seen'),
-        ('no', 'Unseen'),
-    ]
 
-    # مرتب‌سازی
     if sort:
         if direction == 'desc':
-            tickets = tickets.order_by('-' + sort)
+            tickets_with_access = tickets_with_access.order_by('-' + sort)
         else:
-            tickets = tickets.order_by(sort)
+            tickets_with_access = tickets_with_access.order_by(sort)
     else:
-        # مرتب‌سازی پیش‌فرض: unseen اول
-        tickets = tickets.order_by('seen_at', '-created_at')
 
-    paginator = Paginator(tickets, 10)
+        tickets_with_access = tickets_with_access.order_by('seen_at', '-created_at')
+
+    # Pagination
+    paginator = Paginator(tickets_with_access, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # دریافت تیکت‌ها
+    tickets = Ticket.objects.all()
+
+
+    ticket_extra_info = []
+
+    # for ticket in page_obj:
+    #     # محاسبه وضعیت seen برای کاربر جاری
+    #     is_seen_by_current_user = ticket.check_seen_by_user(request.user)
+    #
+    #     # بررسی دسترسی کاربر
+    #     user_has_access = False
+    #     if request.user.is_superuser:
+    #         user_has_access = True
+    #     elif ticket.created_by == request.user:
+    #         user_has_access = True
+    #     elif ticket.assignments_tickets.filter(assignee=request.user).exists():
+    #         user_has_access = True
+    #
+    #     # ذخیره اطلاعات
+    #     ticket_extra_info.append({
+    #         'ticket': ticket,
+    #         'user_has_access': user_has_access,
+    #         'is_seen_by_current_user': is_seen_by_current_user,
+    #         'is_unseen_for_current_user': not is_seen_by_current_user and user_has_access,
+    #         'user_role': user_role,
+    #     })
 
     for ticket in page_obj:
-        # بررسی دسترسی کاربر به این تیکت خاص
-        ticket.user_has_access = False
+        # محاسبه وضعیت seen برای کاربر جاری
+        is_seen_by_current_user = ticket.check_seen_by_user(request.user)
 
-        # بررسی ۴ شرط دسترسی
-        if request.user.is_staff or request.user.is_superuser:
-            ticket.user_has_access = True
+        user_has_access = False
+        if request.user.is_superuser:
+            user_has_access = True
         elif ticket.created_by == request.user:
-            ticket.user_has_access = True
+            user_has_access = True
         elif ticket.assignments_tickets.filter(assignee=request.user).exists():
-            ticket.user_has_access = True
+            user_has_access = True
 
-        # همچنین property قدیمی را هم ست کن
-        ticket.seen_by_current_user = ticket.check_seen_by_user(request.user)
+        seen_history_data = []
 
 
-    swipers = Swiper.objects.filter(is_active=True).order_by('-created_at')
+        if ticket.seen_at and ticket.seen_by:
+            seen_history_data.append({
+                'user': ticket.seen_by,
+                'seen_at': ticket.seen_at,
+                'role': 'Sender' if ticket.seen_by == ticket.created_by else 'Admin'
+            })
 
-    # برای هر تیکت بررسی کن آیا توسط کاربر جاری دیده شده است
-    for ticket in tickets:
-        ticket.seen_by_current_user = ticket.is_seen_by_user(request.user)
+
+        for assignment in ticket.assignments_tickets.filter(seen_at__isnull=False):
+            seen_history_data.append({
+                'user': assignment.assignee,
+                'seen_at': assignment.seen_at,
+                'role': 'Assignee'
+            })
+
+
+        seen_history_data.sort(key=lambda x: x['seen_at'], reverse=True)
+
+
+        ticket_extra_info.append({
+            'ticket': ticket,
+            'user_has_access': user_has_access,
+            'is_seen_by_current_user': is_seen_by_current_user,
+            'is_unseen_for_current_user': not is_seen_by_current_user and user_has_access,
+            'user_role': user_role,
+            'seen_history_data': seen_history_data,
+            'seen_history_count': len(seen_history_data),
+        })
 
     # Bulk Delete Actions
     if request.method == 'POST':
-        print("🚨 POST request received!")
+        print("🚨 POST request received for bulk delete!")
         print(f"POST data: {request.POST}")
 
         if not request.user.is_authenticated:
-            messages.error(request, 'برای انجام این عملیات باید وارد شوید.')
+            messages.error(request, 'You must be logged in to perform this operation.')
             return redirect('tickets-login')
 
-        # بررسی action از دو روش مختلف
-        action_value = request.POST.get('action', '').strip()
-
-        # یا بررسی مستقیم
-        delete_selected = 'delete_selected' in request.POST
-        delete_all = 'delete_all_tickets' in request.POST
-        delete_filtered = 'delete_filtered' in request.POST
-
-        print(f"Action value from form: '{action_value}'")
-        print(f"Direct check - delete_selected: {delete_selected}")
-        print(f"Direct check - delete_all_tickets: {delete_all}")
-        print(f"Direct check - delete_filtered: {delete_filtered}")
+        # بررسی action
+        action = request.POST.get('action', '').strip()
+        print(f"Action from form: '{action}'")
 
         # منطق حذف تیکت‌های انتخاب شده
-        if action_value == 'delete_selected' or delete_selected:
-            print("🔍 Processing delete_selected")
+        if action == 'delete_selected':
             selected_tickets = request.POST.getlist('selected_tickets')
             print(f"Selected tickets: {selected_tickets}")
 
             if not selected_tickets:
-                messages.warning(request, 'هیچ تیکتی انتخاب نشده است.')
+                messages.warning(request, 'No tickets have been selected.')
                 return redirect('tickets')
 
-            # بررسی unseen بودن
-            unseen_tickets = Ticket.objects.filter(
-                id__in=selected_tickets,
-                seen_at__isnull=True
-            )
 
-            if unseen_tickets.exists():
-                unseen_count = unseen_tickets.count()
-                messages.error(request,
-                               f'❌ {unseen_count} تیکت دیده نشده (unseen) وجود دارد که نمی‌توانید حذف کنید. ابتدا آنها را Mark as Seen کنید.')
+            deletable_tickets = []
+            for ticket_id in selected_tickets:
+                try:
+                    ticket = Ticket.objects.get(id=ticket_id)
+
+                    can_delete = False
+
+                    if user_role == "Super Admin":
+                        can_delete = True
+                    elif ticket.created_by == request.user:
+                        can_delete = True
+                    elif Assignment.objects.filter(assigned_ticket=ticket, assignee=request.user).exists():
+                        can_delete = True
+
+                    if can_delete and ticket.seen_at is not None:
+                        deletable_tickets.append(ticket_id)
+                    elif can_delete and ticket.seen_at is None:
+                        messages.error(request,
+                                       f'Ticket #{ticket.tracking_code} has not been seen. Mark it as Seen first.')
+                except Ticket.DoesNotExist:
+                    continue
+
+            if not deletable_tickets:
+                messages.error(request, 'No tickets found to be deleted.')
                 return redirect('tickets')
 
             try:
                 with transaction.atomic():
-                    # حذف روابط
-                    TicketAttachment.objects.filter(ticket_id__in=selected_tickets).delete()
-                    Assignment.objects.filter(assigned_ticket_id__in=selected_tickets).delete()
-                    TicketResponse.objects.filter(ticket_id__in=selected_tickets).delete()
 
-                    # حذف تیکت‌ها
-                    count, _ = Ticket.objects.filter(id__in=selected_tickets).delete()
+                    TicketAttachment.objects.filter(ticket_id__in=deletable_tickets).delete()
+                    Assignment.objects.filter(assigned_ticket_id__in=deletable_tickets).delete()
+                    TicketResponse.objects.filter(ticket_id__in=deletable_tickets).delete()
 
-                    messages.success(request, f'✅ {count} تیکت انتخاب شده پاک شدند.')
+                    count, _ = Ticket.objects.filter(id__in=deletable_tickets).delete()
+
+                    messages.success(request, f'✅ {count} Selected tickets deleted.')
             except Exception as e:
-                messages.error(request, f'خطا: {str(e)}')
+                messages.error(request, f'Error deleting tickets: {str(e)}')
 
             return redirect('tickets')
 
-        # منطق حذف همه تیکت‌ها
-        elif action_value == 'delete_all_tickets' or delete_all:
-            print("🔍 Processing delete_all_tickets")
-            if not (request.user.is_superuser or request.user.is_staff):
-                messages.error(request, 'شما مجوز پاک کردن همه تیکت‌ها را ندارید.')
+
+        elif action == 'delete_all_tickets':
+            if user_role != "Super Admin":
+                messages.error(request, 'You do not have permission to delete all tickets.')
                 return redirect('tickets')
 
-            # بررسی اینکه آیا تیکت‌های unseen وجود دارند
-            unseen_tickets = Ticket.objects.filter(seen_at__isnull=True)
+
+            unseen_tickets = base_queryset.filter(seen_at__isnull=True)
             if unseen_tickets.exists():
                 unseen_count = unseen_tickets.count()
                 messages.error(request,
-                               f'❌ {unseen_count} تیکت دیده نشده (unseen) وجود دارد که نمی‌توانید حذف کنید. ابتدا آنها را Mark as Seen کنید.')
+                               f'❌ {unseen_count} There are unseen tickets. Mark them as Seen first.')
                 return redirect('tickets')
 
             try:
@@ -556,47 +655,49 @@ def index(request):
 
                     count, _ = Ticket.objects.all().delete()
 
-                    messages.success(request, f'✅ {count} تیکت با موفقیت پاک شدند.')
+                    messages.success(request, f'✅ {count} Selected tickets deleted.')
             except Exception as e:
-                messages.error(request, f'خطا: {str(e)}')
+                messages.error(request, f'Error deleting tickets: {str(e)}')
 
             return redirect('tickets')
 
-        # منطق حذف تیکت‌های فیلتر شده
-        elif action_value == 'delete_filtered' or delete_filtered:
-            print("🔍 Processing delete_filtered")
-            # بررسی اینکه آیا تیکت‌های unseen در لیست وجود دارند
-            unseen_tickets = tickets.filter(seen_at__isnull=True)
+
+        elif action == 'delete_filtered':
+
+            unseen_tickets = base_queryset.filter(seen_at__isnull=True)
             if unseen_tickets.exists():
                 unseen_count = unseen_tickets.count()
                 messages.error(request,
-                               f'❌ {unseen_count} تیکت دیده نشده (unseen) وجود دارد که نمی‌توانید حذف کنید. ابتدا آنها را Mark as Seen کنید.')
+                               f'❌ {unseen_count}There are unseen tickets. Mark them as Seen first.')
                 return redirect('tickets')
 
             try:
                 with transaction.atomic():
-                    ticket_ids = list(tickets.values_list('id', flat=True))
+                    ticket_ids = list(base_queryset.values_list('id', flat=True))
 
                     if not ticket_ids:
-                        messages.warning(request, 'هیچ تیکتی برای پاک کردن وجود ندارد.')
+                        messages.warning(request, 'There are no tickets to delete.')
                         return redirect('tickets')
 
                     TicketAttachment.objects.filter(ticket_id__in=ticket_ids).delete()
                     Assignment.objects.filter(assigned_ticket_id__in=ticket_ids).delete()
                     TicketResponse.objects.filter(ticket_id__in=ticket_ids).delete()
 
-                    deleted_count, _ = tickets.delete()
+                    deleted_count, _ = base_queryset.delete()
 
-                    messages.success(request, f'✅ {deleted_count} تیکت فیلترشده پاک شدند.')
+                    messages.success(request, f'✅ {deleted_count}Filtered tickets deleted.')
             except Exception as e:
-                messages.error(request, f'خطا: {str(e)}')
+                messages.error(request, f'Error deleting tickets: {str(e)}')
 
             return redirect('tickets')
 
         else:
             print(f"❌ No valid delete action found")
-            messages.error(request, 'عملیات نامشخص است.')
+            messages.error(request, 'The operation is undefined.')
             return redirect('tickets')
+
+
+    swipers = Swiper.objects.filter(is_active=True).order_by('-created_at')
 
     columns = [
         ('row', 'Row'),
@@ -613,7 +714,7 @@ def index(request):
 
     context = {
         'page_obj': page_obj,
-        'tickets': tickets,
+        'ticket_extra_info': ticket_extra_info,
         'search_query': search_query,
         'selected_category': category_id if category_id not in ["", "None"] else "",
         'selected_priority': priority if priority not in ["", "None"] else "",
@@ -622,12 +723,20 @@ def index(request):
         'selected_response_status': response_status if response_status not in ["", "None"] else "",
         'selected_seen': seen if seen not in ["", "None"] else "",
         'search_mode': search_mode,
-        'categories': categories,
-        'priorities': priorities,
-        'statuses': statuses,
-        'departments': departments,
-        'response_statuses': response_statuses,
-        'seen_choices': seen_choices,
+        'categories': Category.objects.active(),
+        'priorities': Ticket._meta.get_field('priority').choices,
+        'statuses': Ticket._meta.get_field('status').choices,
+        'departments': Ticket._meta.get_field('department').choices,
+        'response_statuses': [
+            ('sent', 'Sent'),
+            ('seen', 'Seen'),
+            ('read', 'Read'),
+            ('replied', 'Replied'),
+        ],
+        'seen_choices': [
+            ('yes', 'Seen'),
+            ('no', 'Unseen'),
+        ],
         'with_close': with_close,
         'direction': direction,
         'sort': sort,
@@ -638,51 +747,86 @@ def index(request):
         'max_replay_date_to': max_replay_date_to,
         'swipers': swipers,
         'user': request.user,
+        'user_role': user_role,
 
-        # اضافه کردن این خط برای check کردن فیلترهای فعال
+        # بررسی وجود فیلترهای فعال
         'has_active_filters': bool(
             search_query or category_id or priority or status or department or
             response_status or created_at_from or created_at_to or
             max_replay_date_from or max_replay_date_to or seen or with_close == "on"),
     }
 
-    return render(request, template_name='index-table-card-assignment-BulkDelete-new-seen.html', context=context)
+    return render(request, template_name='index-table-card-assignment-BulkDelete-new-seen-2.html', context=context)
+
 
 def ticket_create(request):
-    # برای عدم دسترسی کارمند نوشته شده است
-    # user_role = request.session.get('role')
-    # if user_role == "Employee":
-    #     # برای این روش باید صفحه HTML ساخته شود
-    #     raise PermissionDenied
-    #     # برای این روش نیاز به ساخت HTML نیست
-    #     # return HttpResponseForbidden("Access Denied")
 
+    user_role = request.session.get('role')
+    if user_role == "Employee":
+        messages.error(request, 'Staff cannot create new tickets.')
+        return redirect('tickets')
 
     if not request.user.is_authenticated:
         messages.error(request, 'You must be logged in to create a ticket.')
         return redirect('tickets-login')
 
     if request.method == 'POST':
-        form = TicketForm(request.POST, request.FILES,request=request)
-        form.errors.clear()
+        form = TicketForm(request.POST, request.FILES, request=request)
 
-        # validation برای فیلدهای جدید
-        rules = {
+
+
+
+        validation_errors = {}
+
+
+        boolean_rules = {
             "send_notification": ["boolean"],
             "send_email": ["boolean"],
             "send_sms": ["boolean"],
         }
 
-        errors = validate(request.POST, request.FILES, rules)
+        boolean_errors = validate(request.POST, request.FILES, boolean_rules)
+        if boolean_errors:
+            validation_errors.update(boolean_errors)
 
-        if errors:
-            for field, error in errors.items():
+
+        ticket_rules = {
+            'subject': ['required', 'min:10', 'max:200'],
+            'description': ['required', 'min:20'],
+            'contact_name': ['required', 'min:3', 'max:100'],
+            'contact_email': ['required', 'email'],
+            'contact_phone': ['required', 'phone'],
+            'priority': ['required'],
+            'category': ['required'],
+            'department': ['required'],
+            'max_replay_date': ['required', 'future_date'],
+            'due_date': ['future_date'],
+            'tags': ['required', 'min_items:1', 'max_items:5'],
+            'users': ['required', 'min_items:1', 'max_items:10'],
+            'attachments': [
+                'max_files:5',
+                'max_size:10',
+                'file_type:application/pdf,image/jpeg,image/png,application/msword'
+            ]
+        }
+
+        ticket_errors = validate(request.POST, request.FILES, ticket_rules)
+        if ticket_errors:
+            validation_errors.update(ticket_errors)
+
+
+        if validation_errors:
+            for field, error in validation_errors.items():
                 form.add_error(field, error)
 
-        elif form.is_valid():
+
+        if not validation_errors and form.is_valid():
             new_ticket = form.save(commit=False)
             new_ticket.created_by_id = request.user.id
+            new_ticket.seen_count = 0
             new_ticket.save()
+
+
             files = request.FILES.getlist("attachments")
             for file in files:
                 TicketAttachment.objects.create(
@@ -709,15 +853,12 @@ def ticket_create(request):
 
                 # ارسال نوتیفیکیشن بر اساس تنظیمات کاربر
                 if form.cleaned_data.get('send_notification'):
-                    # کد ارسال نوتیفیکیشن درون اپلیکیشن
                     send_in_app_notification(user, new_ticket)
 
                 if form.cleaned_data.get('send_email'):
-                    # کد ارسال ایمیل
                     send_ticket_email(user, new_ticket)
 
                 if form.cleaned_data.get('send_sms'):
-                    # کد ارسال SMS
                     send_ticket_sms(user, new_ticket)
 
             Assignment.objects.bulk_create(assignments)
@@ -725,14 +866,11 @@ def ticket_create(request):
             messages.success(request, 'Your ticket has been created successfully!')
             return redirect('ticket_success', id=new_ticket.id)
 
+        else:
+            messages.error(request, 'Please fix the form errors.')
+
     else:
-        # form = TicketForm(initial={
-        #     'priority': '',
-        #     'send_notification': True,
-        #     'send_email': False,
-        #     'send_sms': False,
-        # })
-        form = TicketForm(request=request)  # ★
+        form = TicketForm(request=request)
 
     return render(request, 'ticket_create.html', {
         'form': form,
@@ -741,58 +879,6 @@ def ticket_create(request):
         'PRIORITY_COLORS': PRIORITY_COLORS,
         'STATUS_COLORS': STATUS_COLORS,
     })
-
-# def ticket_details(request, id):
-#     ticket = get_object_or_404(
-#         Ticket.objects.select_related('category', 'created_by', 'seen_by')
-#         .prefetch_related('tags', 'ticket_attachments'),
-#         id=id
-#     )
-#
-#     # علامت‌گذاری تیکت به عنوان دیده شده اگر کاربر لاگین کرده باشد
-#     if request.user.is_authenticated:
-#         ticket.mark_as_seen(request.user)
-#         # همچنین Assignment مربوطه را هم mark_as_seen کن
-#         assignment = Assignment.objects.filter(
-#             assigned_ticket=ticket,
-#             assignee=request.user
-#         ).first()
-#
-#         # if assignment and not assignment.seen_at:
-#         #     assignment.mark_as_seen()
-#
-#
-#     all_tickets = Ticket.objects.all().order_by('-created_at')
-#     row_number = 0
-#     for i, t in enumerate(all_tickets, start=1):
-#         if t.id == ticket.id:
-#             row_number = i
-#             break
-#
-#     attachments = ticket.ticket_attachments.all()
-#
-#     if not ActivityLog.objects.filter(ticket=ticket).filter(user=request.user).exists():
-#
-#         ActivityLog.objects.create(
-#             user=request.user,
-#             ticket=ticket,
-#             action='view',
-#             # ip_address=request.META['REMOTE_ADDR'],
-#             ip_address=request.META.get('REMOTE_ADDR'),
-#         )
-#
-#     context = {
-#         'ticket': ticket,
-#         'attachments': attachments,
-#         'row_number': row_number,
-#         'is_seen': ticket.is_seen,
-#         'seen_at': ticket.seen_at,
-#         'seen_by': ticket.seen_by,
-#         'seen_by_display': ticket.seen_by_display,
-#         'seen_count': ticket.seen_count,
-#         'assignments': ticket.assignments_tickets.select_related('assignee').all(),
-#     }
-#     return render(request, 'ticket-details.html', context)
 
 
 @login_required()
@@ -803,47 +889,40 @@ def ticket_details(request, id):
         id=id
     )
 
-    # بررسی دسترسی کاربر
+    user_role = request.session.get("role", "User")
     user_has_access = False
 
-    # 1. اگر کاربر staff یا superuser است
-    if request.user.is_staff or request.user.is_superuser:
+    if user_role == "Super Admin":
         user_has_access = True
-
-    # 2. اگر کاربر ایجادکننده تیکت است
-    elif ticket.created_by == request.user:
-        user_has_access = True
-
-    # 3. اگر کاربر به تیکت assign شده است
-    elif ticket.assignments_tickets.filter(assignee=request.user).exists():
-        user_has_access = True
+        print(f"DETAILS: 👑 SUPER ADMIN has access to ticket #{id}")
+    elif user_role == "Admin":
+        user_has_access = ticket.created_by == request.user
+        print(f"DETAILS: 🔧 ADMIN access check: {user_has_access}")
+    elif user_role == "Employee":
+        user_has_access = (ticket.created_by == request.user or
+                           ticket.assignments_tickets.filter(assignee=request.user).exists())
+        print(f"DETAILS: 👨‍💼 EMPLOYEE access check: {user_has_access}")
+    else:
+        user_has_access = ticket.created_by == request.user
 
     if not user_has_access:
-        messages.error(request, 'شما دسترسی به این تیکت را ندارید.')
+        messages.error(request, 'You do not have access to this ticket.')
         return redirect('tickets')
 
-    # علامت‌گذاری تیکت به عنوان دیده شده اگر کاربر لاگین کرده باشد
-    if request.user.is_authenticated:
-        # فقط اگر کاربر assignee یا creator است، mark_as_seen کند
-        if ticket.created_by == request.user or ticket.assignments_tickets.filter(assignee=request.user).exists():
-            ticket.mark_as_seen(request.user)
 
-    # اطلاعات دیده شدن‌ها
-    seen_info = ticket.get_all_seen_info()
+    is_seen_by_current_user = ticket.check_seen_by_user(request.user)
 
-    # اولین بار دیده شدن توسط کاربر جاری
+
     first_seen_by_current_user = ticket.get_first_seen_by_user(request.user)
 
-    # آیا کاربر جاری فرستنده تیکت است؟
     is_creator = ticket.created_by == request.user
 
-    # اطلاعات Assignments
     assignments = ticket.assignments_tickets.select_related('assignee').all()
 
-    # تاریخچه Activity
+
     activities = ticket.activities.all()
 
-    # شماره ردیف
+
     all_tickets = Ticket.objects.filter(created_by=request.user).order_by('-created_at')
     row_number = 0
     for i, t in enumerate(all_tickets, start=1):
@@ -853,14 +932,33 @@ def ticket_details(request, id):
 
     attachments = ticket.ticket_attachments.all()
 
-    # ثبت Activity Log اگر قبلاً ثبت نشده
-    if not ActivityLog.objects.filter(ticket=ticket, user=request.user, action='view').exists():
-        ActivityLog.objects.create(
-            user=request.user,
-            ticket=ticket,
-            action='view',
-            ip_address=request.META.get('REMOTE_ADDR'),
-        )
+
+    notes = ticket.notes.all().select_related('created_by').order_by('-created_at')
+
+
+    if not (request.user.is_staff or request.user.is_superuser or
+            request.user.groups.filter(name='Staff').exists()):
+        notes = notes.filter(is_private=False)
+
+    note_form = TicketNoteForm()
+
+    notes_with_assignee_status = []
+    for note in notes:
+        note_data = {
+            'note': note,
+            'is_assignee': ticket.assignments_tickets.filter(assignee=note.created_by).exists(),
+            'is_ticket_creator': note.created_by == ticket.created_by,
+            'can_edit': note.created_by == request.user,
+            'can_delete': note.created_by == request.user,
+        }
+        notes_with_assignee_status.append(note_data)
+
+
+    seen_history_data = []
+
+
+    seen_info = ticket.get_all_seen_info()
+    seen_history_data = seen_info.get('viewers', [])
 
     context = {
         'ticket': ticket,
@@ -873,32 +971,106 @@ def ticket_details(request, id):
         'seen_count': ticket.seen_count,
         'assignments': assignments,
         'activities': activities,
-        # اطلاعات جدید
-        'seen_info': seen_info,
         'first_seen_by_current_user': first_seen_by_current_user,
         'is_creator': is_creator,
         'user_has_access': user_has_access,
+        'is_seen_by_current_user': is_seen_by_current_user,
         'current_user': request.user,
+        'note_form': note_form,
+        'can_add_note': user_has_access,
+        'notes_with_status': notes_with_assignee_status,
+        'notes': notes,
+        'seen_history_data': seen_history_data,
+        'seen_history_count': len(seen_history_data),
+        'first_view': seen_info.get('first_view'),
+        'last_view': seen_info.get('last_view'),
     }
 
     return render(request, 'ticket-details.html', context)
 
+
+@login_required()
 def ticket_update(request, id):
     ticket = get_object_or_404(Ticket, id=id)
+
+    user_role = request.session.get("role", "User")
+    has_access = False
+
+    if user_role == "Super Admin":
+        has_access = True
+    elif user_role == "Admin":
+        has_access = ticket.created_by == request.user
+    elif user_role == "Employee":
+        has_access = ticket.created_by == request.user
+    else:
+        has_access = ticket.created_by == request.user
+
+    if not has_access:
+        messages.error(request, 'You do not have access to edit this ticket.')
+        return redirect('tickets')
+
     if request.method == 'POST':
-        form = TicketForm(request.POST, instance=ticket)
-        if form.is_valid():
-            form.save()
+        form = TicketForm(request.POST, request.FILES, instance=ticket, request=request)
+
+
+        validation_errors = {}
+
+
+        boolean_rules = {
+            "send_notification": ["boolean"],
+            "send_email": ["boolean"],
+            "send_sms": ["boolean"],
+        }
+
+        boolean_errors = validate(request.POST, request.FILES, boolean_rules)
+        if boolean_errors:
+            validation_errors.update(boolean_errors)
+
+
+        ticket_rules = {
+            'subject': ['required', 'min:10', 'max:200'],
+            'description': ['required', 'min:20'],
+            'contact_name': ['required', 'min:3', 'max:100'],
+            'contact_email': ['required', 'email'],
+            'contact_phone': ['required', 'phone'],
+            'priority': ['required'],
+            'category': ['required'],
+            'department': ['required'],
+            'max_replay_date': ['required', 'future_date'],
+            'due_date': ['future_date'],
+            'tags': ['required', 'min_items:1', 'max_items:5'],
+            'users': ['required', 'min_items:1', 'max_items:10'],
+            'attachments': [
+                'max_files:5',
+                'max_size:10',
+                'file_type:application/pdf,image/jpeg,image/png,application/msword'
+            ]
+        }
+
+        ticket_errors = validate(request.POST, request.FILES, ticket_rules)
+        if ticket_errors:
+            validation_errors.update(ticket_errors)
+
+
+        if validation_errors:
+            for field, error in validation_errors.items():
+                form.add_error(field, error)
+
+        if not validation_errors and form.is_valid():
+
+            updated_ticket = form.save()
 
             # Handle new attachment on EDIT
             files = request.FILES.getlist("attachments")
             for file in files:
-                TicketAttachment.objects.create(ticket=ticket, file=file)
+                TicketAttachment.objects.create(
+                    ticket=updated_ticket,
+                    file=file,
+                    uploaded_by_id=request.user.id
+                )
 
-            # Handel Assignment
-            # set تکراری ها را پاک میکند
+            # Handle Assignment
             selected_users = set(form.cleaned_data['users'])
-
             current_users = set(
                 ticket.assignments_tickets.values_list('assignee_id', flat=True)
             )
@@ -910,29 +1082,64 @@ def ticket_update(request, id):
             ).delete()
 
             # Add New Assignments
-            new_assignments = [Assignment(assigned_ticket=ticket, assignee=user)
-                               for user in selected_users
-                               if user.id not in current_users
-                               ]
-            Assignment.objects.bulk_create(new_assignments)
+            new_assignments = []
+            for user in selected_users:
+                if user.id not in current_users:
+                    new_assignments.append(
+                        Assignment(
+                            assigned_ticket=ticket,
+                            assignee=user,
+                            assigned_by_id=request.user.id,
+                            status='new'
+                        )
+                    )
 
+            if new_assignments:
+                Assignment.objects.bulk_create(new_assignments)
 
-
-            messages.info(request, f'Ticket #{ticket.id} has been updated Successfully !!!')
+            messages.success(request, f'Ticket #{ticket.id} has been updated Successfully !!!')
             return redirect('tickets-details', id=ticket.id)
+        else:
+            messages.error(request, 'Please fix the form errors.')
     else:
-        form = TicketForm(instance=ticket)
-        # instance برای نمایش دوباره مقداری که میخواهیم ویرایش کنیم است
+
+        form = TicketForm(instance=ticket, request=request)
+
+        current_assignees = ticket.assignments_tickets.values_list('assignee_id', flat=True)
+        form.fields['users'].initial = list(current_assignees)
 
     return render(request, 'ticket_create.html', {
         'form': form,
         'ticket': ticket,
         'attachments': ticket.ticket_attachments.all(),
+        'is_edit': True,
     })
 
+
+@login_required()
 def ticket_delete(request, id):
     try:
         ticket = Ticket.objects.get(id=id)
+
+
+        user_role = request.session.get("role", "User")
+        has_access = False
+
+        if user_role == "Super Admin":
+            has_access = True
+            print(f"DELETE: 👑 SUPER ADMIN deleting ticket #{id}")
+        elif user_role == "Admin":
+            has_access = ticket.created_by == request.user
+        elif user_role == "Employee":
+            # Employee فقط اگر creator باشه می‌تونه حذف کنه
+            has_access = ticket.created_by == request.user
+        else:
+            has_access = ticket.created_by == request.user
+
+        if not has_access:
+            messages.error(request, 'You do not have access to delete this ticket.')
+            return redirect('tickets')
+
 
         if ticket.priority.upper() == 'HIGH' or ticket.priority.lower() == 'high':
             messages.error(request, 'Cannot delete tickets with HIGH priority')
@@ -951,21 +1158,25 @@ def ticket_delete(request, id):
         messages.error(request, 'Ticket not found')
         return redirect('tickets')
 
+
 def ticket_success(request, id):
     ticket = get_object_or_404(Ticket, id=id)
     return render(request, 'ticket_success.html', {'ticket': ticket})
 
-# @login_required
+
+@login_required
 def search_logs(request):
     try:
-        # اگر کاربر لاگین کرده، لاگ‌های خودش رو ببین، در غیر این صورت همه لاگ‌ها رو نشون بده
-        if request.user.is_authenticated:
-            logs = SearchLogSignal.objects.filter(user=request.user).select_related('category').order_by('-created_at')
-            print(f" Found {logs.count()} logs for user {request.user.username}")
-        else:
-            # اگر کاربر لاگین نکرده، همه لاگ‌ها رو نشون بده
+        user_role = request.session.get("role", "User")
+
+
+        if user_role == "Super Admin":
             logs = SearchLogSignal.objects.all().select_related('category', 'user').order_by('-created_at')
-            print(f" Found {logs.count()} total logs (user not authenticated)")
+            print(f"👑 SUPER ADMIN sees ALL search logs")
+        else:
+
+            logs = SearchLogSignal.objects.filter(user=request.user).select_related('category').order_by('-created_at')
+            print(f"Found {logs.count()} logs for user {request.user.username}")
 
         paginator = Paginator(logs, 20)
         page_number = request.GET.get('page')
@@ -975,12 +1186,14 @@ def search_logs(request):
             'page_obj': page_obj,
             'logs': page_obj.object_list,
             'user_authenticated': request.user.is_authenticated,
+            'is_super_admin': user_role == "Super Admin",
         }
         return render(request, 'search_logs.html', context)
 
     except Exception as e:
         print(f" Error in search_logs view: {e}")
         return redirect('tickets')
+
 
 def ticket_login(request):
     swipers = Swiper.objects.filter(is_active=True).order_by('-created_at')
@@ -999,6 +1212,7 @@ def ticket_login(request):
 
     return render(request, 'registration/login-page.html', {'swipers': swipers})
 
+
 def ticket_attachment_delete(request, id):
     attachment = get_object_or_404(TicketAttachment, id=id)
     ticket = attachment.ticket
@@ -1009,15 +1223,34 @@ def ticket_attachment_delete(request, id):
     messages.success(request, 'Ticket Attachment Deleted Successfully')
     return redirect('tickets-update', id=ticket.id)
 
-def ticket_attachments_delete_all(request, ticket_id):
 
+@login_required
+def ticket_attachments_delete_all(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
+
+
+    user_role = request.session.get("role", "User")
+    has_access = False
+
+    if user_role == "Super Admin":
+        has_access = True
+    elif user_role == "Admin":
+        has_access = ticket.created_by == request.user
+    elif user_role == "Employee":
+        # Employee فقط اگر creator باشه می‌تونه حذف کنه
+        has_access = ticket.created_by == request.user
+    else:
+        has_access = ticket.created_by == request.user
+
+    if not has_access:
+        messages.error(request, 'You do not have access to delete the files in this ticket.')
+        return redirect('tickets-details', id=ticket.id)
 
     if request.method == 'POST':
         attachments = ticket.ticket_attachments.all()
         count = attachments.count()
 
-        # حذف تمام فایل‌ها
+
         for attachment in attachments:
             attachment.file.delete(save=False)
             attachment.delete()
@@ -1025,12 +1258,32 @@ def ticket_attachments_delete_all(request, ticket_id):
         messages.success(request, f'{count} attachment(s) deleted successfully')
         return redirect('tickets-update', id=ticket.id)
 
-    # اگر درخواست GET بود به صفحه جزئیات برگرد
+
     return redirect('tickets-details', id=ticket.id)
 
-def download_all_attachments(request, ticket_id):
 
+@login_required
+def download_all_attachments(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
+
+
+    user_role = request.session.get("role", "User")
+    has_access = False
+
+    if user_role == "Super Admin":
+        has_access = True
+    elif user_role == "Admin":
+        has_access = ticket.created_by == request.user
+    elif user_role == "Employee":
+        has_access = (ticket.created_by == request.user or
+                      ticket.assignments_tickets.filter(assignee=request.user).exists())
+    else:
+        has_access = ticket.created_by == request.user
+
+    if not has_access:
+        messages.warning(request, 'You do not have access to the files in this ticket.')
+        return redirect('tickets')
+
     attachments = ticket.ticket_attachments.all()
 
     if not attachments.exists():
@@ -1058,6 +1311,7 @@ def download_all_attachments(request, ticket_id):
 
     return response
 
+
 def register(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
@@ -1071,160 +1325,1125 @@ def register(request):
         form = RegisterForm()
     return render(request, 'registration/register.html', {'form': form})
 
+
 def ticket_logout(request):
     logout(request)
     messages.success(request, 'You have been successfully logged out.')
     return redirect('tickets-login')
 
-@login_required
-def ticket_seen_details(request, ticket_id):
-    ticket = get_object_or_404(Ticket, pk=ticket_id)
 
-    # بررسی دسترسی کاربر - منطق ساده‌تر
+@login_required
+def assignee_ticket_list(request):
+    user_role = request.session.get("role", "User")
+
+    print(f"DEBUG: assignee_ticket_list - User: {request.user}, Role: {user_role}")
+
+
+    if not request.user.is_authenticated:
+        messages.error(request, 'You must be logged in to view Tasks.')
+        return redirect('tickets-login')
+
+    try:
+
+        if user_role == "Super Admin":
+
+            assignments = Assignment.objects.all().select_related(
+                'assigned_ticket',
+                "assigned_ticket__category",
+                'assignee'
+            )
+            print(f"DEBUG: Super Admin sees ALL assignments, count: {assignments.count()}")
+
+        else:
+
+            assignments = Assignment.objects.filter(
+                assignee=request.user
+            ).select_related(
+                'assigned_ticket',
+                "assigned_ticket__category",
+                'assignee'
+            )
+            print(f"DEBUG: {user_role} sees assignments FOR self, count: {assignments.count()}")
+
+        assignments = assignments.order_by("-created_at")
+        print(f"DEBUG: After ordering, count: {assignments.count()}")
+
+        paginator = Paginator(assignments, 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        print(f"DEBUG: Pagination - Page: {page_number}, Objects on page: {len(page_obj)}")
+
+        context = {
+            'page_obj': page_obj,
+            'user_role': user_role,
+            'is_super_admin': user_role == "Super Admin",
+            'is_admin': user_role == "Admin",
+            'is_employee': user_role == "Employee",
+        }
+
+        print(f"DEBUG: Rendering template with context")
+        return render(request, "assignee/ticket_assignee_list.html", context=context)
+
+    except Exception as e:
+        print(f"ERROR in assignee_ticket_list: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        messages.error(request, f'An error occurred while loading the page:: {str(e)}')
+        return redirect('tickets')
+
+
+@login_required
+def assignee_ticket_detail(request, id):
+    user_role = request.session.get("role", "User")
+
+    print(f"DEBUG: assignee_ticket_detail - User: {request.user}, Role: {user_role}, Assignment ID: {id}")
+
+
+    if not request.user.is_authenticated:
+        messages.error(request, 'You must log in to view the Task.')
+        return redirect('tickets-login')
+
+    try:
+        assignment = None
+
+        if user_role == "Super Admin":
+            print(f"DEBUG: Super Admin trying to access assignment {id}")
+            # Super Admin به همه assignments دسترسی دارد
+            assignment = get_object_or_404(
+                Assignment.objects.select_related(
+                    'assigned_ticket',
+                    'assigned_ticket__category',
+                    'assigned_ticket__created_by',
+                    'assignee'
+                ),
+                id=id
+            )
+            print(
+                f"DEBUG: Super Admin found assignment for ticket: {assignment.assigned_ticket.id if assignment.assigned_ticket else 'None'}")
+
+
+            if assignment.assigned_ticket:
+                print(f"DEBUG: Super Admin marking ticket as seen for themselves only")
+                assignment.assigned_ticket.mark_as_seen_for_user(request.user)
+
+        else:
+            print(f"DEBUG: {user_role} trying to access assignment {id}")
+
+            assignment = get_object_or_404(
+                Assignment.objects.select_related(
+                    'assigned_ticket',
+                    'assigned_ticket__category',
+                    'assigned_ticket__created_by',
+                    'assignee'
+                ),
+                id=id,
+                assignee=request.user
+            )
+            print(
+                f"DEBUG: {user_role} found assignment for ticket: {assignment.assigned_ticket.id if assignment.assigned_ticket else 'None'}")
+
+
+            if assignment.assigned_ticket:
+                print(f"DEBUG: {user_role} marking ticket as seen for themselves")
+                assignment.assigned_ticket.mark_as_seen_for_user(request.user)
+
+
+                if not assignment.seen_at:
+                    assignment.mark_as_seen(request.user)
+
+        if not assignment:
+            print(f"DEBUG: Assignment not found or no access")
+            messages.error(request, 'The requested assignment was not found or you do not have access')
+            return redirect('assignee-list')
+
+        ticket = assignment.assigned_ticket
+
+        if not ticket:
+            print(f"DEBUG: Ticket not found for assignment {id}")
+            messages.error(request, 'The corresponding ticket was not found.')
+            return redirect('assignee-list')
+
+        print(f"DEBUG: Processing assignment {id} for ticket {ticket.id}")
+
+        if request.method == "POST":
+            print(f"DEBUG: POST request received for assignment {id}")
+
+            can_change_status = False
+
+            if user_role == "Super Admin":
+                can_change_status = True
+                print(f"DEBUG: Super Admin can change status")
+            else:
+
+                can_change_status = assignment.assignee == request.user
+                print(f"DEBUG: {user_role} can change status: {can_change_status}")
+
+            if not can_change_status:
+                messages.error(request, 'You do not have permission to change the status of this ticket.')
+                return redirect('assignee-detail', id=assignment.id)
+
+
+            old_status = assignment.status
+            new_status = request.POST.get('status')
+            assignment.status = new_status
+            assignment.description = request.POST.get('description', '').strip()
+            assignment.save()
+
+            ActivityLog.objects.create(
+                user=request.user,
+                ticket=ticket,
+                action='update_status',
+                field='status',
+                old_value=old_status,
+                new_value=new_status,
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+
+            messages.success(request, 'Ticket status was successfully updated.')
+            return redirect('assignee-detail', id=assignment.id)
+
+
+        notes = ticket.notes.all()
+        if user_role not in ["Super Admin", "Admin"]:
+            notes = notes.filter(
+                Q(is_private=False) |
+                Q(created_by=request.user)
+            )
+
+        print(f"DEBUG: Preparing context for template")
+        context = {
+            'status_choices': STATUS_CHOICES,
+            'assignment': assignment,
+            'ticket': ticket,
+            'notes': notes,
+            'note_form': TicketNoteForm(),
+            'user_role': user_role,
+            'is_super_admin': user_role == "Super Admin",
+            'is_admin': user_role == "Admin",
+            'is_employee': user_role == "Employee",
+
+            'can_change_status': (
+                    user_role == "Super Admin" or
+                    assignment.assignee == request.user
+            ),
+            'can_add_note': (
+                    user_role == "Super Admin" or
+                    assignment.assignee == request.user
+            ),
+        }
+
+        print(f"DEBUG: Rendering template with context")
+        return render(request, "assignee/ticket_assignee_detail.html", context=context)
+
+    except Exception as e:
+        print(f"ERROR in assignee_ticket_detail: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        messages.error(request, f'An error occurred while loading the page:: {str(e)}')
+        return redirect('assignee-list')
+
+
+@login_required
+@csrf_exempt
+def mark_assignment_seen(request, assignment_id):
+
+    try:
+        assignment = Assignment.objects.get(id=assignment_id)
+
+
+        if assignment.assignee != request.user:
+
+            if request.user.is_superuser:
+
+                if assignment.assigned_ticket:
+                    assignment.assigned_ticket.mark_as_seen_for_user(request.user)
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Ticket viewed (only history recorded).',
+                    'seen_status': 'viewed_by_admin',
+                    'is_super_admin': True,
+                    'is_assignee': False
+                })
+
+            return JsonResponse({
+                'success': False,
+                'message': 'You do not have access to this Assignment.'
+            }, status=403)
+
+
+        if not assignment.seen_at:
+            assignment.seen_at = timezone.now()
+            assignment.save(update_fields=['seen_at'])
+
+
+            if assignment.assigned_ticket:
+                assignment.assigned_ticket.mark_as_seen_for_user(request.user)
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Ticket successfully marked as viewed.',
+                'seen_at': assignment.seen_at.strftime('%Y/%m/%d %H:%M'),
+                'seen_status': 'seen_by_assignee',
+                'is_assignee': True
+            })
+        else:
+            return JsonResponse({
+                'success': True,
+                'message': 'This ticket has already been viewed.',
+                'seen_at': assignment.seen_at.strftime('%Y/%m/%d %H:%M'),
+                'seen_status': 'already_seen'
+            })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Server Error: {str(e)}'
+        }, status=500)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(login_required, name='dispatch')
+class MarkAssignmentSeenView(View):
+
+
+    def post(self, request, assignment_id):
+        try:
+            print(f"POST request to mark assignment {assignment_id} as seen")
+
+
+            data = json.loads(request.body) if request.body else {}
+            print(f"Request data: {data}")
+
+            assignment = get_object_or_404(Assignment, id=assignment_id)
+
+
+            if assignment.assignee != request.user:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Access denied'
+                }, status=403)
+
+
+            if not assignment.seen_at:
+                assignment.seen_at = timezone.now()
+                assignment.save(update_fields=['seen_at'])
+
+                if assignment.assigned_ticket:
+                    assignment.assigned_ticket.mark_as_seen(request.user)
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Marked as seen successfully',
+                    'seen_at': assignment.seen_at.isoformat(),
+                    'user': request.user.username
+                })
+            else:
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Already seen',
+                    'seen_at': assignment.seen_at.isoformat()
+                })
+
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            }, status=500)
+
+
+@login_required()
+def get_ticket_seen_info(request, ticket_id):
+
+    try:
+        ticket = Ticket.objects.get(id=ticket_id)
+
+        user_role = request.session.get("role", "User")
+        has_access = False
+
+        if user_role == "Super Admin":
+            has_access = True
+        elif user_role == "Admin":
+            has_access = ticket.created_by == request.user
+        elif user_role == "Employee":
+            has_access = (ticket.created_by == request.user or
+                          ticket.assignments_tickets.filter(assignee=request.user).exists())
+        else:
+            has_access = ticket.created_by == request.user
+
+        if not has_access:
+            return JsonResponse({'error': 'Access denied'}, status=403)
+
+        seen_info = ticket.get_all_seen_info()
+
+
+        formatted_info = {
+            'total_views': seen_info['total_views'],
+            'first_view': {
+                'user': seen_info['first_view'].user.username if seen_info['first_view'] else None,
+                'seen_at': seen_info['first_view'].seen_at.strftime('%Y/%m/%d %H:%M') if seen_info[
+                    'first_view'] else None,
+                'time_ago': timesince(seen_info['first_view'].seen_at) if seen_info['first_view'] else None
+            } if seen_info['first_view'] else None,
+            'last_view': {
+                'user': seen_info['last_view'].user.username if seen_info['last_view'] else None,
+                'seen_at': seen_info['last_view'].seen_at.strftime('%Y/%m/%d %H:%M') if seen_info[
+                    'last_view'] else None,
+                'time_ago': timesince(seen_info['last_view'].seen_at) if seen_info['last_view'] else None
+            } if seen_info['last_view'] else None,
+            'viewers': [
+                {
+                    'user': v['user'].username,
+                    'full_name': v['user'].get_full_name() or v['user'].username,
+                    'seen_at': v['seen_at'].strftime('%Y/%m/%d %H:%M'),
+                    'time_ago': timesince(v['seen_at']),
+                    'role': 'Sender' if v['user'] == ticket.created_by else 'Assignee' if v['is_assignee'] else 'User'
+                }
+                for v in seen_info['viewers']
+            ],
+            'current_user_first_seen': ticket.get_first_seen_by_user(request.user)
+        }
+
+        return JsonResponse({
+            'success': True,
+            'seen_info': formatted_info,
+            'ticket_seen': ticket.is_seen,
+            'seen_count': ticket.seen_count
+        })
+
+    except Ticket.DoesNotExist:
+        return JsonResponse({'error': 'Ticket not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def add_ticket_note(request, ticket_id):
+
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+
+    user_role = request.session.get("role", "User")
     has_access = False
 
-    # 1. اگر کاربر staff یا superuser است
-    if request.user.is_staff or request.user.is_superuser:
+    if user_role == "Super Admin":
         has_access = True
-
-    # 2. اگر کاربر ایجادکننده تیکت است
-    elif ticket.created_by == request.user:
-        has_access = True
-
-    # 3. اگر کاربر به تیکت assign شده است
-    elif ticket.assignments_tickets.filter(assignee=request.user).exists():
-        has_access = True
+    elif user_role == "Admin":
+        has_access = ticket.created_by == request.user
+    elif user_role == "Employee":
+        has_access = (ticket.created_by == request.user or
+                      ticket.assignments_tickets.filter(assignee=request.user).exists())
+    else:
+        has_access = ticket.created_by == request.user
 
     if not has_access:
         return JsonResponse({
             'success': False,
-            'error': 'شما دسترسی لازم برای مشاهده تاریخچه این تیکت را ندارید.'
+            'message': 'You do not have the required access.'
         }, status=403)
 
-    try:
-        # گرفتن تاریخچه
-        seen_history = ticket.get_seen_history()
+    if request.method == 'POST':
+        form = TicketNoteForm(request.POST)
+        if form.is_valid():
+            note = form.save(commit=False)
+            note.ticket = ticket
+            note.created_by = request.user
+            note.save()
 
-        # ساخت داده‌های JSON
-        history_data = []
-        for record in seen_history:
-            history_data.append({
-                'user': {
-                    'id': record.user.id,
-                    'username': record.user.username,
-                    'full_name': record.user.get_full_name() or record.user.username,
-                    'email': record.user.email,
-                },
-                'seen_at': record.seen_at.strftime('%Y/%m/%d %H:%M:%S'),
-                'seen_at_display': record.seen_at.strftime('%Y/%m/%d %H:%M'),
-                'seen_at_relative': timesince(record.seen_at) + ' پیش',
+
+            ActivityLog.objects.create(
+                user=request.user,
+                ticket=ticket,
+                action='add_note',
+                field='note',
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Note added successfully.',
+                'note_id': note.id
             })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Please fill out the form correctly.',
+                'errors': form.errors
+            }, status=400)
+
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request'
+    }, status=400)
+
+
+@login_required
+def edit_ticket_note(request, note_id):
+
+    note = get_object_or_404(TicketNote, id=note_id)
+    ticket = note.ticket
+
+    user_role = request.session.get("role", "User")
+    has_ticket_access = False
+
+    if user_role == "Super Admin":
+        has_ticket_access = True
+    elif user_role == "Admin":
+        has_ticket_access = ticket.created_by == request.user
+    elif user_role == "Employee":
+        has_ticket_access = (ticket.created_by == request.user or
+                             ticket.assignments_tickets.filter(assignee=request.user).exists())
+    else:
+        has_ticket_access = ticket.created_by == request.user
+
+    if not has_ticket_access:
+        return JsonResponse({
+            'success': False,
+            'message': 'You do not have access to this ticket.'
+        }, status=403)
+
+    if not (request.user == note.created_by or user_role == "Super Admin"):
+        return JsonResponse({
+            'success': False,
+            'message': 'You do not have permission to edit this note.'
+        }, status=403)
+
+    if request.method == 'POST':
+        form = TicketNoteForm(request.POST, instance=note)
+        if form.is_valid():
+            note = form.save()
+
+
+            ActivityLog.objects.create(
+                user=request.user,
+                ticket=note.ticket,
+                action='edit_note',
+                field='note',
+                old_value='Note edited.',
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Note successfully edited.',
+                'note_id': note.id
+            })
+
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request'
+    }, status=400)
+
+
+@login_required
+def delete_ticket_note(request, note_id):
+
+    note = get_object_or_404(TicketNote, id=note_id)
+    ticket = note.ticket
+
+    user_role = request.session.get("role", "User")
+    has_ticket_access = False
+
+    if user_role == "Super Admin":
+        has_ticket_access = True
+    elif user_role == "Admin":
+        has_ticket_access = ticket.created_by == request.user
+    elif user_role == "Employee":
+        has_ticket_access = (ticket.created_by == request.user or
+                             ticket.assignments_tickets.filter(assignee=request.user).exists())
+    else:
+        has_ticket_access = ticket.created_by == request.user
+
+    if not has_ticket_access:
+        return JsonResponse({
+            'success': False,
+            'message': 'You do not have access to this ticket.'
+        }, status=403)
+
+
+    if not (request.user == note.created_by or user_role == "Super Admin"):
+        return JsonResponse({
+            'success': False,
+            'message': 'You do not have permission to delete this note.'
+        }, status=403)
+
+    if request.method == 'POST':
+        ticket_id = note.ticket.id
+        note.delete()
+
+
+        ActivityLog.objects.create(
+            user=request.user,
+            ticket=note.ticket,
+            action='delete_note',
+            field='note',
+            old_value='Note deleted.',
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
 
         return JsonResponse({
             'success': True,
-            'ticket': {
-                'id': ticket.id,
-                'tracking_code': ticket.tracking_code,
-                'subject': ticket.subject,
-                'total_seen_count': ticket.seen_count,
-                'last_seen_by': ticket.seen_by.username if ticket.seen_by else None,
-                'last_seen_at': ticket.seen_at.strftime('%Y/%m/%d %H:%M') if ticket.seen_at else None,
-            },
-            'history': history_data,
-            'total_count': len(history_data),
+            'message': 'Note successfully deleted.'
         })
 
-    except Exception as e:
-        # لاگ کردن خطا برای دیباگ
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.error(f"Error in ticket_seen_details: {str(e)}")
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request'
+    }, status=400)
 
+
+@login_required
+def get_ticket_notes(request, ticket_id):
+
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+
+    user_role = request.session.get("role", "User")
+    has_access = False
+
+    if user_role == "Super Admin":
+        has_access = True
+    elif user_role == "Admin":
+        has_access = ticket.created_by == request.user
+    elif user_role == "Employee":
+        has_access = (ticket.created_by == request.user or
+                      ticket.assignments_tickets.filter(assignee=request.user).exists())
+    else:
+        has_access = ticket.created_by == request.user
+
+    if not has_access:
         return JsonResponse({
             'success': False,
-            'error': 'خطا در دریافت اطلاعات تاریخچه'
-        }, status=500)
+            'message': 'You do not have the necessary access.'
+        }, status=403)
+
+    notes = ticket.notes.all()
+
+
+    if not (request.user.is_staff or request.user.is_superuser or
+            request.user.groups.filter(name='Staff').exists()):
+        notes = notes.filter(is_private=False)
+
+    notes_data = []
+    for note in notes:
+        notes_data.append({
+            'id': note.id,
+            'content': note.content,
+            'is_private': note.is_private,
+            'created_by': {
+                'id': note.created_by.id,
+                'username': note.created_by.username,
+                'full_name': note.created_by.get_full_name(),
+            },
+            'created_at': note.created_at.strftime('%Y/%m/%d %H:%M'),
+            'created_at_display': timesince(note.created_at),
+            'can_edit': request.user == note.created_by or user_role == "Super Admin",
+            'can_delete': request.user == note.created_by or user_role == "Super Admin",
+        })
+
+    return JsonResponse({
+        'success': True,
+        'notes': notes_data,
+        'count': len(notes_data),
+        'can_add_note': True,
+        'user_is_staff': request.user.is_staff,
+        'user_role': user_role,
+    })
+
+
+@login_required
+def add_ticket_note_assignee(request, ticket_id):
+
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+    # ✅ بررسی دسترسی - Employee باید assignee باشد
+    user_role = request.session.get("role", "User")
+    has_access = False
+
+    if user_role == "Super Admin":
+        has_access = True
+    elif user_role == "Admin":
+        has_access = ticket.created_by == request.user
+    elif user_role == "Employee":
+        # Employee باید assignee باشد
+        assignment = ticket.assignments_tickets.filter(assignee=request.user).first()
+        has_access = assignment is not None
+    else:
+        has_access = ticket.created_by == request.user
+
+    if not has_access:
+        messages.error(request, 'You do not have access to this ticket.')
+        return redirect('assignee-list')
+
+
+    assignment = ticket.assignments_tickets.filter(assignee=request.user).first()
+    if not assignment and user_role != "Super Admin":
+        messages.error(request, 'You do not have access to this ticket.')
+        return redirect('assignee-list')
+
+    if request.method == 'POST':
+        form = TicketNoteForm(request.POST)
+        if form.is_valid():
+            note = form.save(commit=False)
+            note.ticket = ticket
+            note.created_by = request.user
+            note.save()
+
+
+            ActivityLog.objects.create(
+                user=request.user,
+                ticket=ticket,
+                action='add_note',
+                field='note',
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+
+            messages.success(request, 'Note added successfully..')
+
+            if assignment:
+                return redirect('assignee-detail', id=assignment.id)
+            else:
+                return redirect('tickets-details', id=ticket_id)
+
+    messages.error(request, 'Error adding note.')
+    return redirect('assignee-list')
+
+
+@login_required
+def edit_ticket_note_assignee(request, note_id):
+
+    note = get_object_or_404(TicketNote, id=note_id)
+    ticket = note.ticket
+
+    user_role = request.session.get("role", "User")
+    has_ticket_access = False
+
+    if user_role == "Super Admin":
+        has_ticket_access = True
+    elif user_role == "Admin":
+        has_ticket_access = ticket.created_by == request.user
+    elif user_role == "Employee":
+        # Employee باید assignee باشد
+        assignment = ticket.assignments_tickets.filter(assignee=request.user).first()
+        has_ticket_access = assignment is not None
+    else:
+        has_ticket_access = ticket.created_by == request.user
+
+    if not has_ticket_access:
+        messages.error(request, 'You do not have access to this ticket.')
+        return redirect('assignee-list')
+
+
+    if not (request.user == note.created_by or user_role == "Super Admin"):
+        messages.error(request, 'You do not have permission to edit this note.')
+        return redirect('assignee-list')
+
+
+    assignment = ticket.assignments_tickets.filter(assignee=request.user).first()
+
+    if request.method == 'POST':
+        form = TicketNoteForm(request.POST, instance=note)
+        if form.is_valid():
+            form.save()
+
+
+            ActivityLog.objects.create(
+                user=request.user,
+                ticket=note.ticket,
+                action='edit_note',
+                field='note',
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+
+            messages.success(request, 'The note was successfully edited.')
+            if assignment:
+                return redirect('assignee-detail', id=assignment.id)
+            else:
+                return redirect('tickets-details', id=ticket.id)
+
+    messages.error(request, 'Error editing note.')
+    return redirect('assignee-list')
+
+
+@login_required
+def delete_ticket_note_assignee(request, note_id):
+
+    note = get_object_or_404(TicketNote, id=note_id)
+    ticket = note.ticket
+
+
+    user_role = request.session.get("role", "User")
+    has_ticket_access = False
+
+    if user_role == "Super Admin":
+        has_ticket_access = True
+    elif user_role == "Admin":
+        has_ticket_access = ticket.created_by == request.user
+    elif user_role == "Employee":
+        # Employee باید assignee باشد
+        assignment = ticket.assignments_tickets.filter(assignee=request.user).first()
+        has_ticket_access = assignment is not None
+    else:
+        has_ticket_access = ticket.created_by == request.user
+
+    if not has_ticket_access:
+        messages.error(request, 'You do not have access to this ticket.')
+        return redirect('assignee-list')
+
+
+    if not (request.user == note.created_by or user_role == "Super Admin"):
+        messages.error(request, 'You do not have permission to delete this note.')
+        return redirect('assignee-list')
+
+
+    assignment = ticket.assignments_tickets.filter(assignee=request.user).first()
+
+    if request.method == 'POST':
+        note.delete()
+
+
+        ActivityLog.objects.create(
+            user=request.user,
+            ticket=note.ticket,
+            action='delete_note',
+            field='note',
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+
+        messages.success(request, 'The note was successfully deleted.')
+        if assignment:
+            return redirect('assignee-detail', id=assignment.id)
+        else:
+            return redirect('tickets-details', id=ticket.id)
+
+    return redirect('assignee-list')
+
 
 @login_required
 @require_POST
-def mark_ticket_seen(request, id):
+def add_ticket_note_details(request, ticket_id):
+
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+
+    user_role = request.session.get("role", "User")
+    has_access = False
+
+    if user_role == "Super Admin":
+        has_access = True
+    elif user_role == "Admin":
+        has_access = ticket.created_by == request.user
+    elif user_role == "Employee":
+        has_access = (ticket.created_by == request.user or
+                      ticket.assignments_tickets.filter(assignee=request.user).exists())
+    else:
+        has_access = ticket.created_by == request.user
+
+    if not has_access:
+        messages.error(request, 'You do not have the necessary access.')
+        return redirect('tickets-details', id=ticket_id)
+
+    if request.method == 'POST':
+        form = TicketNoteForm(request.POST)
+        if form.is_valid():
+            note = form.save(commit=False)
+            note.ticket = ticket
+            note.created_by = request.user
+            note.save()
+
+
+            ActivityLog.objects.create(
+                user=request.user,
+                ticket=ticket,
+                action='add_note',
+                field='note',
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+
+            messages.success(request, 'Note added successfully.')
+        else:
+            messages.error(request, 'Please fill out the form correctly.')
+
+    return redirect('tickets-details', id=ticket_id)
+
+
+@login_required
+@require_POST
+def edit_ticket_note_details(request, note_id):
+
+    note = get_object_or_404(TicketNote, id=note_id)
+    ticket = note.ticket
+
+
+    user_role = request.session.get("role", "User")
+    has_ticket_access = False
+
+    if user_role == "Super Admin":
+        has_ticket_access = True
+    elif user_role == "Admin":
+        has_ticket_access = ticket.created_by == request.user
+    elif user_role == "Employee":
+        has_ticket_access = (ticket.created_by == request.user or
+                             ticket.assignments_tickets.filter(assignee=request.user).exists())
+    else:
+        has_ticket_access = ticket.created_by == request.user
+
+    if not has_ticket_access:
+        messages.error(request, 'You do not have access to this ticket.')
+        return redirect('tickets-details', id=note.ticket.id)
+
+
+    if not (request.user == note.created_by or user_role == "Super Admin"):
+        messages.error(request, 'You do not have permission to edit this note.')
+        return redirect('tickets-details', id=note.ticket.id)
+
+    form = TicketNoteForm(request.POST, instance=note)
+    if form.is_valid():
+        form.save()
+
+
+        ActivityLog.objects.create(
+            user=request.user,
+            ticket=note.ticket,
+            action='edit_note',
+            field='note',
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+
+        messages.success(request, 'Note successfully edited..')
+    else:
+        messages.error(request, 'Error editing note.')
+
+    return redirect('tickets-details', id=note.ticket.id)
+
+
+@login_required
+@require_POST
+def delete_ticket_note_details(request, note_id):
+
+    note = get_object_or_404(TicketNote, id=note_id)
+    ticket_id = note.ticket.id
+
+
+    user_role = request.session.get("role", "User")
+    has_ticket_access = False
+
+    if user_role == "Super Admin":
+        has_ticket_access = True
+    elif user_role == "Admin":
+        has_ticket_access = note.ticket.created_by == request.user
+    elif user_role == "Employee":
+        has_ticket_access = (note.ticket.created_by == request.user or
+                             note.ticket.assignments_tickets.filter(assignee=request.user).exists())
+    else:
+        has_ticket_access = note.ticket.created_by == request.user
+
+    if not has_ticket_access:
+        messages.error(request, 'You do not have access to this ticket.')
+        return redirect('tickets-details', id=ticket_id)
+
+    if not (request.user == note.created_by or user_role == "Super Admin"):
+        messages.error(request, 'You do not have permission to delete this note.')
+        return redirect('tickets-details', id=ticket_id)
+
+    note.delete()
+
+
+    ActivityLog.objects.create(
+        user=request.user,
+        ticket=note.ticket,
+        action='delete_note',
+        field='note',
+        ip_address=request.META.get('REMOTE_ADDR')
+    )
+
+    messages.success(request, 'The note was successfully deleted.')
+    return redirect('tickets-details', id=ticket_id)
+
+
+@login_required
+@csrf_exempt
+def mark_ticket_seen(request, ticket_id):
+
     try:
-        # print(f"DEBUG: mark_ticket_seen called with id={id}")
-        # print(f"DEBUG: User: {request.user}, Is Staff: {request.user.is_staff}")
+        ticket = Ticket.objects.get(id=ticket_id)
 
-        ticket = Ticket.objects.get(id=id)
-        # print(f"DEBUG: Ticket found: {ticket.tracking_code}")
-        # print(f"DEBUG: Ticket created_by: {ticket.created_by}")
-        # print(f"DEBUG: User assignments: {ticket.assignments_tickets.filter(assignee=request.user).exists()}")
 
-        if not ticket.is_seen or ticket.seen_by != request.user:
-            # print(f"DEBUG: Marking ticket as seen...")
-            ticket.mark_as_seen(request.user)
-            # print(f"DEBUG: Ticket marked successfully")
+        if not ticket.user_has_access_to_view(request.user):
+            return JsonResponse({
+                'success': False,
+                'message': 'You do not have the necessary access.'
+            }, status=403)
 
-            # همچنین Assignment را هم mark کن
-            assignment = Assignment.objects.filter(
+
+        if ticket.mark_as_seen_for_user(request.user):
+
+            from .models import Assignment
+            is_assignee = Assignment.objects.filter(
                 assigned_ticket=ticket,
                 assignee=request.user
-            ).first()
+            ).exists()
 
-            if assignment and not assignment.seen_at:
+            is_creator = ticket.created_by == request.user
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Ticket viewed.',
+                'seen_at': timezone.now().isoformat(),
+                'user_type': 'super_admin' if request.user.is_superuser else
+                'creator' if is_creator else
+                'assignee' if is_assignee else 'other',
+                'ticket_id': ticket.id,
+                'is_seen_for_current_user': True,
+                'is_ticket_marked_seen': ticket.seen_at is not None
+            })
+        else:
+            return JsonResponse({
+                'success': True,
+                'message': 'Operation completed.',
+                'is_seen_for_current_user': True
+            })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error in Server: {str(e)}'
+        }, status=500)
+
+
+def mark_as_seen_for_user(self, user):
+
+    from .models import TicketSeenHistory, Assignment
+
+    try:
+        print(f"\n=== DEBUG mark_as_seen_for_user ===")
+        print(f"Ticket: #{self.id}, User: {user.username}")
+
+
+        already_seen = TicketSeenHistory.objects.filter(ticket=self, user=user).exists()
+        print(f"Already in TicketSeenHistory: {already_seen}")
+
+
+        if not already_seen:
+            TicketSeenHistory.objects.get_or_create(
+                ticket=self,
+                user=user,
+                defaults={'seen_at': timezone.now()}
+            )
+            print(f"Added to TicketSeenHistory")
+
+
+        assignment = Assignment.objects.filter(
+            assigned_ticket=self,
+            assignee=user
+        ).first()
+
+        is_assignee = assignment is not None
+        print(f"Is assignee: {is_assignee}")
+
+        is_creator = self.created_by == user
+        print(f"Is creator: {is_creator}")
+
+
+        if is_creator or is_assignee:
+
+            if is_creator and not self.seen_at:
+                self.seen_at = timezone.now()
+                self.seen_by = user
+                print(f"Updated ticket main fields for creator")
+
+
+            if is_assignee and assignment and not assignment.seen_at:
                 assignment.seen_at = timezone.now()
                 assignment.save(update_fields=['seen_at'])
-                print(f"DEBUG: Assignment updated")
+                print(f"Updated assignment seen_at for assignee")
+
+
+                if not self.seen_at:
+                    self.seen_at = timezone.now()
+                    self.seen_by = user
+                    print(f"Also updated ticket main fields for assignee")
+
+
+        if user.is_superuser:
+            print(f"Super Admin view recorded in history only")
+
+
+        old_count = self.seen_count
+        self.update_seen_count()
+        print(f"seen_count: {old_count} -> {self.seen_count}")
+        print("===\n")
+
+        return True
+
+    except Exception as e:
+        print(f"Error in mark_as_seen_for_user: {str(e)}")
+        return False
+
+
+@login_required
+def get_seen_history(request, ticket_id):
+    try:
+        print(f"DEBUG: Getting seen history for ticket {ticket_id}")
+        ticket = Ticket.objects.get(id=ticket_id)
+
+        if not (request.user.is_superuser or
+                ticket.created_by == request.user or
+                ticket.assignments_tickets.filter(assignee=request.user).exists()):
+            print(f"DEBUG: Access denied for user {request.user}")
+            return JsonResponse({
+                'success': False,
+                'message': 'You have the necessary access.'
+            }, status=403)
+
+        seen_history = []
+
+        if ticket.seen_at and ticket.seen_by:
+            seen_history.append({
+                'user': {
+                    'username': ticket.seen_by.username,
+                    'full_name': ticket.seen_by.get_full_name() or ticket.seen_by.username
+                },
+                'seen_at': ticket.seen_at.isoformat(),
+                'seen_at_display': ticket.seen_at.strftime('%Y/%m/%d %H:%M'),
+                'role': 'Sender' if ticket.seen_by == ticket.created_by else 'Admin'
+            })
+
+
+        for assignment in ticket.assignments_tickets.filter(seen_at__isnull=False):
+            seen_history.append({
+                'user': {
+                    'username': assignment.assignee.username,
+                    'full_name': assignment.assignee.get_full_name() or assignment.assignee.username
+                },
+                'seen_at': assignment.seen_at.isoformat(),
+                'seen_at_display': assignment.seen_at.strftime('%Y/%m/%d %H:%M'),
+                'role': 'Assignee'
+            })
+
+        print(f"DEBUG: Found {len(seen_history)} seen records")
 
         return JsonResponse({
             'success': True,
-            'message': 'Ticket marked as seen',
-            'seen_at': ticket.seen_at.strftime('%Y-%m-%d %H:%M:%S') if ticket.seen_at else None,
-            'seen_by': ticket.seen_by.username if ticket.seen_by else None,
-            'seen_by_display': ticket.seen_by_display,
-            'seen_count': ticket.seen_count
+            'ticket_id': ticket.id,
+            'ticket_code': ticket.tracking_code,
+            'seen_history': seen_history,
+            'total_views': len(seen_history)
         })
+
     except Ticket.DoesNotExist:
-        print(f"DEBUG: Ticket not found")
+        print(f"DEBUG: Ticket {ticket_id} not found")
         return JsonResponse({
             'success': False,
-            'message': 'Ticket not found'
+            'message': 'Not Found Ticket'
         }, status=404)
     except Exception as e:
-        print(f"DEBUG: Exception in mark_ticket_seen: {str(e)}")
+        print(f"DEBUG: Exception: {str(e)}")
         import traceback
         traceback.print_exc()
         return JsonResponse({
             'success': False,
-            'message': f'Server error: {str(e)}'
+            'message': f'Error in Server: {str(e)}'
         }, status=500)
-
-@login_required
-def assignee_ticket_list(request):
-    assignments = (
-        Assignment.objects
-        .for_user(request.user)
-        .select_related('assigned_ticket',"assigned_ticket__category")
-        .order_by("-created_at")
-    )
-
-    paginator = Paginator(assignments, 10)
-    page_obj = paginator.get_page(request.GET.get('page'))
-
-    context = {
-        'page_obj': page_obj,
-    }
-    return render (request,"assignee/ticket_assignee_list.html",context=context)
-
-@login_required
-def assignee_ticket_detail(request, id):
-    assignment = get_object_or_404(Assignment, id=id,assignee=request.user)
-
-    if request.method == "POST":
-         assignment.status = request.POST.get('status')
-         assignment.description = request.POST.get('description')
-         assignment.save()
-         return redirect('assignee-list')
-    context = {
-        'status_choices':STATUS_CHOICES,
-        'assignment': assignment,
-        "ticket":assignment.assigned_ticket,
-    }
-    return render(request,"assignee/ticket_assignee_detail.html",context=context)

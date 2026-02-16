@@ -2,6 +2,7 @@
 {% load static %}
 {% load widget-card-PERCENTAGE %}
 {% load buttongroup_tags %}
+{% load dashboard_tags %}
 
 {% block title %}
     Dashboard
@@ -16,7 +17,7 @@
             </div>
 
             <div class="col-md-3">
-                {% widget_card_PERCENTAGE title="Total Tickets" count=total_tickets color="dark" icon='inboxes' title_color="dark" btn_color="dark" btn_icon='arrow-right' url="Tickets" extra_class="shadow bg-gradient"%}
+                {% widget_card_PERCENTAGE title="Total Tickets" count=total_tickets color="dark" icon='inboxes' title_color="dark" btn_color="dark" btn_icon='arrow-right' url="Tickets" extra_class="shadow bg-gradient" %}
             </div>
 
             <div class="col-md-3">
@@ -24,7 +25,7 @@
             </div>
 
             <div class="col-md-3 ">
-                {% widget_card_PERCENTAGE title="Unseen Tickets" count=unseen_tickets|floatformat:"0"|add:"%" color="warning" icon='eye-slash' title_color="warning" btn_color="warning" btn_icon='arrow-right' url="Tickets?seen=no" extra_class="shadow bg-gradient border-warning" extra_text=unseen_tickets|stringformat:"d"|add:" tickets" %}
+                {% widget_card_PERCENTAGE title="Unseen Tickets" count=unseen_percentage|floatformat:"0"|add:"%" color="warning" icon='eye-slash' title_color="warning" btn_color="warning" btn_icon='arrow-right' url="Tickets?seen=no" extra_class="shadow bg-gradient border-warning" extra_text=unseen_tickets|stringformat:"d"|add:" tickets" %}
             </div>
 
             <div class="col-md-3">
@@ -59,7 +60,8 @@
                 {% widget_card_PERCENTAGE title="Critical Priority" count=critical_percentage|floatformat:"0"|add:"%" color="danger" icon='fire' title_color="danger" btn_color="danger" btn_icon='arrow-right' url="Tickets?priority=critical" extra_class="shadow bg-gradient" extra_text=critical_tickets|stringformat:"d"|add:" tickets" %}
             </div>
         </div>
-        {# بخش آمار Seen/Unseen با چارت #}
+
+        {#         بخش آمار Seen/Unseen با چارت#}
         <div class="row mt-5">
             <div class="col-md-6">
                 <div class="card shadow">
@@ -75,7 +77,8 @@
                                     <div class="progress" style="height: 20px;">
                                         <div class="progress-bar bg-info" role="progressbar"
                                              style="width: {{ seen_percentage|floatformat:0 }}%"
-                                             aria-valuenow="{{ seen_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                             aria-valuenow="{{ seen_percentage }}" aria-valuemin="0"
+                                             aria-valuemax="100">
                                             {{ seen_percentage|floatformat:1 }}%
                                         </div>
                                     </div>
@@ -96,7 +99,6 @@
                                 </div>
                             </div>
                         </div>
-                        {# گراف دایره‌ای ساده با CSS #}
                         <div class="text-center mt-4">
                             <div class="pie-chart mx-auto"
                                  style="width: 150px; height: 150px; position: relative; border-radius: 50%; background: conic-gradient(#0dcaf0 0% {{ seen_percentage }}%, #ffc107 {{ seen_percentage }}% 100%);">
@@ -113,7 +115,8 @@
                         <div class="row text-center">
                             <div class="col-6">
                                 <span class="badge bg-info">Seen</span>
-                                <small class="text-muted d-block">{{ seen_percentage|floatformat:1 }}% of tickets</small>
+                                <small class="text-muted d-block">{{ seen_percentage|floatformat:1 }}% of
+                                    tickets</small>
                             </div>
                             <div class="col-6">
                                 <span class="badge bg-warning">Unseen</span>
@@ -127,10 +130,482 @@
             </div>
         </div>
 
-        <div class="row mb-4">
+        <!-- بخش Tasks -->
+        <div class="row mt-4">
             <div class="col-12">
-                <h1 class="mb-3 mt-lg-4 text-success">Category :</h1>
-                {% category_button_group active_categories %}
+                <h3 class="mb-3 mt-3 text-success">Task Statistics : </h3>
+                <p class="text-muted mb-4">Total: {{ total_tasks }} assigned tickets</p>
+            </div>
+
+            <div class="col-md-3">
+                {% widget_card_PERCENTAGE title="Total Tasks" count=total_tasks color="primary" icon='send-check' title_color="primary" btn_color="primary" btn_icon='arrow-right' url="assignee-list" extra_class="shadow bg-gradient" extra_text="assigned tickets" %}
+            </div>
+
+            <div class="col-md-3">
+                {% widget_card_PERCENTAGE title="Sent Tasks" count=sent_tasks color="info" icon='send' title_color="info" btn_color="info" btn_icon='arrow-right' url="assignee-list?filter=sent" extra_class="shadow bg-gradient" extra_text=sent_tasks|stringformat:"d"|add:" tickets" %}
+            </div>
+
+            <div class="col-md-3">
+                {% widget_card_PERCENTAGE title="Received Tasks" count=received_tasks color="warning" icon='inbox' title_color="warning" btn_color="warning" btn_icon='arrow-right' url="assignee-list" extra_class="shadow bg-gradient" extra_text=received_tasks|stringformat:"d"|add:" tickets" %}
+            </div>
+
+            <div class="col-md-3">
+                {% widget_card_PERCENTAGE title="Open Tasks" count=open_tasks_percentage|floatformat:"0"|add:"%" color="success" icon='folder-plus' title_color="success" btn_color="success" btn_icon='arrow-right' url="assignee-list?status=open" extra_class="shadow bg-gradient" extra_text=open_sent_tasks|add:open_received_tasks|stringformat:"d"|add:" open" %}
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="bi bi-send me-2"></i>Sent Tasks Breakdown</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="h4 text-primary">{{ open_sent_tasks }}</div>
+                                <small class="text-muted">Open Sent</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="h4 text-success">{{ closed_sent_tasks }}</div>
+                                <small class="text-muted">Closed Sent</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-warning text-white">
+                        <h6 class="mb-0"><i class="bi bi-inbox me-2"></i>Received Tasks Breakdown</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="h4 text-primary">{{ open_received_tasks }}</div>
+                                <small class="text-muted">Open Received</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="h4 text-success">{{ closed_received_tasks }}</div>
+                                <small class="text-muted">Closed Received</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- بخش Role Statistics -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <h3 class="mb-3 text-success">
+                    <i class="bi bi-people me-2"></i>Role Statistics
+                    {% if is_super_admin %}
+                        <small class="text-muted fs-6">(All Roles)</small>
+                    {% else %}
+                        <small class="text-muted fs-6">(Your Role)</small>
+                    {% endif %}
+                </h3>
+            </div>
+
+{#            {% for stats in role_statistics %}#}
+{#                <div class="col-md-{% if is_super_admin %}4{% else %}12{% endif %} mb-4">#}
+{#                    <div class="card shadow-lg border-{% if stats.role.level <= 1 %}danger{% elif stats.role.level <= 3 %}warning{% else %}success{% endif %}">#}
+{#                        <div class="card-header bg-{% if stats.role.level <= 1 %}danger{% elif stats.role.level <= 3 %}warning{% else %}success{% endif %} text-white">#}
+{#                            <h5 class="mb-0">#}
+{#                                <i class="bi bi-person-badge me-2"></i>#}
+{#                                {{ stats.role.persian_title }}#}
+{#                                <small class="opacity-75">({{ stats.role.title }})</small>#}
+{#                                <span class="badge bg-light text-dark float-end">#}
+{#                                    {{ stats.user_count }} user{{ stats.user_count|pluralize }}#}
+{#                                </span>#}
+{#                            </h5>#}
+{#                        </div>#}
+{##}
+{#                        <div class="card-body">#}
+{#                            <div class="row text-center mb-4">#}
+{#                                <div class="col-4">#}
+{#                                    <div class="h2 fw-bold text-dark">{{ stats.total_tickets }}</div>#}
+{#                                    <small class="text-muted">Total Tickets</small>#}
+{#                                </div>#}
+{#                                <div class="col-4">#}
+{#                                    <div class="h2 fw-bold text-primary">{{ stats.open_tickets }}</div>#}
+{#                                    <small class="text-muted">Open ({{ stats.open_percentage }}%)</small>#}
+{#                                </div>#}
+{#                                <div class="col-4">#}
+{#                                    <div class="h2 fw-bold text-success">{{ stats.seen_tickets }}</div>#}
+{#                                    <small class="text-muted">Seen ({{ stats.seen_percentage }}%)</small>#}
+{#                                </div>#}
+{#                            </div>#}
+{##}
+{#                            <!-- Tasks Statistics -->#}
+{#                            <div class="row mb-3">#}
+{#                                <div class="col-12">#}
+{#                                    <h6 class="border-bottom pb-2">#}
+{#                                        <i class="bi bi-send me-1"></i> Tasks#}
+{#                                    </h6>#}
+{#                                    <div class="row text-center">#}
+{#                                        <div class="col-6">#}
+{#                                            <span class="badge bg-info">{{ stats.sent_tasks }}</span>#}
+{#                                            <small class="text-muted ms-1">Sent</small>#}
+{#                                        </div>#}
+{#                                        <div class="col-6">#}
+{#                                            <span class="badge bg-warning">{{ stats.received_tasks }}</span>#}
+{#                                            <small class="text-muted ms-1">Received</small>#}
+{#                                        </div>#}
+{#                                    </div>#}
+{#                                </div>#}
+{#                            </div>#}
+{##}
+{#                            <!-- Priority Breakdown -->#}
+{#                            <div class="row mb-3">#}
+{#                                <div class="col-12">#}
+{#                                    <h6 class="border-bottom pb-2">#}
+{#                                        <i class="bi bi-exclamation-triangle me-1"></i> Priority#}
+{#                                    </h6>#}
+{#                                    <div class="d-flex flex-wrap gap-2">#}
+{#                                        <span class="badge bg-success">{{ stats.tickets_by_priority.low }} Low</span>#}
+{#                                        <span class="badge bg-warning">{{ stats.tickets_by_priority.middle }} Middle</span>#}
+{#                                        <span class="badge bg-danger">{{ stats.tickets_by_priority.high }} High</span>#}
+{#                                        <span class="badge bg-danger">{{ stats.tickets_by_priority.critical }} Critical</span>#}
+{#                                        <span class="badge bg-secondary">{{ stats.tickets_by_priority.secret }} Secret</span>#}
+{#                                    </div>#}
+{#                                </div>#}
+{#                            </div>#}
+{#                            <!-- Status Breakdown -->#}
+{#                            <div class="row">#}
+{#                                <div class="col-12">#}
+{#                                    <h6 class="border-bottom pb-2">#}
+{#                                        <i class="bi bi-list-check me-1"></i> Status#}
+{#                                    </h6>#}
+{#                                    <div class="d-flex flex-wrap gap-2">#}
+{#                                        <span class="badge bg-primary">{{ stats.tickets_by_status.new }} New</span>#}
+{#                                        <span class="badge bg-info">{{ stats.tickets_by_status.in_progress }} In Progress</span>#}
+{#                                        <span class="badge bg-success">{{ stats.tickets_by_status.solved }} Solved</span>#}
+{#                                        <span class="badge bg-secondary">{{ stats.tickets_by_status.impossible }} Impossible</span>#}
+{#                                    </div>#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>#}
+{##}
+{#                        <div class="card-footer bg-light">#}
+{#                            <div class="row">#}
+{#                                <div class="col-6">#}
+{#                                    <small class="text-muted">#}
+{#                                        <i class="bi bi-clock me-1"></i>#}
+{#                                        Closed: {{ stats.closed_tickets }}#}
+{#                                    </small>#}
+{#                                </div>#}
+{#                                <div class="col-6 text-end">#}
+{#                                    <a href="{% url 'tickets' %}?role={{ stats.role.id }}"#}
+{#                                       class="btn btn-sm btn-outline-dark">#}
+{#                                        <i class="bi bi-eye me-1"></i> View Tickets#}
+{#                                    </a>#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </div>#}
+{#            {% endfor %}   #}
+            {% for stats in role_statistics %}
+                <div class="col-md-{% if is_super_admin %}4{% else %}12{% endif %} mb-4">
+        <div class="card shadow-lg border-{% cycle 'danger' 'warning' 'success' %}">
+            <div class="card-header bg-{% cycle 'danger' 'warning' 'success' %} text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-people me-2"></i>
+                    {{ stats.group.name }}
+                    <span class="badge bg-light text-dark float-end">
+                        {{ stats.user_count }} user{{ stats.user_count|pluralize }}
+                    </span>
+                </h5>
+            </div>
+
+                        <div class="card-body">
+                            <div class="row text-center mb-4">
+                                <div class="col-4">
+                                    <div class="h2 fw-bold text-dark">{{ stats.total_tickets }}</div>
+                                    <small class="text-muted">Total Tickets</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="h2 fw-bold text-primary">{{ stats.open_tickets }}</div>
+                                    <small class="text-muted">Open ({{ stats.open_percentage }}%)</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="h2 fw-bold text-success">{{ stats.seen_tickets }}</div>
+                                    <small class="text-muted">Seen ({{ stats.seen_percentage }}%)</small>
+                                </div>
+                            </div>
+
+                            <!-- Tasks Statistics -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <h6 class="border-bottom pb-2">
+                                        <i class="bi bi-send me-1"></i> Tasks
+                                    </h6>
+                                    <div class="row text-center">
+                                        <div class="col-6">
+                                            <span class="badge bg-info">{{ stats.sent_tasks }}</span>
+                                            <small class="text-muted ms-1">Sent</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <span class="badge bg-warning">{{ stats.received_tasks }}</span>
+                                            <small class="text-muted ms-1">Received</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Priority Breakdown -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <h6 class="border-bottom pb-2">
+                                        <i class="bi bi-exclamation-triangle me-1"></i> Priority
+                                    </h6>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <span class="badge bg-success">{{ stats.tickets_by_priority.low }} Low</span>
+                                        <span class="badge bg-warning">{{ stats.tickets_by_priority.middle }} Middle</span>
+                                        <span class="badge bg-danger">{{ stats.tickets_by_priority.high }} High</span>
+                                        <span class="badge bg-danger">{{ stats.tickets_by_priority.critical }} Critical</span>
+                                        <span class="badge bg-secondary">{{ stats.tickets_by_priority.secret }} Secret</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Status Breakdown -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="border-bottom pb-2">
+                                        <i class="bi bi-list-check me-1"></i> Status
+                                    </h6>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <span class="badge bg-primary">{{ stats.tickets_by_status.new }} New</span>
+                                        <span class="badge bg-info">{{ stats.tickets_by_status.in_progress }} In Progress</span>
+                                        <span class="badge bg-success">{{ stats.tickets_by_status.solved }} Solved</span>
+                                        <span class="badge bg-secondary">{{ stats.tickets_by_status.impossible }} Impossible</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-light">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock me-1"></i>
+                                        Closed: {{ stats.closed_tickets }}
+                                    </small>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <a href="{% url 'tickets' %}?role={{ stats.role.id }}"
+                                       class="btn btn-sm btn-outline-dark">
+                                        <i class="bi bi-eye me-1"></i> View Tickets
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+
+
+
+
+        </div>
+
+        {% if is_super_admin and role_statistics|length > 1 %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-dark text-white">
+                            <h6 class="mb-0"><i class="bi bi-table me-2"></i>Role Statistics Summary</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Role</th>
+                                        <th>Users</th>
+                                        <th>Total Tickets</th>
+                                        <th>Open</th>
+                                        <th>Seen</th>
+                                        <th>Sent Tasks</th>
+                                        <th>Received Tasks</th>
+                                        <th>High Priority</th>
+                                        <th>Status</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for stats in role_statistics %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ stats.role.persian_title }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ stats.role.title }}</small>
+                                            </td>
+                                            <td>{{ stats.user_count }}</td>
+                                            <td>{{ stats.total_tickets }}</td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ stats.open_tickets }}</span>
+                                                <br>
+                                                <small>{{ stats.open_percentage }}%</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">{{ stats.seen_tickets }}</span>
+                                                <br>
+                                                <small>{{ stats.seen_percentage }}%</small>
+                                            </td>
+                                            <td>{{ stats.sent_tasks }}</td>
+                                            <td>{{ stats.received_tasks }}</td>
+                                            <td>
+                                                <span class="badge bg-danger">
+                                                    {{ stats.tickets_by_priority.high|add:stats.tickets_by_priority.critical }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    {% widthratio stats.tickets_by_status.solved stats.total_tickets 100 as solved_percent %}
+                                                    <div class="progress-bar bg-success"
+                                                         style="width: {{ solved_percent }}%">
+                                                        {{ solved_percent|floatformat:0 }}%
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        <!-- بخش Category Statistics -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3 class="mb-3 text-success">
+                    <i class="bi bi-tags me-2"></i>Category Statistics
+                    {% if is_super_admin %}
+                        <small class="text-muted fs-6">(All Used Categories)</small>
+                    {% else %}
+                        <small class="text-muted fs-6">(Your Used Categories)</small>
+                    {% endif %}
+                </h3>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm border-success h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-tags text-success fs-1 mb-3"></i>
+                        <h2 class="text-dark">{{ user_categories_count }}</h2>
+                        <p class="text-muted mb-1">
+                            {% if is_super_admin %}
+                                Used Categories
+                            {% else %}
+                                Your Categories
+                            {% endif %}
+                        </p>
+                        <small class="text-muted">
+                            {% if is_super_admin %}
+                                out of {{ categories_with_tickets }} total
+                            {% else %}
+                                used in your tickets
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% if is_super_admin %}
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm border-warning h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-tag text-warning fs-1 mb-3"></i>
+                            <h2 class="text-dark">{{ categories_with_tickets|subtract:user_categories_count }}</h2>
+                            <p class="text-muted mb-1">Unused Categories</p>
+                            <small class="text-muted">with no tickets</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm border-info h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-percent text-info fs-1 mb-3"></i>
+                            <h2 class="text-dark">
+                                {% if categories_with_tickets > 0 %}
+                                    {{ user_categories_count|divide:categories_with_tickets|multiply:100|floatformat:0 }}
+                                    %
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </h2>
+                            <p class="text-muted mb-1">Category Usage</p>
+                            <small class="text-muted">of available categories</small>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-ul me-2"></i>
+                            {% if is_super_admin %}
+                                All Used Categories
+                            {% else %}
+                                Your Categories
+                            {% endif %}
+                            <span class="badge bg-secondary float-end">{{ user_category_list|length }}</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if user_category_list %}
+                            <div class="row">
+                                {% for category in user_category_list %}
+                                    <div class="col-md-3 col-sm-6 mb-3">
+                                        <div class="card border-{% cycle 'primary' 'success' 'info' 'warning' %} h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">
+                                                    <i class="bi bi-tag-fill me-1 text-{% cycle 'primary' 'success' 'info' 'warning' %}"></i>
+                                                    {{ category.name }}
+                                                </h6>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="badge bg-dark">
+                                                        {{ category.ticket_count }} ticket{{ category.ticket_count|pluralize }}
+                                                    </span>
+                                                    {% if is_super_admin %}
+                                                        <small class="text-muted">
+                                                            {{ category.my_ticket_count }} yours
+                                                        </small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="card-footer bg-transparent border-0 pt-0">
+                                                <a href="{% url 'tickets' %}?category={{ category.id }}"
+                                                   class="btn btn-sm btn-outline-{% cycle 'primary' 'success' 'info' 'warning' %} w-100">
+                                                    View Tickets
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-tag text-muted fs-1"></i>
+                                <p class="text-muted mt-2">
+                                    {% if is_super_admin %}
+                                        No categories have been used in tickets yet.
+                                    {% else %}
+                                        You haven't used any categories in your tickets.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </section>

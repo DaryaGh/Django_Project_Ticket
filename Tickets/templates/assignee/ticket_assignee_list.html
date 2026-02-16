@@ -1,65 +1,299 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-    <div class="container mt-4">
-        <h3 class="mb-3">My Assigned Tickets</h3>
-        <div class="card shadow-sm">
-            <table class="table table-hover mb-0">
-                <thead>
-                <tr>
-                    <th>Tracking</th>
-                    <th>Subject</th>
-                    <th>Category</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                {% for assignment in page_obj %}
-                    <tr>
-                        <td>{{ assignment.assigned_ticket.tracking_code }}</td>
-                        <td>{{ assignment.assigned_ticket.subject }}</td>
-                        <td>{{ assignment.assigned_ticket.category }}</td>
-                        <td>
-                            <span class="badge" style="background: {{ assignment.assigned_ticket.get_priority_color }}">
-                                {{ assignment.assigned_ticket.priority }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge" style="background: {{ assignment.get_status_color }}">
-                                {{ assignment.status }}
-                            </span>
-                        </td>
-                        <td>
-                            <a href="{% url 'assignee-detail' assignment.id %}" class="btn btn-sm btn-outline-primary">
-                                View
-                            </a>
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted">
-                            No Assigned Tickets
-                        </td>
-                    </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </div>
 
-    <div class="container mt-3 mb-5">
-        <div class="d-none d-md-block">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="flex-grow-1 me-3">
-                    {% include 'pagination-showing-result-dee.html' %}
-                </div>
-                <div class="flex-shrink-0">
-                    {% include 'pagination-dee.html' %}
-                </div>
+    <div class="container mt-4">
+    <h3 class="mb-3">My Assigned Tickets</h3>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <table class="table table-hover mb-0" id="assigneeTable">
+            <thead>
+            <tr>
+                <th>Tracking</th>
+                <th>Assigned by</th>
+                <th>Subject</th>
+                <th>Category</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Seen</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for assignment in page_obj %}
+                {% if assignment.assigned_ticket %}
+                <tr id="assignment-{{ assignment.id }}"
+                    data-assignment-id="{{ assignment.id }}"
+                    class="{% if not assignment.seen_at %}assignment-unseen{% endif %}">
+                    <td>{{ assignment.assigned_ticket.tracking_code|default:"N/A" }}</td>
+                <td>{{ assignment.assigned_ticket.created_by }}</td>
+                    <td>{{ assignment.assigned_ticket.subject|truncatechars:30|default:"No subject" }}</td>
+                    <td>{{ assignment.assigned_ticket.category.name|default:"—" }}</td>
+                    <td>
+                        <span class="badge" style="background: {{ assignment.assigned_ticket.get_priority_color|default:'#6c757d' }}">
+                            {{ assignment.assigned_ticket.get_priority_display|default:"—" }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge" style="background: {{ assignment.get_status_color|default:'#6c757d' }}">
+                            {{ assignment.get_status_display|default:"—" }}
+                        </span>
+                    </td>
+                    <td class="seen-column">
+                        {% if assignment.seen_at %}
+                            <span class="badge bg-success seen-badge">
+                                <i class="bi bi-eye-fill me-1"></i>
+                                {{ assignment.seen_at|date:"Y/m/d H:i" }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-warning unseen-badge">
+                                <i class="bi bi-eye-slash me-1"></i>
+                                Unseen
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'assignee-detail' assignment.id %}"
+                               class="btn btn-outline-primary view-assignment-btn"
+                               data-assignment-id="{{ assignment.id }}">
+                                <i class="bi bi-eye me-1"></i> View
+                            </a>
+
+                            {% if not assignment.seen_at %}
+                                <button class="btn btn-outline-info mark-seen-btn"
+                                        data-assignment-id="{{ assignment.id }}">
+                                    <i class="bi bi-check-circle me-1"></i> Mark Seen
+                                </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <!-- اگر تیکت وجود نداشت -->
+                <tr class="table-danger">
+                    <td colspan="7" class="text-center text-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        تیکت مربوطه وجود ندارد (حذف شده)
+                    </td>
+                </tr>
+                {% endif %}
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                        No Assigned Tickets
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal for Quick View -->
+<div class="modal fade" id="quickViewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ticket Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="quickViewContent">
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" class="btn btn-primary" id="fullViewBtn">Full Details</a>
             </div>
         </div>
-        <div class="d-block d-md-none">
-            {% include 'pagination-mobile-dee.html' %}
+    </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded - AJAX script started');
+
+    // تابع ساده‌تر برای گرفتن CSRF token
+    function getCSRFToken() {
+        const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfTokenElement) {
+            return csrfTokenElement.value;
+        }
+
+        // روش جایگزین
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                return value;
+            }
+        }
+        return '';
+    }
+
+    const csrftoken = getCSRFToken();
+    console.log('CSRF Token:', csrftoken ? 'Found' : 'Not found');
+
+    // تابع ساده برای نمایش alert
+    function showSimpleAlert(message, type = 'success') {
+        alert(type === 'success' ? '✅ ' + message : '❌ ' + message);
+    }
+
+    // تابع اصلی برای علامت‌گذاری
+    function markAssignmentAsSeen(assignmentId) {
+        console.log('Marking assignment as seen:', assignmentId);
+
+        // ساخت URL درست
+        const url = `/assignee/${assignmentId}/mark-seen/`;
+        console.log('Request URL:', url);
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'mark_seen=true' // داده ساده
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+
+            if (data.success) {
+                showSimpleAlert(data.message, 'success');
+
+                // آپدیت UI
+                updateUI(assignmentId, data.seen_at);
+
+            } else {
+                showSimpleAlert(data.message || 'Failed to mark as seen', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            showSimpleAlert('Network error. Please check console.', 'error');
+        });
+    }
+
+    // تابع ساده برای آپدیت UI
+    function updateUI(assignmentId, seenAt) {
+        const row = document.getElementById(`assignment-${assignmentId}`);
+        if (!row) {
+            console.warn('Row not found:', `assignment-${assignmentId}`);
+            return;
+        }
+
+        // تغییر کلاس
+        row.classList.remove('assignment-unseen');
+        row.classList.add('assignment-seen');
+
+        // آپدیت badge
+        const seenColumn = row.querySelector('.seen-column');
+        if (seenColumn) {
+            seenColumn.innerHTML = `
+                <span class="badge bg-success">
+                    <i class="bi bi-eye-fill me-1"></i>
+                    ${seenAt || 'Just now'}
+                </span>
+            `;
+        }
+
+        // حذف دکمه Mark Seen
+        const markSeenBtn = row.querySelector('.mark-seen-btn');
+        if (markSeenBtn) {
+            markSeenBtn.remove();
+        }
+
+        // تغییر دکمه View
+        const viewBtn = row.querySelector('.view-assignment-btn');
+        if (viewBtn) {
+            viewBtn.innerHTML = '<i class="bi bi-eye-fill me-1"></i> Viewed';
+            viewBtn.classList.add('disabled');
+        }
+    }
+
+    // رویداد کلیک روی دکمه‌های Mark Seen
+    document.querySelectorAll('.mark-seen-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Mark Seen button clicked');
+            const assignmentId = this.dataset.assignmentId;
+            if (assignmentId) {
+                markAssignmentAsSeen(assignmentId);
+            } else {
+                console.error('No assignment ID found on button');
+            }
+        });
+    });
+
+    // رویداد کلیک روی دکمه‌های View
+    document.querySelectorAll('.view-assignment-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            const assignmentId = this.dataset.assignmentId;
+            const row = document.getElementById(`assignment-${assignmentId}`);
+
+            // اگر unseen بود و کاربر روی View کلیک کرد، علامت‌گذاری کن
+            if (row && row.classList.contains('assignment-unseen')) {
+                console.log('Auto-marking as seen on view click');
+                markAssignmentAsSeen(assignmentId);
+
+                // اجازه بده لینک باز شود
+                setTimeout(() => {
+                    window.location.href = this.href;
+                }, 500);
+                e.preventDefault();
+            }
+        });
+    });
+
+    console.log('AJAX script initialized successfully');
+});
+</script>
+
+<style>
+    .seen-badge, .unseen-badge {
+    font-size: 0.8em;
+    padding: 4px 8px;
+}
+
+#assigneeTable tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+
+<div class="container mt-3 mb-5">
+    <div class="d-none d-md-block">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="flex-grow-1 me-3">
+                {% include 'pagination-showing-result-dee.html' %}
+            </div>
+            <div class="flex-shrink-0">
+                {% include 'pagination-dee.html' %}
+            </div>
         </div>
     </div>
+    <div class="d-block d-md-none">
+        {% include 'pagination-mobile-dee.html' %}
+    </div>
+</div>
 {% endblock %}

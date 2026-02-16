@@ -16,14 +16,14 @@ PRIORITY_COLORS = {
 
 STATUS_CHOICES = [
     ("new", "New"),
-    ("in-progress", "In Progress"),
+    ("in_progress", "In Progress"),
     ("solved", "Solved"),
     ("impossible", "Impossible"),
 ]
 
 STATUS_COLORS = {
     "new": "#0dcaf0",
-    "in-progress": "#0d6efd",
+    "in_progress": "#0d6efd",
     "solved": "#198754",
     "impossible": "#dc3545",
 }

@@ -1,0 +1,167 @@
+{% load ticket_filters %}
+<!-- templates/assignee/assignee_status_form.html -->
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-primary shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-gear me-2"></i>تغییر وضعیت تیکت
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" id="statusForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_status">
+
+                    <!-- وضعیت فعلی -->
+                    <div class="alert alert-info mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-info-circle fs-4 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">وضعیت فعلی</h6>
+                                <p class="mb-0">
+                                    تیکت در حال حاضر در وضعیت
+                                    <span class="badge" style="background: {{ assignment.get_status_color }}">
+                                        {{ assignment.get_status_display }}
+                                    </span>
+                                    قرار دارد.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- انتخاب وضعیت جدید -->
+                    <div class="mb-4">
+                        <label for="status" class="form-label fw-bold">
+                            <i class="bi bi-flag me-1"></i>وضعیت جدید
+                            <span class="text-danger">*</span>
+                        </label>
+                        <select name="status" id="status" class="form-select form-select-lg" required>
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}"
+                                        {% if assignment.status == value %}selected{% endif %}
+                                        style="color: {{ value|get_status_color }}; font-weight: bold;">
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            لطفاً وضعیت فعلی تیکت را بر اساس پیشرفت کار انتخاب کنید.
+                        </div>
+                    </div>
+
+                    <!-- توضیحات -->
+                    <div class="mb-4">
+                        <label for="description" class="form-label fw-bold">
+                            <i class="bi bi-chat-left-text me-1"></i>توضیحات (اختیاری)
+                        </label>
+                        <textarea name="description" id="description"
+                                  class="form-control" rows="5"
+                                  placeholder="توضیحی در مورد تغییر وضعیت، اقدامات انجام شده یا اطلاعات مورد نیاز...">{{ assignment.description|default:"" }}</textarea>
+                        <div class="form-text">
+                            این توضیحات برای فرستنده تیکت و سایر مسئولان قابل مشاهده است.
+                        </div>
+                    </div>
+
+                    <!-- پیش‌نمایش -->
+                    <div class="card border-warning mb-4" id="statusPreview" style="display: none;">
+                        <div class="card-header bg-warning">
+                            <h6 class="mb-0">
+                                <i class="bi bi-eye me-1"></i>پیش‌نمایش تغییرات
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>تغییر وضعیت از:</strong>
+                                <span class="badge ms-2" style="background: {{ assignment.get_status_color }}">
+                                    {{ assignment.get_status_display }}
+                                </span>
+                                <i class="bi bi-arrow-right mx-2"></i>
+                                <strong>به:</strong>
+                                <span class="badge ms-2" id="previewStatus">...</span>
+                            </div>
+                            <div>
+                                <strong>توضیحات:</strong>
+                                <p class="mt-1 text-muted" id="previewDescription">...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- دکمه‌های action -->
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline-secondary"
+                                onclick="previewStatus()">
+                            <i class="bi bi-eye me-1"></i>پیش‌نمایش
+                        </button>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check-circle me-1"></i>ذخیره تغییرات
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewStatus() {
+    const statusSelect = document.getElementById('status');
+    const descriptionText = document.getElementById('description').value;
+    const previewDiv = document.getElementById('statusPreview');
+
+    // وضعیت انتخاب شده
+    const selectedStatus = statusSelect.options[statusSelect.selectedIndex];
+    const statusText = selectedStatus.text;
+    const statusColor = selectedStatus.getAttribute('style')?.replace('color: ', '') || '#6c757d';
+
+    // آپدیت پیش‌نمایش
+    document.getElementById('previewStatus').innerHTML = statusText;
+    document.getElementById('previewStatus').style.backgroundColor = statusColor;
+    document.getElementById('previewDescription').innerHTML = descriptionText || 'بدون توضیح';
+
+    // نمایش پیش‌نمایش
+    previewDiv.style.display = 'block';
+}
+
+// تغییر رنگ select بر اساس وضعیت انتخاب شده
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.getElementById('status');
+
+    function updateSelectColor() {
+        const selectedOption = statusSelect.options[statusSelect.selectedIndex];
+        const color = selectedOption.getAttribute('style')?.replace('color: ', '') || '#000';
+        statusSelect.style.color = color;
+        statusSelect.style.borderColor = color;
+    }
+
+    updateSelectColor();
+    statusSelect.addEventListener('change', updateSelectColor);
+
+    // پیش‌بارگیری در صورت وجود توضیحات
+    if (document.getElementById('description').value.trim()) {
+        previewStatus();
+    }
+});
+</script>
+
+<style>
+#statusForm .form-control:focus,
+#statusForm .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+#status {
+    font-weight: bold;
+}
+
+#description {
+    resize: vertical;
+    min-height: 120px;
+}
+
+#statusPreview .badge {
+    font-size: 0.9em;
+    padding: 0.5em 1em;
+}
+</style>

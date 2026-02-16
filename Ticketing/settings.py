@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     # 'widget_tweaks'
     'Tickets',
 ]
@@ -155,6 +156,18 @@ MESSAGE_TAGS = {
 
 MEDIA_URL = '/media/'  # URL prefix for media files
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+
+# Email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+# ایمیل شرکت را وارد کنید
+EMAIL_HOST_USER = 'daryaghaffary.developer@gmail.com'
+EMAIL_HOST_PASSWORD = 'muas vaoe htka jfgh'
+# همان ایمیل شرکت یا اسمی که مخواهید نمایش داده شود که اکثرا همان ایمیل شرکت استو با بالایی یکی است
+DEFAULT_FROM_EMAIL = 'daryaghaffary.developer@gmail.com'
+# روی سرور هر سه این موارد پاک میشود و هاستینگ به ما این موارد را میدهد
 
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_HOST = os.getenv('EMAIL_HOST')

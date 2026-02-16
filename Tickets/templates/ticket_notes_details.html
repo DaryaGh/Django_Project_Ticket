@@ -1,0 +1,599 @@
+{% for note_data in notes_with_status %}
+    {% with note=note_data.note %}
+        <div class="timeline-item mb-4 position-relative">
+            <div class="timeline-badge">
+            <span class="badge bg-{% if note.created_by == current_user %}primary{% else %}secondary{% endif %}">
+                <i class="bi bi-person-fill"></i>
+            </span>
+            </div>
+
+            <div class="card {% if note.is_private %}border-warning{% endif %}">
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <strong class="me-2">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    {{ note.created_by.get_full_name|default:note.created_by.username }}
+                                </strong>
+
+                                {% if note.created_by == current_user %}
+                                    <span class="badge bg-primary">
+                                <i class="bi bi-person-check me-1"></i>You
+                            </span>
+                                {% endif %}
+
+                                {% if note_data.is_ticket_creator %}
+                                    <span class="badge bg-info ms-1">
+                                <i class="bi bi-envelope-paper me-1"></i> Sender Ticket
+                            </span>
+                                {% endif %}
+
+
+                                {% if note_data.is_assignee %}
+                                    <span class="badge bg-warning ms-1">
+                                <i class="bi bi-person-gear me-1"></i> Responsible
+                            </span>
+                                {% endif %}
+
+                                {% if note.is_private %}
+                                    <span class="badge bg-warning ms-1">
+                                <i class="bi bi-lock me-1"></i> Private
+                            </span>
+                                {% endif %}
+                            </div>
+
+
+                            <div>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-plus me-1"></i>
+                                    Creation : {{ note.created_at|date:"Y/m/d H:i" }}
+                                </small>
+
+                                {% if note.updated_at != note.created_at %}
+                                    <small class="text-muted ms-3">
+                                        <i class="bi bi-pencil me-1"></i>
+                                        Edit : {{ note.updated_at|date:"H:i" }}
+                                    </small>
+                                {% endif %}
+
+                                <small class="text-muted ms-3">
+                                    <i class="bi bi-clock-history me-1"></i>
+                                    {{ note.created_at|timesince }} Ago
+                                </small>
+                            </div>
+                        </div>
+
+
+                        {% if note.created_by == current_user %}
+                            <div class="dropdown ms-3">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                        type="button" id="noteMenu-{{ note.id }}"
+                                        data-bs-toggle="dropdown" aria-expanded="false"
+                                        title="Note operation">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm"
+                                    aria-labelledby="noteMenu-{{ note.id }}">
+
+                                    <li>
+                                        <button class="dropdown-item text-primary edit-note-btn"
+                                                type="button"
+                                                data-note-id="{{ note.id }}"
+                                                data-content="{{ note.content }}"
+                                                data-private="{{ note.is_private|yesno:'true,false' }}">
+                                            <i class="bi bi-pencil-square me-2"></i>
+                                                Edit note
+                                        </button>
+                                    </li>
+
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+
+
+                                    <li>
+                                        <form method="post"
+                                              action="{% url 'delete_ticket_note_details' note.id %}"
+                                              class="delete-note-form"
+                                              data-note-id="{{ note.id }}">
+                                            {% csrf_token %}
+                                            <button type="button"
+                                                    class="dropdown-item text-danger delete-note-btn"
+                                                    data-note-id="{{ note.id }}"
+                                                    data-note-author="{{ note.created_by.get_full_name|default:note.created_by.username }}"
+                                                    data-note-date="{{ note.created_at|date:'Y/m/d H:i' }}">
+                                                <i class="bi bi-trash me-2"></i>
+                                                    Delete note
+                                            </button>
+                                        </form>
+                                    </li>
+
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+
+
+                                    <li>
+                                        <div class="dropdown-item text-muted">
+                                            <small>
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                Only you can edit or delete this note.
+                                            </small>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        {% else %}
+
+                            <div class="ms-3">
+                        <span class="text-muted"
+                              title="This note was created by {{ note.created_by.get_full_name|default:note.created_by.username }}. Only the creator can edit or delete it">
+                            <i class="bi bi-info-circle"></i>
+                        </span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="note-content mt-3 p-3 bg-light rounded"
+                         style="white-space: pre-line; line-height: 1.8;">
+                        {{ note.content }}
+                    </div>
+
+
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-fingerprint me-1"></i>
+                                    ID : <code>{{ note.id }}</code>
+                                </small>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                {% if note.is_private %}
+                                    <small class="text-warning">
+                                        <i class="bi bi-shield-lock me-1"></i>
+                                        This note is only visible to employees.
+                                    </small>
+                                {% else %}
+                                    <small class="text-success">
+                                        <i class="bi bi-eye me-1"></i>
+                                        This note is visible to all access holders.
+                                    </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endwith %}
+{% empty %}
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-journal-x display-4"></i>
+        <h5 class="mt-3">No notes have been recorded yet.</h5>
+        <p class="mb-0">Be the first to take notes.</p>
+    </div>
+{% endfor %}
+
+
+<div class="modal fade" id="editNoteModal" tabindex="-1"
+     aria-labelledby="editNoteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editNoteModalLabel">
+                    <i class="bi bi-pencil-square me-2"></i>
+                    Edit note
+                </h5>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form id="editNoteForm" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="note_id" id="editNoteId">
+
+                <div class="modal-body">
+                    <div class="alert alert-info mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-info-circle fs-4 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">Edit personal note</h6>
+                                <p class="mb-0 small">
+                                    You are editing a note you created. The changes will only apply to this note.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="mb-4">
+                        <label for="editNoteContent" class="form-label fw-semibold">
+                            Note text
+                            <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" name="content" id="editNoteContent"
+                                  rows="6" placeholder="Edit the note text here..."
+                                  required></textarea>
+                        <div class="form-text">
+                            Notes are used to create history and document the ticket.
+                        </div>
+                    </div>
+
+
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning-subtle">
+                            <h6 class="mb-0">
+                                <i class="bi bi-shield-lock me-2"></i>
+                                Privacy settings
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox"
+                                       name="is_private" id="editNotePrivate"
+                                       role="switch">
+                                <label class="form-check-label fw-semibold" for="editNotePrivate">
+                                    Private note
+                                </label>
+                                <div class="form-text mt-2">
+                                    <ul class="small mb-0">
+                                        <li>Notes<strong>Private</strong> notes are only visible to system staff.</li>
+
+                                        <li>Notes<strong>Public</strong> notes are visible to everyone who has access to the ticket.</li>
+
+                                        <li>This setting only affects visibility and does not affect edit/delete ability.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i>
+                        ذخیره تغییرات
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای تایید حذف -->
+<div class="modal fade" id="deleteNoteConfirmModal" tabindex="-1"
+     aria-labelledby="deleteNoteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteNoteConfirmModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    تایید حذف یادداشت
+                </h5>
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-octagon fs-4 me-3"></i>
+                        <div>
+                            <h6 class="mb-1">هشدار: عملیات حذف</h6>
+                            <p class="mb-0">این عمل قابل بازگشت نیست!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <p>آیا از حذف این یادداشت اطمینان دارید؟</p>
+
+                <div class="card border-danger mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title">جزئیات یادداشت</h6>
+                        <ul class="list-unstyled mb-0">
+                            <li><strong>ایجادکننده:</strong> <span id="deleteNoteAuthor"></span></li>
+                            <li><strong>تاریخ ایجاد:</strong> <span id="deleteNoteDate"></span></li>
+                            <li><strong>وضعیت:</strong> <span id="deleteNotePrivacy"></span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <p class="text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    پس از حذف، این یادداشت از تاریخچه تیکت حذف شده و قابل بازیابی نخواهد بود.
+                </p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i>
+                    انصراف
+                </button>
+                <form id="confirmDeleteForm" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash3 me-1"></i>
+                        حذف یادداشت
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* استایل‌های مخصوص یادداشت‌ها */
+    .timeline-item {
+        position: relative;
+        padding-left: 60px;
+    }
+
+    .timeline-badge {
+        position: absolute;
+        left: 0;
+        top: 20px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border: 3px solid #dee2e6;
+        z-index: 2;
+        transition: all 0.3s ease;
+    }
+
+    .timeline-item:hover .timeline-badge {
+        border-color: #0d6efd;
+        transform: scale(1.1);
+    }
+
+    .timeline-badge .badge {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 0.9rem;
+    }
+
+    .note-content {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-left: 4px solid #0d6efd;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .card.border-warning .note-content {
+        border-left-color: #ffc107;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    }
+
+    .dropdown-menu {
+        min-width: 220px;
+        border: 1px solid rgba(0, 0, 0, .1);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, .15);
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        margin: 2px 8px;
+        width: calc(100% - 16px);
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .delete-note-btn:hover {
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+
+    .edit-note-btn:hover {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+
+    /* انیمیشن hover برای کارت */
+    .card {
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+    }
+
+    .card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, .1);
+        transform: translateY(-2px);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // مدیریت Modal ویرایش
+        const editNoteModal = new bootstrap.Modal(document.getElementById('editNoteModal'));
+        const editNoteForm = document.getElementById('editNoteForm');
+
+        // مدیریت Modal تایید حذف
+        const deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteNoteConfirmModal'));
+        let noteToDelete = null;
+
+        // رویداد کلیک روی دکمه ویرایش
+        document.querySelectorAll('.edit-note-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const noteId = this.dataset.noteId;
+                const content = this.dataset.content;
+                const isPrivate = this.dataset.private === 'true';
+
+                // تنظیم مقادیر فرم
+                document.getElementById('editNoteId').value = noteId;
+                document.getElementById('editNoteContent').value = content;
+                document.getElementById('editNotePrivate').checked = isPrivate;
+
+                // تنظیم action فرم
+                editNoteForm.action = "{% url 'edit_ticket_note_details' 0 %}".replace('/0/', `/${noteId}/`);
+
+                // نمایش Modal
+                editNoteModal.show();
+
+                // فوکوس روی textarea
+                setTimeout(() => {
+                    document.getElementById('editNoteContent').focus();
+                }, 500);
+            });
+        });
+
+        // رویداد کلیک روی دکمه حذف
+        document.querySelectorAll('.delete-note-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const noteId = this.dataset.noteId;
+                const noteAuthor = this.dataset.noteAuthor;
+                const noteDate = this.dataset.noteDate;
+
+                // ذخیره اطلاعات یادداشت برای حذف
+                noteToDelete = noteId;
+
+                // پر کردن اطلاعات در Modal تایید
+                document.getElementById('deleteNoteAuthor').textContent = noteAuthor;
+                document.getElementById('deleteNoteDate').textContent = noteDate;
+
+                // بررسی آیا یادداشت خصوصی است
+                const noteCard = this.closest('.timeline-item').querySelector('.card');
+                const isPrivate = noteCard.classList.contains('border-warning');
+                document.getElementById('deleteNotePrivacy').textContent =
+                    isPrivate ? 'خصوصی' : 'عمومی';
+
+                // تنظیم action فرم حذف
+                document.getElementById('confirmDeleteForm').action =
+                    "{% url 'delete_ticket_note_details' 0 %}".replace('/0/', `/${noteId}/`);
+
+                // نمایش Modal تایید
+                deleteConfirmModal.show();
+            });
+        });
+
+        // ارسال فرم ویرایش
+        editNoteForm.addEventListener('submit', function (e) {
+            const content = document.getElementById('editNoteContent').value.trim();
+
+            if (!content) {
+                e.preventDefault();
+                alert('لطفاً متن یادداشت را وارد کنید.');
+                document.getElementById('editNoteContent').focus();
+                return;
+            }
+
+            if (content.length > 1000) {
+                e.preventDefault();
+                alert('متن یادداشت نباید بیشتر از ۱۰۰۰ کاراکتر باشد.');
+                document.getElementById('editNoteContent').focus();
+                return;
+            }
+
+            // نمایش loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> در حال ذخیره...';
+            submitBtn.disabled = true;
+        });
+
+        // ارسال فرم حذف
+        document.getElementById('confirmDeleteForm').addEventListener('submit', function (e) {
+            // نمایش loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> در حال حذف...';
+            submitBtn.disabled = true;
+        });
+
+        // مدیریت Auto-save برای ویرایش (اختیاری)
+        let autoSaveTimer;
+        const editContent = document.getElementById('editNoteContent');
+
+        if (editContent) {
+            editContent.addEventListener('input', function () {
+                // پاک کردن تایمر قبلی
+                clearTimeout(autoSaveTimer);
+
+                // نمایش indicator
+                const indicator = document.createElement('div');
+                indicator.className = 'position-fixed bottom-0 end-0 m-3';
+                indicator.innerHTML = `
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    <i class="bi bi-pencil me-1"></i>
+                    در حال ویرایش...
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+                document.body.appendChild(indicator);
+
+                // حذف indicator بعد از 2 ثانیه
+                setTimeout(() => {
+                    indicator.remove();
+                }, 2000);
+            });
+        }
+
+        // Hotkey برای ویرایش (Ctrl+E)
+        document.addEventListener('keydown', function (e) {
+            // اگر در حال تایپ در textarea هستیم، hotkey کار نکند
+            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
+                return;
+            }
+
+            // Ctrl+E برای ویرایش یادداشت انتخاب شده
+            if (e.ctrlKey && e.key === 'e') {
+                const firstEditBtn = document.querySelector('.edit-note-btn');
+                if (firstEditBtn) {
+                    e.preventDefault();
+                    firstEditBtn.click();
+                }
+            }
+
+            // Esc برای بستن modalها
+            if (e.key === 'Escape') {
+                if (editNoteModal._isShown) {
+                    editNoteModal.hide();
+                }
+                if (deleteConfirmModal._isShown) {
+                    deleteConfirmModal.hide();
+                }
+            }
+        });
+
+        // Tooltip برای آیکون info
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Auto-refresh یادداشت‌ها هر 60 ثانیه
+        let notesRefreshInterval = setInterval(refreshNotes, 60000);
+
+        function refreshNotes() {
+            // فقط اگر modal باز نباشد، refresh کن
+            if (!editNoteModal._isShown && !deleteConfirmModal._isShown) {
+                location.reload();
+            }
+        }
+
+        // توقف refresh وقتی کاربر در حال ویرایش است
+        editNoteModal._element.addEventListener('shown.bs.modal', function () {
+            clearInterval(notesRefreshInterval);
+        });
+
+        editNoteModal._element.addEventListener('hidden.bs.modal', function () {
+            notesRefreshInterval = setInterval(refreshNotes, 60000);
+        });
+    });
+</script>

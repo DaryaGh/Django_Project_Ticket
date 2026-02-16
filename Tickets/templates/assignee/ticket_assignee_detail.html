@@ -1,51 +1,335 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
+{% load ticket_filters %}
 
 {% block content %}
-    <div class="container mt-4">
-        <div class="card shadow-sm p-4">
-            <h4>{{ ticket.subject }}</h4>
-            <p class="text-muted">{{ ticket.description }}</p>
-            <hr>
-            <form method="post">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label class="form-label">Status {{ assignment.status }}</label>
-                    <select name="status" class="form-select">
-                        {% for value , label in status_choices %}
-                            <option value="{{ value }}"
-                                    {% if assignment.status == value %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Report / Comment :</label>
-                    <textarea name="description" class="form-control" rows="4">
-                        {{ assignment.description }}
-                    </textarea>
-                </div>
-
-                <button class="btn btn-primary">Update</button>
-                <a href="{% url 'assignee-list' %}" class="btn btn-secondary">
-                    Back
-                </a>
-            </form>
-        </div>
+<div class="container-fluid mt-4">
+    <!-- دکمه برگشت -->
+    <div class="mb-4">
+        <a href="{% url 'assignee-list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> بازگشت به لیست تیکت‌های من
+        </a>
     </div>
 
-    <div class="container mt-3 mb-5">
-        <div class="d-none d-md-block">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="flex-grow-1 me-3">
-                    {% include 'pagination-showing-result-dee.html' %}
+    <!-- کارت اصلی با تب‌ها -->
+    <div class="card shadow-lg">
+        <!-- هدر کارت -->
+        <div class="card-header bg-primary text-white p-0">
+            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                <div>
+                    <h4 class="mb-0">
+                        <i class="bi bi-ticket-detailed-fill me-2"></i>
+                        تیکت اختصاص داده شده
+                    </h4>
+                    <small class="opacity-75">#{{ ticket.tracking_code }}</small>
                 </div>
-                <div class="flex-shrink-0">
-                    {% include 'pagination-dee.html' %}
+                <div class="d-flex align-items-center gap-2">
+                    {% if assignment.seen_at %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-eye-fill me-1"></i>مشاهده شده
+                        </span>
+                    {% else %}
+                        <span class="badge bg-warning">
+                            <i class="bi bi-eye-slash me-1"></i>مشاهده نشده
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- تب‌ها -->
+            <ul class="nav nav-tabs border-bottom-0" id="assigneeTabs">
+                <li class="nav-item">
+                    <button class="nav-link active text-white" id="assignee-details-tab"
+                            data-bs-toggle="tab" data-bs-target="#assignee-details-tab-pane"
+                            type="button">
+                        <i class="bi bi-info-circle me-1"></i>جزئیات تیکت
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link text-white" id="assignee-notes-tab"
+                            data-bs-toggle="tab" data-bs-target="#assignee-notes-tab-pane"
+                            type="button">
+                        <i class="bi bi-journal-text me-1"></i>یادداشت‌ها
+                        {% if notes %}
+                            <span class="badge bg-light text-dark ms-1">{{ notes|length }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link text-white" id="assignee-attachments-tab"
+                            data-bs-toggle="tab" data-bs-target="#assignee-attachments-tab-pane"
+                            type="button">
+                        <i class="bi bi-paperclip me-1"></i>ضمیمه‌ها
+                        {% if ticket.ticket_attachments.exists %}
+                            <span class="badge bg-light text-dark ms-1">{{ ticket.ticket_attachments.count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link text-white" id="assignee-status-tab"
+                            data-bs-toggle="tab" data-bs-target="#assignee-status-tab-pane"
+                            type="button">
+                        <i class="bi bi-gear me-1"></i>تغییر وضعیت
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- محتوای تب‌ها -->
+        <div class="card-body p-0">
+            <div class="tab-content" id="assigneeTabContent">
+                <!-- تب ۱: جزئیات تیکت -->
+                <div class="tab-pane fade show active p-4" id="assignee-details-tab-pane"
+                     role="tabpanel" tabindex="0">
+                    {% include 'assignee/assignee_details_main.html' %}
+                </div>
+
+                <!-- تب ۲: یادداشت‌ها -->
+                <div class="tab-pane fade p-4" id="assignee-notes-tab-pane"
+                     role="tabpanel" tabindex="0">
+                    {% include 'assignee/assignee_notes.html' %}
+                </div>
+
+                <!-- تب ۳: ضمیمه‌ها -->
+                <div class="tab-pane fade p-4" id="assignee-attachments-tab-pane"
+                     role="tabpanel" tabindex="0">
+                    {% if ticket.ticket_attachments.exists %}
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-paperclip me-2"></i>فایل‌های ضمیمه
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    {% for attachment in ticket.ticket_attachments.all %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="bi bi-file-earmark me-2"></i>
+                                            {{ attachment.original_filename|default:attachment.file.name }}
+                                            <small class="text-muted ms-2">
+                                                ({{ attachment.file.size|filesizeformat }})
+                                            </small>
+                                        </div>
+                                        <a href="{{ attachment.file.url }}"
+                                           class="btn btn-sm btn-outline-primary"
+                                           target="_blank">
+                                            <i class="bi bi-download me-1"></i>دانلود
+                                        </a>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-paperclip display-4"></i>
+                            <h5 class="mt-3">فاقد ضمیمه</h5>
+                            <p>هیچ فایل ضمیمه‌ای برای این تیکت وجود ندارد.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- تب ۴: تغییر وضعیت -->
+                <div class="tab-pane fade p-4" id="assignee-status-tab-pane"
+                     role="tabpanel" tabindex="0">
+                    {% include 'assignee/assignee_status_form.html' %}
                 </div>
             </div>
         </div>
-        <div class="d-block d-md-none">
-            {% include 'pagination-mobile-dee.html' %}
+
+        <!-- فوتر کارت -->
+        <div class="card-footer bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    {% if not assignment.seen_at %}
+                        <button type="button" class="btn btn-info mark-seen-btn-assignee"
+                                data-assignment-id="{{ assignment.id }}">
+                            <i class="bi bi-eye me-1"></i> علامت‌گذاری به عنوان دیده شده
+                        </button>
+                    {% else %}
+                        <span class="text-muted">
+                            <i class="bi bi-check-circle text-success me-1"></i>
+                            مشاهده شده در {{ assignment.seen_at|date:"Y/m/d H:i" }}
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="btn-group">
+                    <a href="{% url 'assignee-list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> بازگشت
+                    </a>
+                    <button type="button" class="btn btn-outline-primary"
+                            onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i> چاپ
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
+</div>
+
+<style>
+    /* استایل‌های سفارشی برای تب‌ها */
+    .nav-tabs .nav-link {
+        color: rgba(255, 255, 255, 0.8);
+        border: none;
+        border-radius: 0;
+        padding: 12px 20px;
+        transition: all 0.3s;
+    }
+
+    .nav-tabs .nav-link:hover {
+        color: white;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        background: white;
+        border-bottom: 3px solid #0d6efd;
+    }
+
+    .nav-tabs .nav-link.active:hover {
+        color: #0d6efd;
+    }
+
+    .nav-tabs .nav-item {
+        margin-bottom: -1px;
+    }
+
+    .tab-content {
+        min-height: 500px;
+    }
+
+    .list-group-item {
+        transition: all 0.2s;
+    }
+
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(2px);
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // فعال‌سازی تب‌ها
+    const triggerTabList = [].slice.call(document.querySelectorAll('#assigneeTabs button'))
+    triggerTabList.forEach(function (triggerEl) {
+        const tabTrigger = new bootstrap.Tab(triggerEl)
+
+        triggerEl.addEventListener('click', function (event) {
+            event.preventDefault()
+            tabTrigger.show()
+        })
+    })
+
+    // Mark as Seen functionality for assignee
+    const markSeenBtn = document.querySelector('.mark-seen-btn-assignee');
+    if (markSeenBtn) {
+        markSeenBtn.addEventListener('click', function() {
+            const assignmentId = this.dataset.assignmentId;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(`/assignee/${assignmentId}/mark-seen/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ mark_seen: true })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', 'تیکت با موفقیت علامت‌گذاری شد.');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast('error', 'خطا: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', 'خطایی رخ داد.');
+            });
+        });
+    }
+
+    // تابع نمایش Toast
+    function showToast(type, message) {
+        const toastId = 'assigneeToast';
+        let toast = document.getElementById(toastId);
+
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            toast.style.position = 'fixed';
+            toast.style.top = '20px';
+            toast.style.right = '20px';
+            toast.style.zIndex = '1060';
+
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                            data-bs-dismiss="toast"></button>
+                </div>
+            `;
+
+            document.body.appendChild(toast);
+        }
+
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+
+    // ذخیره تب فعال در sessionStorage
+    const activeTab = sessionStorage.getItem('assigneeDetailsActiveTab');
+    if (activeTab) {
+        const tabTrigger = document.querySelector(`[data-bs-target="${activeTab}"]`);
+        if (tabTrigger) {
+            bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+        }
+    }
+
+    // ذخیره تب فعلی هنگام تغییر
+    const tabButtons = document.querySelectorAll('#assigneeTabs button[data-bs-toggle="tab"]');
+    tabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', function(event) {
+            const target = event.target.getAttribute('data-bs-target');
+            sessionStorage.setItem('assigneeDetailsActiveTab', target);
+        });
+    });
+
+    // Auto-mark as seen when viewing the ticket
+    if (!{{ assignment.seen_at|yesno:"true,false" }}) {
+        setTimeout(function() {
+            const assignmentId = {{ assignment.id }};
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(`/assignee/${assignmentId}/mark-seen/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ auto_mark: true })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Auto-marked as seen');
+                }
+            });
+        }, 3000); // بعد از 3 ثانیه
+    }
+});
+</script>
 {% endblock %}

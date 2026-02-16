@@ -1,0 +1,277 @@
+<!-- templates/assignee/assignee_notes.html -->
+<div class="card shadow-sm">
+    <div class="card-header bg-info text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-journal-text me-2"></i>یادداشت‌های تیکت
+            </h5>
+            <span class="badge bg-light text-dark">{{ notes|length }} یادداشت</span>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <!-- فرم افزودن یادداشت جدید -->
+        <div class="mb-4 p-3 border rounded bg-light">
+            <h6 class="mb-3">
+                <i class="bi bi-plus-circle me-1"></i>افزودن یادداشت جدید
+            </h6>
+            <form method="post" action="{% url 'add_ticket_note_assignee' ticket.id %}"
+                  id="addNoteForm">
+                {% csrf_token %}
+                <input type="hidden" name="assignment_id" value="{{ assignment.id }}">
+
+                <div class="mb-3">
+                    <textarea class="form-control" name="content"
+                              id="noteContent" rows="3"
+                              placeholder="یادداشت خود را اینجا بنویسید..."
+                              required></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox"
+                                   name="is_private" id="assignee-note-private">
+                            <label class="form-check-label" for="assignee-note-private">
+                                <i class="bi bi-lock me-1"></i>
+                                یادداشت خصوصی (فقط برای کارکنان)
+                            </label>
+                            <small class="text-muted d-block">
+                                این یادداشت فقط توسط کارکنان سیستم قابل مشاهده است
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button type="submit" class="btn btn-primary" id="submitNoteBtn">
+                            <i class="bi bi-save me-1"></i>ذخیره یادداشت
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- لیست یادداشت‌های موجود -->
+        <div class="notes-list">
+            <h6 class="border-bottom pb-2 mb-3">
+                <i class="bi bi-list-ul me-1"></i>یادداشت‌های ثبت شده
+            </h6>
+
+            {% if notes %}
+                {% for note in notes %}
+                <div class="card mb-3 {% if note.is_private %}border-warning{% else %}border-light{% endif %}">
+                    <div class="card-body">
+                        <!-- هدر یادداشت -->
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <strong>
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    {{ note.created_by.get_full_name|default:note.created_by.username }}
+                                </strong>
+                                <small class="text-muted ms-2">
+                                    <i class="bi bi-clock me-1"></i>
+                                    {{ note.created_at|date:"Y/m/d H:i" }}
+                                </small>
+
+                                <!-- نشانگرها -->
+                                {% if note.is_private %}
+                                    <span class="badge bg-warning ms-2">
+                                        <i class="bi bi-lock"></i> خصوصی
+                                    </span>
+                                {% endif %}
+
+                                {% if note.created_by == user %}
+                                    <span class="badge bg-primary ms-2">
+                                        <i class="bi bi-person-check"></i> شما
+                                    </span>
+                                {% endif %}
+
+                                {% if note.created_by == ticket.created_by %}
+                                    <span class="badge bg-info ms-2">
+                                        <i class="bi bi-envelope-paper"></i> فرستنده
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- دکمه‌های عملیات -->
+                            {% if note.created_by == user %}
+                            <div class="btn-group btn-group-sm">
+                                <!-- دکمه ویرایش -->
+                                <button class="btn btn-outline-primary edit-note-btn"
+                                        data-note-id="{{ note.id }}"
+                                        data-content="{{ note.content }}"
+                                        data-private="{{ note.is_private|yesno:'true,false' }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                <!-- دکمه حذف -->
+                                <form method="post" action="{% url 'delete_ticket_note_assignee' note.id %}"
+                                      class="d-inline delete-note-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="assignment_id" value="{{ assignment.id }}">
+                                    <button type="button" class="btn btn-outline-danger delete-note-btn"
+                                            data-note-id="{{ note.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- محتوای یادداشت -->
+                        <div class="note-content mt-3 p-3 bg-light rounded"
+                             id="note-content-{{ note.id }}"
+                             style="white-space: pre-line; line-height: 1.8;">
+                            {{ note.content }}
+                        </div>
+
+                        <!-- اطلاعات اضافی -->
+                        {% if note.updated_at != note.created_at %}
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-pencil"></i>
+                            ویرایش شده در: {{ note.updated_at|date:"Y/m/d H:i" }}
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-journal-x display-4"></i>
+                    <h5 class="mt-3">هنوز هیچ یادداشتی ثبت نشده است</h5>
+                    <p class="mb-0">اولین نفر باشید که یادداشت ثبت می‌کند</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای ویرایش یادداشت -->
+<div class="modal fade" id="editNoteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ویرایش یادداشت</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" id="editNoteForm">
+                {% csrf_token %}
+                <input type="hidden" name="assignment_id" value="{{ assignment.id }}">
+                <input type="hidden" id="editNoteId" name="note_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editNoteContent" class="form-label">متن یادداشت</label>
+                        <textarea class="form-control" id="editNoteContent"
+                                  name="content" rows="4" required></textarea>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox"
+                               name="is_private" id="editNotePrivate">
+                        <label class="form-check-label" for="editNotePrivate">
+                            یادداشت خصوصی (فقط برای کارکنان)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- استایل‌های اختصاصی -->
+<style>
+.notes-list .card {
+    border-left: 4px solid #0d6efd;
+    transition: all 0.3s;
+}
+
+.notes-list .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.notes-list .card.border-warning {
+    border-left-color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.05);
+}
+
+.note-content {
+    line-height: 1.8;
+    font-size: 0.95rem;
+    padding-right: 10px;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // مدیریت Modal ویرایش
+    const editModal = new bootstrap.Modal(document.getElementById('editNoteModal'));
+
+    // رویداد کلیک روی دکمه ویرایش
+    document.querySelectorAll('.edit-note-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const noteId = this.dataset.noteId;
+            const content = this.dataset.content;
+            const isPrivate = this.dataset.private === 'true';
+
+            document.getElementById('editNoteId').value = noteId;
+            document.getElementById('editNoteContent').value = content;
+            document.getElementById('editNotePrivate').checked = isPrivate;
+
+            editModal.show();
+        });
+    });
+
+    // ارسال فرم ویرایش
+    document.getElementById('editNoteForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const noteId = document.getElementById('editNoteId').value;
+        const content = document.getElementById('editNoteContent').value.trim();
+        const isPrivate = document.getElementById('editNotePrivate').checked;
+
+        if (!content) {
+            alert('لطفاً متن یادداشت را وارد کنید.');
+            return;
+        }
+
+        // ارسال فرم
+        this.submit();
+    });
+
+    // مدیریت حذف یادداشت
+    document.querySelectorAll('.delete-note-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const noteId = this.dataset.noteId;
+
+            if (confirm('آیا از حذف این یادداشت اطمینان دارید؟')) {
+                const form = this.closest('.delete-note-form');
+                if (form) {
+                    form.submit();
+                }
+            }
+        });
+    });
+
+    // مدیریت فرم افزودن یادداشت
+    document.getElementById('addNoteForm').addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submitNoteBtn');
+        const originalText = submitBtn.innerHTML;
+
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> در حال ذخیره...';
+        submitBtn.disabled = true;
+
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 3000);
+    });
+});
+</script>

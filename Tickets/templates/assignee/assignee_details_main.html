@@ -1,0 +1,226 @@
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>اطلاعات تیکت
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong class="text-muted">موضوع:</strong>
+                            <h5 class="mt-1">{{ ticket.subject }}</h5>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong class="text-muted">فرستنده:</strong>
+                            <p class="mt-1">
+                                {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}
+                                {% if ticket.created_by == user %}
+                                    <span class="badge bg-primary ms-1">شما</span>
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong class="text-muted">اولویت:</strong>
+                            <span class="badge mt-1"
+                                  style="background: {{ ticket.get_priority_color }}">
+                                {{ ticket.get_priority_display }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong class="text-muted">دسته‌بندی:</strong>
+                            <p class="mt-1">
+                                {{ ticket.category.name|default:"بدون دسته‌بندی" }}
+                            </p>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong class="text-muted">تاریخ ایجاد:</strong>
+                            <p class="mt-1">{{ ticket.created_at|date:"Y/m/d H:i" }}</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong class="text-muted">مهلت پاسخ:</strong>
+                            <p class="mt-1 {% if ticket.is_expired %}text-danger{% endif %}">
+                                {{ ticket.max_replay_date|date:"Y/m/d H:i" }}
+                                {% if ticket.is_expired %}
+                                    <span class="badge bg-danger">منقضی شده</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- توضیحات تیکت -->
+                {% if ticket.description %}
+                <div class="mt-4 pt-3 border-top">
+                    <strong class="text-muted">توضیحات:</strong>
+                    <div class="mt-2 p-3 bg-light rounded">
+                        {{ ticket.description|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- کارت وضعیت Assignment -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-badge me-2"></i>وضعیت اختصاص
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>وضعیت کنونی:</strong>
+                            <div class="mt-2">
+                                <span class="badge fs-6"
+                                      style="background: {{ assignment.get_status_color }}">
+                                    {{ assignment.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong>تاریخ اختصاص:</strong>
+                            <p class="mt-1">{{ assignment.assigned_at|date:"Y/m/d H:i" }}</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>آخرین بروزرسانی:</strong>
+                            <p class="mt-1">
+                                {{ assignment.updated_at|date:"Y/m/d H:i" }}
+                                <small class="text-muted">({{ assignment.updated_at|timesince }} پیش)</small>
+                            </p>
+                        </div>
+
+                        {% if assignment.completed_at %}
+                        <div class="mb-3">
+                            <strong>تاریخ تکمیل:</strong>
+                            <p class="mt-1">{{ assignment.completed_at|date:"Y/m/d H:i" }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if assignment.description %}
+                <div class="mt-3 pt-3 border-top">
+                    <strong>توضیحات وضعیت:</strong>
+                    <div class="mt-2 p-3 bg-light rounded">
+                        {{ assignment.description|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ستون سمت راست: اطلاعات جانبی -->
+    <div class="col-lg-4">
+        <!-- کارت وضعیت مشاهده -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-eye me-2"></i>وضعیت مشاهده
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    {% if assignment.seen_at %}
+                        <i class="bi bi-eye-fill text-success display-4"></i>
+                        <h4 class="mt-3 text-success">مشاهده شده</h4>
+                        <p class="text-muted">
+                            در {{ assignment.seen_at|date:"Y/m/d H:i" }}<br>
+                            ({{ assignment.seen_at|timesince }} پیش)
+                        </p>
+                    {% else %}
+                        <i class="bi bi-eye-slash text-warning display-4"></i>
+                        <h4 class="mt-3 text-warning">مشاهده نشده</h4>
+                        <p class="text-muted">هنوز این تیکت را مشاهده نکرده‌اید.</p>
+                        <button type="button" class="btn btn-info mark-seen-btn-assignee"
+                                data-assignment-id="{{ assignment.id }}">
+                            <i class="bi bi-eye me-1"></i> علامت‌گذاری
+                        </button>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <div class="mt-3">
+                    <strong>وضعیت کلی تیکت:</strong>
+                    <p class="mt-1">
+                        {% if ticket.is_seen %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-eye-fill me-1"></i>
+                                دیده شده توسط {{ ticket.calculate_seen_count }} نفر
+                            </span>
+                            <br>
+                            <small class="text-muted">
+                                آخرین بار توسط {{ ticket.seen_by_display }}
+                            </small>
+                        {% else %}
+                            <span class="badge bg-warning">
+                                <i class="bi bi-eye-slash me-1"></i>
+                                دیده نشده
+                            </span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- کارت سایر Assigneeها -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-people me-2"></i>سایر مسئولان
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for assign in ticket.assignments_tickets.all %}
+                        {% if assign.assignee != user %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small>
+                                        {{ assign.assignee.get_full_name|default:assign.assignee.username }}
+                                    </small>
+                                    {% if assign.seen_at %}
+                                        <br>
+                                        <small class="text-success">
+                                            <i class="bi bi-eye"></i> مشاهده شده
+                                        </small>
+                                    {% else %}
+                                        <br>
+                                        <small class="text-warning">
+                                            <i class="bi bi-eye-slash"></i> مشاهده نشده
+                                        </small>
+                                    {% endif %}
+                                </div>
+                                <span class="badge" style="background: {{ assign.get_status_color }}">
+                                    {{ assign.get_status_display }}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% empty %}
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-person-x"></i>
+                            <p class="mt-2">شما تنها مسئول این تیکت هستید.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -10,68 +10,80 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto d-flex align-items-center">
                 {% if request.resolver_match.url_name != 'tickets' %}
-                    <li class="nav-item mx-2 text-white">
-                        <a href="{% url 'tickets' %}" class="nav-link d-flex align-items-center">
+                    <li class="nav-item mx-2">
+                        <a href="{% url 'tickets' %}" class="nav-link d-flex align-items-center text-white">
                             <i class="bi bi-list-task me-1"></i>
                             Tickets
                         </a>
                     </li>
                 {% endif %}
-{#برای عدم دسترسی کارمند نوشته شده است #}
-{#                {% if request.resolver_match.url_name != 'tickets' and request.resolver_match.url_name != 'tickets-create' or request.session.role == "Admin" or request.session.role == "Super Admin"%}#}
-                {% if request.session.role == "Admin" or request.session.role == "Super Admin"%}
-                    <li class="nav-item mx-2 text-white">
-                        <a href="{% url 'tickets-create' %}" class="nav-link d-flex align-items-center">
-                            <i class="bi bi-plus-circle me-1"></i>
-                            New Ticket
+
+
+                    {% if parms.Tickets.add_ticket %}
+                    {% if request.resolver_match.url_name != 'tickets-create' %}
+                        <li class="nav-item mx-2">
+                            <a href="{% url 'tickets-create' %}" class="nav-link d-flex align-items-center text-white">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                New Ticket
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endif %}
+
+                {% if user.is_superuser or user.groups.first.name == "SuperAdmin" %}
+                    {% if request.resolver_match.url_name != 'search_logs' %}
+                        <li class="nav-item mx-2">
+                            <a href="{% url 'search_logs' %}" class="nav-link text-white">
+                                <i class="bi bi-clock-history"></i>
+                                Search History
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endif %}
+
+                    <li class="nav-item mx-2">
+                        <a href="#" class="text-decoration-none position-relative">
+                            <i class="bi bi-bell fs-4 text-white"></i>
+                        </a>
+                    </li>
+                {% if request.resolver_match.url_name != 'assignee-list' %}
+                    <li class="nav-item mx-2">
+                        <a href="{% url 'assignee-list' %}" class="nav-link d-flex align-items-center text-white">
+                            <i class="bi bi-list-stars me-1"></i>My Tasks
                         </a>
                     </li>
                 {% endif %}
-                {% if request.resolver_match.url_name != 'tickets' and request.resolver_match.url_name != 'tickets-create' and request.resolver_match.url_name != 'tickets-update' and request.resolver_match.url_name != 'assignee-list' and request.resolver_match.url_name != 'assignee-detail' %}
-                    <li class="nav-item mx-2 text-white">
-                        <a href="{% url 'search_logs' %}" class="nav-link">
-                            <i class="bi bi-clock-history"></i>
-                            Search History
-                        </a>
-                    </li>
-                {% endif %}
-                <li class="nav-item mx-2">
-                    <a href="#" class="text-decoration-none position-relative">
-                        <i class="bi bi-bell fs-4 text-white"></i>
-                    </a>
-                </li>
-            {% if request.resolver_match.url_name != 'assignee-list' %}
-                <li class="nav-item mx-2 text-white">
-                    <a href="{% url 'assignee-list' %}" class="nav-link d-flex align-items-center">
-                        <i class="bi bi-list-stars me-1"></i>My Task
-                        Tickets
-                    </a>
-                </li>
-            {% endif %}
+
                 {% if user.is_authenticated %}
-                    <li class="nav-item mx-2 dropdown text-white">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
-                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <li class="nav-item mx-2 dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#"
+                           id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle fs-4 me-1"></i>
-{#                            برای نمایش role #}
-                            <span class="small">{{ user.username }} - {{ request.session.role }}</span>
+                            <span class="small">
+                                {{ user.username }}
+                                {% if user.is_superuser %}
+                                    - Super Admin
+                                {% elif user.groups.first %}
+                                    - {{ user.groups.first.name }}
+                                {% endif %}
+                            </span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li>
-                                <a class="dropdown-item" href="#">
-                                    <i class="bi bi-person me-2"></i>
-                                    Profile
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="#">
-                                    <i class="bi bi-gear me-2"></i>
-                                    Settings
-                                </a>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-person me-2"></i>
+                                        Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-gear me-2"></i>
+                                        Settings
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
                             <li>
                                 <form method="post" action="{% url 'tickets-logout' %}" id="logout-form">
                                     {% csrf_token %}
@@ -84,21 +96,20 @@
                         </ul>
                     </li>
                 {% else %}
-                    <li class="nav-item mx-2 text-white">
-                        <a href="{% url 'tickets-login' %}" class="nav-link d-flex align-items-center">
+                    <li class="nav-item mx-2">
+                        <a href="{% url 'tickets-login' %}" class="nav-link d-flex align-items-center text-white">
                             <i class="bi bi-person-circle fs-4 me-1"></i>
                             <span>Login</span>
                         </a>
                     </li>
-                    <li class="nav-item mx-2 text-white">
-                        <a href="{% url 'register' %}" class="nav-link d-flex align-items-center">
+                    <li class="nav-item mx-2">
+                        <a href="{% url 'register' %}" class="nav-link d-flex align-items-center text-white">
                             <i class="bi bi-person-plus me-1"></i>
                             <span>Register</span>
                         </a>
                     </li>
                 {% endif %}
-
-                <li class="nav-item mx-2 ">
+                <li class="nav-item mx-2">
                     <button id="themeToggle" class="text-warning text-decoration-none p-0 border-0 bg-transparent fs-4">
                         <i class="bi bi-moon-fill fs-5 text-warning"></i>
                     </button>

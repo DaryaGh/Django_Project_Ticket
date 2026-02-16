@@ -15,38 +15,38 @@ from django.template.loader import render_to_string
 from django.conf import settings
 
 
-# @receiver(post_save, sender=Ticket)
-# def ticket_email_notification(sender, instance, created, **kwargs):
-#     if created:
-#         subject = f"New Ticket Created : #{instance.tracking_code}"
-#         html_template = 'emails/ticket-email-create.html'
-#         text_template = 'emails/ticket-email-create.txt'
-#     else:
-#         subject = f"New Ticket Updated : #{instance.tracking_code}"
-#         html_template = 'emails/ticket-email-update.html'
-#         text_template = 'emails/ticket-email-update.txt'
-#
-#     context = {
-#         'ticket' : instance,
-#         'creator' : instance.created_by,
-#         'ticket_url' : f'http://127.0.0.1:8000/Tickets/#{instance.tracking_code}/',
-#     }
-#
-#     text_content = render_to_string(text_template, context)
-#     html_content = render_to_string(html_template, context)
-#
-#     email = EmailMultiAlternatives(
-#         subject=subject,
-#         body=text_content,
-#         # from_email = settings.DEFAULT_FROM_EMAIL,
-#         from_email = None,
-#         # to=[instance.created_by.email],
-#         # to=["D.Ghaffary@hotmail.com"],
-#         to=["daryaaa.ghaffary@gmail.com"],
-#     )
-#
-#     email.attach_alternative(html_content, "text/html")
-#     email.send(fail_silently=False)
+@receiver(post_save, sender=Ticket)
+def ticket_email_notification(sender, instance, created, **kwargs):
+    if created:
+        subject = f"New Ticket Created : #{instance.tracking_code}"
+        html_template = 'emails/ticket-email-create.html'
+        text_template = 'emails/ticket-email-create.txt'
+    else:
+        subject = f"New Ticket Updated : #{instance.tracking_code}"
+        html_template = 'emails/ticket-email-update.html'
+        text_template = 'emails/ticket-email-update.txt'
+
+    context = {
+        'ticket' : instance,
+        'creator' : instance.created_by,
+        'ticket_url' : f'http://127.0.0.1:8000/Tickets/#{instance.tracking_code}/',
+    }
+
+    text_content = render_to_string(text_template, context)
+    html_content = render_to_string(html_template, context)
+
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=text_content,
+        # from_email = settings.DEFAULT_FROM_EMAIL,
+        from_email = None,
+        # to=[instance.created_by.email],
+        # to=["D.Ghaffary@hotmail.com"],
+        to=["daryaaa.ghaffary@gmail.com"],
+    )
+
+    email.attach_alternative(html_content, "text/html")
+    email.send(fail_silently=False)
 
 
 @receiver(post_save, sender=Ticket)
@@ -263,54 +263,54 @@ def log_ticket_change(sender, instance, **kwargs):
 
 # Email ==> Example-2
 
-# @receiver(post_save, sender=Ticket)
-# def ticket_email_notification(sender, instance, created, **kwargs):
-#     recipient_list = []
-#     subject = ""
-#     message = ""
-#     if created:
-#         subject = f"New Ticket Created : #{instance.tracking_code}"
-#         message = (
-#             f"A new ticket has been created for {instance.tracking_code}. \n\n"
-#             f"Description : {instance.description}\n"
-#             f"Title  : {instance.subject}\n"
-#             f"Created by : {instance.created_by.username}\n"
-#             f"Created at : {instance.created_at}\n"
-#         )
+@receiver(post_save, sender=Ticket)
+def ticket_email_notification(sender, instance, created, **kwargs):
+    recipient_list = []
+    subject = ""
+    message = ""
+    if created:
+        subject = f"New Ticket Created : #{instance.tracking_code}"
+        message = (
+            f"A new ticket has been created for {instance.tracking_code}. \n\n"
+            f"Description : {instance.description}\n"
+            f"Title  : {instance.subject}\n"
+            f"Created by : {instance.created_by.username}\n"
+            f"Created at : {instance.created_at}\n"
+        )
 
-#         if instance.contact_email:
-#             recipient_list = [instance.contact_email]
-#         elif instance.created_by and instance.created_by.email:
-#             recipient_list = [instance.created_by.email]
-#         else:
-#             recipient_list = ['d.ghaffary@hotmail.com']
-#
-#     else:
-#         subject = f"Ticket Updated : #{instance.tracking_code}"
-#         message = (
-#             f"Ticket has been Updated : #{instance.tracking_code}\n\n"
-#             f"Description : {instance.description}\n"
-#             f"Title  : {instance.subject}\n"
-#             f"Last updated at : {instance.updated_at}\n"
-#         )
-#         # recipient_list = ['admin@yourdomain.com', 'support@yourdomain.com']
-#     if recipient_list and all(recipient_list):
-#         try:
-#             # from_email = settings.DEFAULT_FROM_EMAIL or 'noreply@yourdomain.com'
-#             from_email = settings.DEFAULT_FROM_EMAIL
-#
-#             send_mail(
-#                 subject=subject,
-#                 message=message,
-#                 from_email=from_email,
-#                 recipient_list=recipient_list,
-#                 fail_silently=True
-#             )
-#         except Exception as e:
-#             print(f"❌ خطا در ارسال ایمیل برای تیکت #{instance.tracking_code}: {e}")
-#     else:
-#         print(f"⚠️ آدرس ایمیل گیرنده معتبری برای تیکت #{instance.tracking_code} یافت نشد")
-#
+        if instance.contact_email:
+            recipient_list = [instance.contact_email]
+        elif instance.created_by and instance.created_by.email:
+            recipient_list = [instance.created_by.email]
+        else:
+            recipient_list = ['d.ghaffary@hotmail.com']
+
+    else:
+        subject = f"Ticket Updated : #{instance.tracking_code}"
+        message = (
+            f"Ticket has been Updated : #{instance.tracking_code}\n\n"
+            f"Description : {instance.description}\n"
+            f"Title  : {instance.subject}\n"
+            f"Last updated at : {instance.updated_at}\n"
+        )
+        # recipient_list = ['admin@yourdomain.com', 'support@yourdomain.com']
+    if recipient_list and all(recipient_list):
+        try:
+            # from_email = settings.DEFAULT_FROM_EMAIL or 'noreply@yourdomain.com'
+            from_email = settings.DEFAULT_FROM_EMAIL
+
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=from_email,
+                recipient_list=recipient_list,
+                fail_silently=True
+            )
+        except Exception as e:
+            print(f"❌Error sending email for ticket #{instance.tracking_code}: {e}")
+    else:
+        print(f"⚠️ No valid recipient email address found for ticket #{instance.tracking_code}")
+
 
 
 # Email ==> Example-1
