@@ -2,6 +2,7 @@ from django.urls import path
 from .views import *
 
 urlpatterns = [
+    path('Account/login/', ticket_login, name='login'),  # اضافه کنید
     path('', dashboard, name='dashboard'),
     path('Tickets', index, name='tickets'),
     path('Tickets/create', ticket_create, name='tickets-create'),

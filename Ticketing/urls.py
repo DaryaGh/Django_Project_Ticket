@@ -24,6 +24,8 @@ urlpatterns = [
     path("",include('Tickets.urls')),
 
     path('Account/', include('django.contrib.auth.urls')),
+
+    path('i18n/', include('django.conf.urls.i18n')),
 ]
 # اضافه کردن این خط برای سرو کردن فایل‌های media در حالت توسعه
 if settings.DEBUG:

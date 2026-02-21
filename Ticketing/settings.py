@@ -23,7 +23,6 @@ load_dotenv(BASE_DIR / '.env')
 DEBUG = os.getenv('DEBUG') == 'True'
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -34,7 +33,6 @@ SECRET_KEY = 'django-insecure-0v(5+x%h!5c_g%6apkbx)7=sak-6k@q-x7qvfeg5-*v5c$jbz5
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -54,6 +52,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -74,13 +73,13 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.i18n'
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = 'Ticketing.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -91,7 +90,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -111,17 +109,75 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LOGIN_URL = '/Account/login/'  # آدرس صفحه لاگین شما
+LOGIN_REDIRECT_URL = '/'  # آدرس بعد از لاگین موفق
+
+
+# settings.py
+# from pathlib import Path
+# import os
+#
+# BASE_DIR = Path(__file__).resolve().parent.parent
+
+from django.utils.translation import gettext_lazy as _
+
+# اگر می‌خواهید CSS جداگانه برای RTL داشته باشید
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'),
+]
+
+LANGUAGES = [
+    ('en', 'English'),
+    ('fa', 'Persian'),
+]
+
+LANGUAGE_CODE = 'en'  # زبان پیش‌فرض
+USE_I18N = True
+USE_L10N = True
+
+
+
+
+
+
+# # تنظیمات زبان
+
+#
+#
+#
+# LANGUAGE_CODE = 'fa'
+#
+# USE_I18N = True
+# USE_L10N = True
+# USE_TZ = True
+#
+# LANGUAGE_COOKIE_NAME = 'django_language'
+# LANGUAGE_COOKIE_AGE = None
+# LANGUAGE_COOKIE_PATH = '/'
+#
+# # زبان‌های فعال
+# LANGUAGES = [
+#     ('en', _('English')),
+#     ('fa', _('Persian')),
+# ]
+#
+# # مسیر فایل‌های ترجمه
+# LOCALE_PATHS = [
+#     # BASE_DIR / 'locale',
+#     BASE_DIR / 'locale/',
+# ]
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+
 
 TIME_ZONE = 'Asia/Tehran'
-
-USE_I18N = True
-
-USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -136,8 +192,6 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -156,23 +210,3 @@ MESSAGE_TAGS = {
 
 MEDIA_URL = '/media/'  # URL prefix for media files
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
-
-# Email
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_USE_TLS = True
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-# ایمیل شرکت را وارد کنید
-EMAIL_HOST_USER = 'daryaghaffary.developer@gmail.com'
-EMAIL_HOST_PASSWORD = 'muas vaoe htka jfgh'
-# همان ایمیل شرکت یا اسمی که مخواهید نمایش داده شود که اکثرا همان ایمیل شرکت استو با بالایی یکی است
-DEFAULT_FROM_EMAIL = 'daryaghaffary.developer@gmail.com'
-# روی سرور هر سه این موارد پاک میشود و هاستینگ به ما این موارد را میدهد
-
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = os.getenv('EMAIL_HOST')
-# EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
-# EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') == 'True'
-# EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-# EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

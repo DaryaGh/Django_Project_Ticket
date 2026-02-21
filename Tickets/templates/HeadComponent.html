@@ -9,7 +9,11 @@
             Ticketing App
         {% endblock %}
     </title>
+    {% if LANGUAGE_CODE == "fa" %}
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.rtl.min.css' %}">
+    {% else %}
     <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
+    {% endif %}
     <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">

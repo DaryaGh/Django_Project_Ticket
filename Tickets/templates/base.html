@@ -1,12 +1,30 @@
 {% load static %}
+{% load i18n %}
 {% load humanize %}
 <!DOCTYPE html>
-<html lang="en">
+{#<html lang="en">#}
+<html lang="{{ LANGUAGE_CODE }}" dir="{%  if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}">
 
 {% include 'HeadComponent.html' %}
 
 <body data-bs-theme={{ mode }}>
 
+{#<p class="mb-5">{% translate "ticket" %}</p>#}
+{#<p class="mb-5">{% translate "Ticket" %}</p>#}
+{#<p class="mb-5">{% translate "English" %}</p>#}
+{#<p class="mb-5">{% translate "Submit" %}</p>#}
+{#<p class="mb-5">{% translate "Close" %}</p>#}
+{#<p class="mb-5">{% translate "Open" %}</p>#}
+{#<p class="mb-5">{% translate "Love You" %}</p>#}
+{#<p class="mb-5">{% translate "See" %}</p>#}
+{#<p class="mb-5">{% translate "Any Of Them" %}</p>#}
+{#<p class="mb-5">{% translate "Moon" %}</p>#}
+{##}
+{#<p>{% translate "Current language :" %}#}
+{#{% get_current_language as current_language %}#}
+{#    {% get_language_info for current_language as lang %}#}
+{#    {{ lang.name_local }}#}
+{#</p>#}
 {% include 'NavComponent.html' %}
 
 <main>
