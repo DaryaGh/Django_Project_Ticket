@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
-
 {% load static %}
+{% load i18n %}
 {% load highlight %}
 {% load button_tags %}
 {% load alert_tags %}
@@ -12,7 +12,10 @@
 {% block content %}
     <div class="container-lg">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>All Tickets</h2>
+            <h2>
+            {% translate "All Tickets" %}
+                All Tickets
+            </h2>
 
             <div class="btn-group" role="group">
                 <input type="radio" class="btn-check" name="view-mode" id="table-view" autocomplete="off" checked>
@@ -29,7 +32,8 @@
             {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
                 <a href="{% url 'tickets-create' %}" class="btn btn-success">
                     <i class="fas fa-plus me-1"></i>
-                    New Ticket
+                    {% translate "New Ticket" %}
+{#                    New Ticket#}
                 </a>
             {% endif %}
         </div>
@@ -55,11 +59,15 @@
                     <div class="d-flex align-items-center gap-2 flex-wrap">
 
                         <button type="button" class="btn btn-outline-primary btn-sm" id="selectAllBtn">
-                            <i class="fas fa-check-square me-1"></i>All Choose
+                            <i class="fas fa-check-square me-1"></i>
+                            {% translate "All Choose" %}
+{#                            All Choose#}
                         </button>
 
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="deselectAllBtn">
-                            <i class="fas fa-square me-1"></i>Cancel
+                            <i class="fas fa-square me-1"></i>
+                            {% translate "Cancel" %}
+{#                            Cancel#}
                         </button>
 
 
@@ -67,20 +75,26 @@
                             <button class="btn btn-danger btn-sm dropdown-toggle" type="button"
                                     id="bulkActionBtn" data-bs-toggle="dropdown"
                                     aria-expanded="false">
-                                <i class="fas fa-trash me-1"></i> Group operations
+                                <i class="fas fa-trash me-1"></i>
+                                {% translate "Group operations" %}
+{#                                Group operations#}
                             </button>
                             <ul class="dropdown-menu" aria-labelledby="bulkActionBtn">
                                 <li>
                                     <button class="dropdown-item text-danger bulk-delete-btn" type="button"
                                             data-action="delete_selected">
-                                        <i class="fas fa-trash me-2"></i>Delete Selected
+                                        <i class="fas fa-trash me-2"></i>
+                                        {% translate "Delete Selected" %}
+{#                                        Delete Selected#}
                                     </button>
                                 </li>
                                 <li>
                                     {% if request.user.is_superuser or request.user.is_staff %}
                                         <button class="dropdown-item text-danger bulk-delete-btn" type="button"
                                                 data-action="delete_all_tickets">
-                                            <i class="fas fa-bomb me-2"></i> Clear all tickets
+                                            <i class="fas fa-bomb me-2"></i>
+                                            {% translate "Clear all tickets" %}
+{#                                            Clear all tickets#}
                                         </button>
                                     {% endif %}
                                 </li>
@@ -88,7 +102,9 @@
                                     <li>
                                         <button class="dropdown-item text-warning bulk-delete-btn" type="button"
                                                 data-action="delete_filtered">
-                                            <i class="fas fa-filter me-2"></i> Clear search results
+                                            <i class="fas fa-filter me-2"></i>
+                                            {% translate "Clear search results" %}
+{#                                            Clear search results#}
                                         </button>
                                     </li>
                                 {% endif %}
@@ -96,7 +112,9 @@
                         </div>
 
                         <span class="badge bg-info ms-2" id="selectedCountBadge" style="display: none;">
-                    <span id="selectedCount">0</span> Selected item
+                    <span id="selectedCount">0</span>
+                            {% translate "Selected item" %}
+{#                            Selected item#}
                 </span>
                     </div>
                 </div>
@@ -172,7 +190,10 @@
                                     <th scope="col">
                                         <div class="table-header-content text-success">
                                             <i class="bi bi-gear"></i>
-                                            <span>Actions</span>
+                                            <span>
+                                                {% translate "Actions" %}
+{#                                                Actions#}
+                                            </span>
                                         </div>
                                     </th>
                                 </tr>
@@ -200,7 +221,10 @@
                                                 {{ item.ticket.subject|truncatewords:5|highlight:search_query }}
                                             </a>
                                             {% if item.is_unseen_for_current_user %}
-                                                <span class="badge bg-success ms-1">New</span>
+                                                <span class="badge bg-success ms-1">
+                                                {% translate "New" %}
+{#                                                    New#}
+                                                </span>
                                             {% endif %}
                                         </td>
 
@@ -293,19 +317,28 @@
                                             <div class="d-flex flex-column align-items-center">
                                                 {% if item.is_seen_by_current_user %}
                                                     <span class="badge bg-success mb-1">
-                <i class="bi bi-eye me-1"></i>Seen by you
+                <i class="bi bi-eye me-1"></i>
+                                                        {% translate "Seen by you" %}
+{#                                                        Seen by you#}
             </span>
                                                     {% if item.ticket.seen_at %}
                                                         <small class="text-muted" data-bs-toggle="tooltip"
                                                                data-bs-title="Seen at {{ item.ticket.seen_at|date:'Y/m/d H:i' }}">
-                                                            {{ item.ticket.seen_at|timesince }} ago
+                                                            {{ item.ticket.seen_at|timesince }}
+                                                            {% translate "ago" %}
+{#                                                            ago#}
                                                         </small>
                                                     {% endif %}
                                                 {% else %}
                                                     <span class="badge bg-secondary mb-1">
-                <i class="bi bi-eye-slash me-1"></i>Unseen by you
+                <i class="bi bi-eye-slash me-1"></i>
+                                                        {% translate "Unseen by you" %}
+{#                                                        Unseen by you#}
             </span>
-                                                    <small class="text-danger">Never seen by you</small>
+                                                    <small class="text-danger">
+                                                        {% translate "Never seen by you" %}
+{#                                                        Never seen by you#}
+                                                    </small>
                                                 {% endif %}
 
 
@@ -325,7 +358,8 @@
                                                     <div class="mt-2">
                 <span class="badge bg-light text-dark">
                     <i class="bi bi-eye-slash me-1"></i>
-                    No history
+                    {% translate "No history" %}
+{#                    No history#}
                 </span>
                                                     </div>
                                                 {% endif %}
@@ -342,13 +376,17 @@
                                                         <div class="d-grid">
                                                             <a href="{% url 'tickets-details' item.ticket.pk %}"
                                                                class="btn btn-outline-success btn-sm text-start mb-1 border-0">
-                                                                <i class="bi bi-eye me-1"></i>View
+                                                                <i class="bi bi-eye me-1"></i>
+                                                                {% translate "View" %}
+{#                                                                View#}
                                                             </a>
 
                                                             {% if request.session.role == "Admin" or request.session.role == "Super Admin" %}
                                                                 <a href="{% url 'tickets-update' item.ticket.pk %}"
                                                                    class="btn btn-outline-warning btn-sm text-start mb-1 border-0">
-                                                                    <i class="bi bi-pencil-square me-1"></i>Edit
+                                                                    <i class="bi bi-pencil-square me-1"></i>
+                                                                    {% translate "Edit" %}
+{#                                                                    Edit#}
                                                                 </a>
                                                             {% endif %}
 
@@ -357,7 +395,9 @@
                                                                 {% if not item.is_seen_by_current_user %}
                                                                     <button class="btn btn-outline-info btn-sm text-start mb-1 border-0 mark-seen-btn"
                                                                             data-ticket-id="{{ item.ticket.id }}">
-                                                                        <i class="bi bi-eye me-1"></i>Mark as Seen
+                                                                        <i class="bi bi-eye me-1"></i>
+                                                                        {% translate "Mark as Seen" %}
+{#                                                                        Mark as Seen#}
                                                                     </button>
                                                                 {% endif %}
                                                             {% endif %}
@@ -368,7 +408,9 @@
                                                                         data-ticket-number="{{ item.ticket.id }}"
                                                                         data-bs-toggle="modal"
                                                                         data-bs-target="#deleteModal">
-                                                                    <i class="bi bi-trash3 me-1"></i>Delete
+                                                                    <i class="bi bi-trash3 me-1"></i>
+                                                                    {% translate "Delete" %}
+{#                                                                    Delete#}
                                                                 </button>
                                                             {% endif %}
                                                         </div>
@@ -379,7 +421,10 @@
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="13" class="text-center py-4">No Tickets Found!!!</td>
+                                        <td colspan="13" class="text-center py-4">
+                                            {% translate "No Tickets Found!!!" %}
+{#                                            No Tickets Found!!!#}
+                                        </td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>
@@ -405,7 +450,10 @@
                                     <label class="form-check-label" for="card-check-{{ item.ticket.id }}">
                                         <span class="badge bg-primary">#{{ item.ticket.tracking_code|highlight:search_query }}</span>
                                         {% if item.is_unseen_for_current_user %}
-                                            <span class="badge bg-danger ms-1">New</span>
+                                            <span class="badge bg-danger ms-1">
+                                                {% translate "New" %}
+{#                                                New#}
+                                            </span>
                                         {% endif %}
                                     </label>
                                 </div>
@@ -418,13 +466,17 @@
                                         <li>
                                             <a class="dropdown-item"
                                                href="{% url 'tickets-details' item.ticket.pk %}">
-                                                <i class="bi bi-eye me-2"></i>View
+                                                <i class="bi bi-eye me-2"></i>
+                                                {% translate "View" %}
+{#                                                View#}
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item"
                                                href="{% url 'tickets-update' item.ticket.pk %}">
-                                                <i class="bi bi-pencil-square me-2"></i>Edit
+                                                <i class="bi bi-pencil-square me-2"></i>
+                                                {% translate "Edit" %}
+{#                                                Edit#}
                                             </a>
                                         </li>
 
@@ -434,7 +486,9 @@
                                                 <li>
                                                     <a class="dropdown-item mark-seen-btn" href="#"
                                                        data-ticket-id="{{ item.ticket.id }}">
-                                                        <i class="bi bi-eye me-2"></i>Mark as Seen
+                                                        <i class="bi bi-eye me-2"></i>
+                                                        {% translate "Mark as Seen" %}
+{#                                                        Mark as Seen#}
                                                     </a>
                                                 </li>
                                             {% endif %}
@@ -449,7 +503,9 @@
                                                data-ticket-number="{{ item.ticket.id }}"
                                                data-bs-toggle="modal"
                                                data-bs-target="#deleteModal">
-                                                <i class="bi bi-trash3 me-2"></i>Delete
+                                                <i class="bi bi-trash3 me-2"></i>
+                                                {% translate "Delete" %}
+{#                                                Delete#}
                                             </a>
                                         </li>
                                     </ul>
@@ -476,7 +532,9 @@
                                                 data-ticket-id="{{ item.ticket.id }}"
                                                 data-ticket-code="{{ item.ticket.tracking_code }}">
                                             <i class="bi bi-clock-history me-1"></i>
-                                            View history ({{ item.seen_history_count }})
+                                            {% translate "View history" %}
+{#                                            View history #}
+                                            ({{ item.seen_history_count }})
                                         </button>
                                     </div>
                                 {% endif %}
@@ -504,12 +562,20 @@
 
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="bi bi-calendar me-2 text-muted"></i>
-                                        <small class="text-muted">Due: {{ item.ticket.max_replay_date|date:"Y/m/d" }}</small>
+                                        <small class="text-muted">
+                                            {% translate "Due :" %}
+{#                                            Due:#}
+                                            {{ item.ticket.max_replay_date|date:"Y/m/d" }}
+                                        </small>
                                     </div>
 
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-clock me-2 text-muted"></i>
-                                        <small class="text-muted">Created: {{ item.ticket.created_at|date:"Y/m/d H:i" }}</small>
+                                        <small class="text-muted">
+                                            {% translate "Created:" %}
+{#                                            Created: #}
+                                            {{ item.ticket.created_at|date:"Y/m/d H:i" }}
+                                        </small>
                                     </div>
                                 </div>
 
@@ -542,8 +608,13 @@
                                     <div>
                                         <small class="text-muted">ID: {{ item.ticket.id }}</small>
                                         {% if item.ticket.seen_count > 0 %}
-                                            <small class="text-muted ms-2">Seen: {{ item.ticket.seen_count }}
-                                                times</small>
+                                            <small class="text-muted ms-2">
+                                                {% translate "Seen :" %}
+{#                                                Seen: #}
+                                                {{ item.ticket.seen_count }}
+                                                {% translate "times" %}
+{#                                                times#}
+                                            </small>
                                         {% endif %}
                                     </div>
                                     <div class="btn-group btn-group-sm" role="group">
@@ -593,8 +664,14 @@
                         <div class="card shadow-sm">
                             <div class="card-body text-center py-5">
                                 <i class="bi bi-inbox display-4 text-muted mb-3"></i>
-                                <h5 class="text-muted">No Tickets Found</h5>
-                                <p class="text-muted mb-0">There are no tickets matching your criteria.</p>
+                                <h5 class="text-muted">
+                                    {% translate "No Tickets Found" %}
+{#                                    No Tickets Found#}
+                                </h5>
+                                <p class="text-muted mb-0">
+                                    {% translate "There are no tickets matching your criteria." %}
+{#                                    There are no tickets matching your criteria.#}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -628,7 +705,8 @@
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">
                         <i class="bi bi-clock-history me-2"></i>
-                        Seen History
+                        {% translate "Seen History" %}
+{#                        Seen History#}
                     </h5>
                     <button type="button" class="btn-close btn-close-white"
                             data-bs-dismiss="modal"></button>
@@ -637,15 +715,23 @@
                     <div id="seenHistoryContent">
                         <div class="text-center py-4">
                             <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
+                                <span class="visually-hidden">
+                                    {% translate "Loading..." %}
+{#                                    Loading...#}
+                                </span>
                             </div>
-                            <p class="mt-2">Loading history...</p>
+                            <p class="mt-2">
+                                {% translate "Loading history..." %}
+{#                                Loading history...#}
+                            </p>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary"
-                            data-bs-dismiss="modal">Close
+                            data-bs-dismiss="modal">
+                        {% translate "Close" %}
+{#                        Close#}
                     </button>
                 </div>
             </div>

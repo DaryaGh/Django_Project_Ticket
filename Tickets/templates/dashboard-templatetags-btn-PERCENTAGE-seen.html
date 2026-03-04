@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 {% load widget-card-PERCENTAGE %}
 {% load buttongroup_tags %}
 {% load dashboard_tags %}
@@ -12,8 +13,17 @@
     <section class="container my-4">
         <div class="row">
             <div class="col-12">
-                <h1 class="mb-3 mt-3 text-success">Ticket Statistics : </h1>
-                <p class="text-muted mb-4">Total: {{ total_tickets }} tickets</p>
+                <h1 class="mb-3 mt-3 text-success">
+                    {% translate "Ticket Statistics :" %}
+{#                    Ticket Statistics : #}
+                </h1>
+                <p class="text-muted mb-4">
+                    {% translate "Total :" %}
+{#                    Total: #}
+                    {{ total_tickets }}
+                    {% translate "ticket" %}
+{#                    tickets#}
+                </p>
             </div>
 
             <div class="col-md-3">
@@ -66,14 +76,20 @@
             <div class="col-md-6">
                 <div class="card shadow">
                     <div class="card-header bg-info text-white">
-                        <h5 class="mb-0"><i class="bi bi-eye me-2"></i>Seen Status Overview</h5>
+                        <h5 class="mb-0"><i class="bi bi-eye me-2"></i>
+                            {% translate "Seen Status Overview" %}
+{#                            Seen Status Overview#}
+                        </h5>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="text-center">
                                     <div class="display-4 text-info">{{ seen_tickets }}</div>
-                                    <p class="text-muted">Seen Tickets</p>
+                                    <p class="text-muted">
+                                        {% translate "Seen Tickets" %}
+{#                                        Seen Tickets#}
+                                    </p>
                                     <div class="progress" style="height: 20px;">
                                         <div class="progress-bar bg-info" role="progressbar"
                                              style="width: {{ seen_percentage|floatformat:0 }}%"
@@ -87,7 +103,10 @@
                             <div class="col-md-6">
                                 <div class="text-center">
                                     <div class="display-4 text-warning">{{ unseen_tickets }}</div>
-                                    <p class="text-muted">Unseen Tickets</p>
+                                    <p class="text-muted">
+                                        {% translate "Unseen Tickets" %}
+{#                                        Unseen Tickets#}
+                                    </p>
                                     <div class="progress" style="height: 20px;">
                                         <div class="progress-bar bg-warning" role="progressbar"
                                              style="width: {% widthratio unseen_tickets total_tickets 100 %}%"
@@ -106,7 +125,10 @@
                                      style="width: 100px; height: 100px;"></div>
                                 <div class="position-absolute top-50 start-50 translate-middle">
                                     <strong>{{ total_tickets }}</strong>
-                                    <small class="d-block">Total</small>
+                                    <small class="d-block">
+                                        {% translate "Total" %}
+{#                                        Total#}
+                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -116,10 +138,15 @@
                             <div class="col-6">
                                 <span class="badge bg-info">Seen</span>
                                 <small class="text-muted d-block">{{ seen_percentage|floatformat:1 }}% of
-                                    tickets</small>
+                                    {% translate "tickets" %}
+{#                                    tickets#}
+                                </small>
                             </div>
                             <div class="col-6">
-                                <span class="badge bg-warning">Unseen</span>
+                                <span class="badge bg-warning">
+                                {% translate "Unseen" %}
+{#                                    Unseen#}
+                                </span>
                                 <small class="text-muted d-block">
                                     {% widthratio unseen_tickets total_tickets 100 %}% of tickets
                                 </small>
@@ -133,8 +160,17 @@
         <!-- بخش Tasks -->
         <div class="row mt-4">
             <div class="col-12">
-                <h3 class="mb-3 mt-3 text-success">Task Statistics : </h3>
-                <p class="text-muted mb-4">Total: {{ total_tasks }} assigned tickets</p>
+                <h3 class="mb-3 mt-3 text-success">
+                {% translate " Task Statistics :" %}
+{#                    Task Statistics : #}
+                </h3>
+                <p class="text-muted mb-4">
+                {% translate "Total:" %}
+{#                    Total: #}
+                    {{ total_tasks }}
+                    {% translate "assigned tickets" %}
+{#                    assigned tickets#}
+                </p>
             </div>
 
             <div class="col-md-3">
@@ -158,17 +194,26 @@
             <div class="col-md-6">
                 <div class="card shadow-sm">
                     <div class="card-header bg-info text-white">
-                        <h6 class="mb-0"><i class="bi bi-send me-2"></i>Sent Tasks Breakdown</h6>
+                        <h6 class="mb-0"><i class="bi bi-send me-2"></i>
+                            {% translate "Sent Tasks Breakdown" %}
+{#                            Sent Tasks Breakdown#}
+                        </h6>
                     </div>
                     <div class="card-body">
                         <div class="row text-center">
                             <div class="col-6">
                                 <div class="h4 text-primary">{{ open_sent_tasks }}</div>
-                                <small class="text-muted">Open Sent</small>
+                                <small class="text-muted">
+                                    {% translate "Open Sent" %}
+{#                                    Open Sent#}
+                                </small>
                             </div>
                             <div class="col-6">
                                 <div class="h4 text-success">{{ closed_sent_tasks }}</div>
-                                <small class="text-muted">Closed Sent</small>
+                                <small class="text-muted">
+                                    {% translate "Closed Sent" %}
+{#                                    Closed Sent#}
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -178,17 +223,26 @@
             <div class="col-md-6">
                 <div class="card shadow-sm">
                     <div class="card-header bg-warning text-white">
-                        <h6 class="mb-0"><i class="bi bi-inbox me-2"></i>Received Tasks Breakdown</h6>
+                        <h6 class="mb-0"><i class="bi bi-inbox me-2"></i>
+                            {% translate "Received Tasks Breakdown" %}
+{#                            Received Tasks Breakdown#}
+                        </h6>
                     </div>
                     <div class="card-body">
                         <div class="row text-center">
                             <div class="col-6">
                                 <div class="h4 text-primary">{{ open_received_tasks }}</div>
-                                <small class="text-muted">Open Received</small>
+                                <small class="text-muted">
+                                {% translate "Open Received" %}
+{#                                    Open Received#}
+                                </small>
                             </div>
                             <div class="col-6">
                                 <div class="h4 text-success">{{ closed_received_tasks }}</div>
-                                <small class="text-muted">Closed Received</small>
+                                <small class="text-muted">
+                                {% translate "Closed Received" %}
+{#                                    Closed Received#}
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -199,11 +253,19 @@
         <div class="row mt-5">
             <div class="col-12">
                 <h3 class="mb-3 text-success">
-                    <i class="bi bi-people me-2"></i>Role Statistics
+                    <i class="bi bi-people me-2"></i>
+                    {% translate "Role Statistics" %}
+{#                    Role Statistics#}
                     {% if is_super_admin %}
-                        <small class="text-muted fs-6">(All Roles)</small>
+                        <small class="text-muted fs-6">
+                            {% translate "(All Role)" %}
+{#                            (All Roles)#}
+                        </small>
                     {% else %}
-                        <small class="text-muted fs-6">(Your Role)</small>
+                        <small class="text-muted fs-6">
+                        {% translate "(Your Role)" %}
+{#                            (Your Role)#}
+                        </small>
                     {% endif %}
                 </h3>
             </div>
@@ -324,7 +386,10 @@
                             <div class="row text-center mb-4">
                                 <div class="col-4">
                                     <div class="h2 fw-bold text-dark">{{ stats.total_tickets }}</div>
-                                    <small class="text-muted">Total Tickets</small>
+                                    <small class="text-muted">
+                                    {% translate "Total Tickets" %}
+{#                                        Total Tickets#}
+                                    </small>
                                 </div>
                                 <div class="col-4">
                                     <div class="h2 fw-bold text-primary">{{ stats.open_tickets }}</div>
@@ -332,7 +397,11 @@
                                 </div>
                                 <div class="col-4">
                                     <div class="h2 fw-bold text-success">{{ stats.seen_tickets }}</div>
-                                    <small class="text-muted">Seen ({{ stats.seen_percentage }}%)</small>
+                                    <small class="text-muted">
+                                        {% translate "Seen" %}
+{#                                        Seen #}
+                                        ({{ stats.seen_percentage }}%)
+                                    </small>
                                 </div>
                             </div>
 
@@ -340,16 +409,24 @@
                             <div class="row mb-3">
                                 <div class="col-12">
                                     <h6 class="border-bottom pb-2">
-                                        <i class="bi bi-send me-1"></i> Tasks
+                                        <i class="bi bi-send me-1"></i>
+                                        {% translate Tasks %}
+{#                                        Tasks#}
                                     </h6>
                                     <div class="row text-center">
                                         <div class="col-6">
                                             <span class="badge bg-info">{{ stats.sent_tasks }}</span>
-                                            <small class="text-muted ms-1">Sent</small>
+                                            <small class="text-muted ms-1">
+                                                {% translate "Sent" %}
+{#                                                Sent#}
+                                            </small>
                                         </div>
                                         <div class="col-6">
                                             <span class="badge bg-warning">{{ stats.received_tasks }}</span>
-                                            <small class="text-muted ms-1">Received</small>
+                                            <small class="text-muted ms-1">
+                                            {% translate "Received" %}
+{#                                                Received#}
+                                            </small>
                                         </div>
                                     </div>
                                 </div>
@@ -359,7 +436,9 @@
                             <div class="row mb-3">
                                 <div class="col-12">
                                     <h6 class="border-bottom pb-2">
-                                        <i class="bi bi-exclamation-triangle me-1"></i> Priority
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        {% translate "Priority" %}
+{#                                        Priority#}
                                     </h6>
                                     <div class="d-flex flex-wrap gap-2">
                                         <span class="badge bg-success">{{ stats.tickets_by_priority.low }} Low</span>
@@ -374,13 +453,31 @@
                             <div class="row">
                                 <div class="col-12">
                                     <h6 class="border-bottom pb-2">
-                                        <i class="bi bi-list-check me-1"></i> Status
+                                        <i class="bi bi-list-check me-1"></i>
+                                        {% translate Status %}
+{#                                        Status#}
                                     </h6>
                                     <div class="d-flex flex-wrap gap-2">
-                                        <span class="badge bg-primary">{{ stats.tickets_by_status.new }} New</span>
-                                        <span class="badge bg-info">{{ stats.tickets_by_status.in_progress }} In Progress</span>
-                                        <span class="badge bg-success">{{ stats.tickets_by_status.solved }} Solved</span>
-                                        <span class="badge bg-secondary">{{ stats.tickets_by_status.impossible }} Impossible</span>
+                                        <span class="badge bg-primary">
+                                            {{ stats.tickets_by_status.new }}
+                                        {% translate "New" %}
+{#                                            New#}
+                                        </span>
+                                        <span class="badge bg-info">
+                                            {{ stats.tickets_by_status.in_progress }}
+                                        {% translate "In Progress" %}
+{#                                            In Progress#}
+                                        </span>
+                                        <span class="badge bg-success">
+                                            {{ stats.tickets_by_status.solved }}
+                                        {% translate "Solved" %}
+{#                                            Solved#}
+                                        </span>
+                                        <span class="badge bg-secondary">
+                                            {{ stats.tickets_by_status.impossible }}
+                                        {% translate "Impossible" %}
+{#                                            Impossible#}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -391,13 +488,17 @@
                                 <div class="col-6">
                                     <small class="text-muted">
                                         <i class="bi bi-clock me-1"></i>
-                                        Closed: {{ stats.closed_tickets }}
+                                        {% translate "Closed :" %}
+{#                                        Closed: #}
+                                        {{ stats.closed_tickets }}
                                     </small>
                                 </div>
                                 <div class="col-6 text-end">
                                     <a href="{% url 'tickets' %}?role={{ stats.role.id }}"
                                        class="btn btn-sm btn-outline-dark">
-                                        <i class="bi bi-eye me-1"></i> View Tickets
+                                        <i class="bi bi-eye me-1"></i>
+                                        {% translate "View Tickets" %}
+{#                                        View Tickets#}
                                     </a>
                                 </div>
                             </div>
@@ -417,22 +518,52 @@
                 <div class="col-12">
                     <div class="card shadow-sm">
                         <div class="card-header bg-dark text-white">
-                            <h6 class="mb-0"><i class="bi bi-table me-2"></i>Role Statistics Summary</h6>
+                            <h6 class="mb-0"><i class="bi bi-table me-2"></i>
+                                {% translate "Role Statistics Summary" %}
+{#                                Role Statistics Summary#}
+                            </h6>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-hover table-sm">
                                     <thead class="table-light">
                                     <tr>
-                                        <th>Role</th>
-                                        <th>Users</th>
-                                        <th>Total Tickets</th>
-                                        <th>Open</th>
-                                        <th>Seen</th>
-                                        <th>Sent Tasks</th>
-                                        <th>Received Tasks</th>
-                                        <th>High Priority</th>
-                                        <th>Status</th>
+                                        <th>
+                                            {% translate "Role" %}
+{#                                            Role#}
+                                        </th>
+                                        <th>
+                                            {% translate "Users" %}
+{#                                            Users#}
+                                        </th>
+                                        <th>
+                                            {% translate "Total Tickets" %}
+{#                                            Total Tickets#}
+                                        </th>
+                                        <th>
+                                            {% translate "Open" %}
+{#                                            Open#}
+                                        </th>
+                                        <th>
+                                            {% translate "Seen" %}
+{#                                            Seen#}
+                                        </th>
+                                        <th>
+                                            {% translate "Sent Tasks" %}
+{#                                            Sent Tasks#}
+                                        </th>
+                                        <th>
+                                            {% translate "Received Tasks" %}
+{#                                            Received Tasks#}
+                                        </th>
+                                        <th>
+                                            {% translate "High Priority" %}
+{#                                            High Priority#}
+                                        </th>
+                                        <th>
+                                            {% translate "Status" %}
+{#                                            Status#}
+                                        </th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -485,11 +616,19 @@
         <div class="row mt-4">
             <div class="col-12">
                 <h3 class="mb-3 text-success">
-                    <i class="bi bi-tags me-2"></i>Category Statistics
+                    <i class="bi bi-tags me-2"></i>
+                    {% translate "Category Statistics" %}
+{#                    Category Statistics#}
                     {% if is_super_admin %}
-                        <small class="text-muted fs-6">(All Used Categories)</small>
+                        <small class="text-muted fs-6">
+                            {% translate "(All Used Categories)" %}
+{#                            (All Used Categories)#}
+                        </small>
                     {% else %}
-                        <small class="text-muted fs-6">(Your Used Categories)</small>
+                        <small class="text-muted fs-6">
+                            {% translate "(Your Used Categories)" %}
+{#                            (Your Used Categories)#}
+                        </small>
                     {% endif %}
                 </h3>
             </div>
@@ -500,16 +639,23 @@
                         <h2 class="text-dark">{{ user_categories_count }}</h2>
                         <p class="text-muted mb-1">
                             {% if is_super_admin %}
-                                Used Categories
+                                {% translate "Used Categories" %}
+{#                                Used Categories#}
                             {% else %}
-                                Your Categories
+                                {% translate "Your Categories" %}
+{#                                Your Categories#}
                             {% endif %}
                         </p>
                         <small class="text-muted">
                             {% if is_super_admin %}
-                                out of {{ categories_with_tickets }} total
+                                {% translate "out of" %}
+{#                                out of #}
+                                {{ categories_with_tickets }}
+                                {% translate "total" %}
+{#                                total#}
                             {% else %}
-                                used in your tickets
+                                {% translate "used in your tickets" %}
+{#                                used in your tickets#}
                             {% endif %}
                         </small>
                     </div>
@@ -521,8 +667,14 @@
                         <div class="card-body text-center">
                             <i class="bi bi-tag text-warning fs-1 mb-3"></i>
                             <h2 class="text-dark">{{ categories_with_tickets|subtract:user_categories_count }}</h2>
-                            <p class="text-muted mb-1">Unused Categories</p>
-                            <small class="text-muted">with no tickets</small>
+                            <p class="text-muted mb-1">
+                            {% translate "Unused Categories" %}
+{#                                Unused Categories#}
+                            </p>
+                            <small class="text-muted">
+                            {% translate "with no tickets" %}
+{#                                with no tickets#}
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -538,8 +690,14 @@
                                     0%
                                 {% endif %}
                             </h2>
-                            <p class="text-muted mb-1">Category Usage</p>
-                            <small class="text-muted">of available categories</small>
+                            <p class="text-muted mb-1">
+                                {% translate "Category Usage" %}
+{#                                Category Usage#}
+                            </p>
+                            <small class="text-muted">
+                            {% translate "of available categories" %}
+{#                                of available categories#}
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -553,9 +711,11 @@
                         <h5 class="mb-0">
                             <i class="bi bi-list-ul me-2"></i>
                             {% if is_super_admin %}
-                                All Used Categories
+                                {% translate "All Used Categories" %}
+{#                                All Used Categories#}
                             {% else %}
-                                Your Categories
+                                {% translate "Your Categories" %}
+{#                                Your Categories#}
                             {% endif %}
                             <span class="badge bg-secondary float-end">{{ user_category_list|length }}</span>
                         </h5>
@@ -573,11 +733,16 @@
                                                 </h6>
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <span class="badge bg-dark">
-                                                        {{ category.ticket_count }} ticket{{ category.ticket_count|pluralize }}
+                                                        {{ category.ticket_count }}
+                                                        {% translate "ticket" %}
+{#                                                        ticket#}
+                                                        {{ category.ticket_count|pluralize }}
                                                     </span>
                                                     {% if is_super_admin %}
                                                         <small class="text-muted">
-                                                            {{ category.my_ticket_count }} yours
+                                                            {{ category.my_ticket_count }}
+                                                            {% translate "yours" %}
+{#                                                            yours#}
                                                         </small>
                                                     {% endif %}
                                                 </div>
@@ -585,7 +750,8 @@
                                             <div class="card-footer bg-transparent border-0 pt-0">
                                                 <a href="{% url 'tickets' %}?category={{ category.id }}"
                                                    class="btn btn-sm btn-outline-{% cycle 'primary' 'success' 'info' 'warning' %} w-100">
-                                                    View Tickets
+                                                    {% translate "View Tickets" %}
+{#                                                    View Tickets#}
                                                 </a>
                                             </div>
                                         </div>
@@ -597,9 +763,11 @@
                                 <i class="bi bi-tag text-muted fs-1"></i>
                                 <p class="text-muted mt-2">
                                     {% if is_super_admin %}
-                                        No categories have been used in tickets yet.
+                                        {% translate "No categories have been used in tickets yet." %}
+{#                                        No categories have been used in tickets yet.#}
                                     {% else %}
-                                        You haven't used any categories in your tickets.
+                                        {% translate "You haven't used any categories in your tickets." %}
+{#                                        You haven't used any categories in your tickets.#}
                                     {% endif %}
                                 </p>
                             </div>
