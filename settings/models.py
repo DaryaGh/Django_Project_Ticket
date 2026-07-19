@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from Tickets.Choices import PRIORITY_CHOICES
-from settings.constants import SITE_SETTINGS_CACHE_KEY
+from settings.constants import SITE_SETTINGS_CACHE_KEY, SITE_SETTINGS_CACHE_TIMEOUT
 
 
 class SiteSetting(models.Model):
@@ -174,26 +174,36 @@ class SiteSetting(models.Model):
         """
         دریافت تنظیمات فعال (با کش)
         """
-        # مرحله ۱: از کش بخون
+        # ===== مرحله 1: از کش بخون =====
         settings = cache.get(SITE_SETTINGS_CACHE_KEY)
 
-        # مرحله ۲: اگه تو کش نبود، از دیتابیس بگیر
+        # ===== مرحله 2: اگه تو کش نبود =====
         if settings is None:
             try:
-                # اولین رکورد فعال رو بگیر (اگه is_active=True)
+                # از دیتابیس بگیر
                 settings = cls.objects.filter(is_active=True).first()
 
-                # مرحله ۳: تو کش ذخیره کن (حتی اگه None باشه)
-                # این کار باعث میشه دفعه بعد دوباره به دیتابیس نزنه
-                cache.set(SITE_SETTINGS_CACHE_KEY, settings, 3600)  # ۱ ساعت
+                # اگه پیدا شد، تو کش ذخیره کن
+                if settings:
+                    cache.set(
+                        SITE_SETTINGS_CACHE_KEY,
+                        settings,
+                        SITE_SETTINGS_CACHE_TIMEOUT
+                    )
+                    print(f"✅ Settings loaded from DB and cached: {settings.site_name}")
+                else:
+                    # اگه هیچ تنظیماتی وجود نداره
+                    print("⚠️ No settings found in database")
+                    # یه None تو کش ذخیره کن تا دوباره دیتابیس نزنه
+                    cache.set(SITE_SETTINGS_CACHE_KEY, None, 60)  # ۱ دقیقه
 
             except Exception as e:
-                # اگه خطایی پیش اومد، None برگردون
+                print(f"❌ Error loading settings: {e}")
                 settings = None
-                # لاگ خطا (اختیاری)
-                # logger.error(f"Error getting settings: {e}")
 
         return settings
+
+
 
     @classmethod
     def get_setting_value(cls, field_name, default=None):
