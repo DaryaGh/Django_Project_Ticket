@@ -42,7 +42,7 @@ class TicketForm(forms.ModelForm):
                   'due_date',
                   # داینامیک کردن چکباکس
                   'attachments',
-                  'send_notification', 'send_email', 'send_sms'
+                  # 'send_notification', 'send_email', 'send_sms'
                   ]
 
         exclude = ['created_by', 'closed_at', 'tracking_code', 'status']
@@ -65,9 +65,9 @@ class TicketForm(forms.ModelForm):
             # 'users': forms.ModelMultipleChoiceField(attrs={'class': 'form-select'}),
             'users': forms.SelectMultiple(attrs={'class': 'form-select'}),
             # داینامیک کردن چکباکس
-            'send_notification': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'send_email': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'send_sms': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            # 'send_notification': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            # 'send_email': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            # 'send_sms': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
         labels = {

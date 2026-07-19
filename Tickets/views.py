@@ -4,11 +4,13 @@ from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.timesince import timesince
+from django.utils.translation import activate
+from pip._internal.utils._jaraco_text import _
+
 from Tickets.forms import *
 from Tickets.models import *
 from Tickets.services import *
 from .Choices import *
-from .notification import *
 from .validators import validate
 from django.core.paginator import Paginator
 from django.contrib.auth import authenticate, login, logout
@@ -249,6 +251,7 @@ def dashboard(request):
             group_statistics.append(group_stats)
 
     context = {
+        "page_title": " Dashboard | Ticketing",
         'total_tickets': total_tickets,
         'seen_tickets': seen_tickets,
         'unseen_tickets': unseen_tickets,
@@ -713,6 +716,7 @@ def index(request):
     ]
 
     context = {
+        "page_title": "Tickets List | Ticketing ",
         'page_obj': page_obj,
         'ticket_extra_info': ticket_extra_info,
         'search_query': search_query,
@@ -760,7 +764,6 @@ def index(request):
 
 
 def ticket_create(request):
-
     user_role = request.session.get('role')
     if user_role == "Employee":
         messages.error(request, 'Staff cannot create new tickets.')
@@ -779,15 +782,16 @@ def ticket_create(request):
         validation_errors = {}
 
 
-        boolean_rules = {
-            "send_notification": ["boolean"],
-            "send_email": ["boolean"],
-            "send_sms": ["boolean"],
-        }
+        # boolean_rules = {
+        #     "send_notification": ["boolean"],
+        #     "send_email": ["boolean"],
+        #     "send_sms": ["boolean"],
+        # }
 
-        boolean_errors = validate(request.POST, request.FILES, boolean_rules)
-        if boolean_errors:
-            validation_errors.update(boolean_errors)
+        # boolean_errors = validate(request.POST, request.FILES, boolean_rules)
+        boolean_errors = validate(request.POST, request.FILES)
+        # if boolean_errors:
+        #     validation_errors.update(boolean_errors)
 
 
         ticket_rules = {
@@ -851,15 +855,15 @@ def ticket_create(request):
                     )
                 )
 
-                # ارسال نوتیفیکیشن بر اساس تنظیمات کاربر
-                if form.cleaned_data.get('send_notification'):
-                    send_in_app_notification(user, new_ticket)
-
-                if form.cleaned_data.get('send_email'):
-                    send_ticket_email(user, new_ticket)
-
-                if form.cleaned_data.get('send_sms'):
-                    send_ticket_sms(user, new_ticket)
+                # # ارسال نوتیفیکیشن بر اساس تنظیمات کاربر
+                # if form.cleaned_data.get('send_notification'):
+                #     send_in_app_notification(user, new_ticket)
+                #
+                # if form.cleaned_data.get('send_email'):
+                #     send_ticket_email(user, new_ticket)
+                #
+                # if form.cleaned_data.get('send_sms'):
+                #     send_ticket_sms(user, new_ticket)
 
             Assignment.objects.bulk_create(assignments)
 
@@ -873,6 +877,7 @@ def ticket_create(request):
         form = TicketForm(request=request)
 
     return render(request, 'ticket_create.html', {
+        "page_title": "Create New Ticket | Ticketing",
         'form': form,
         'PRIORITY_CHOICES': PRIORITY_CHOICES,
         'STATUS_CHOICES': STATUS_CHOICES,
@@ -961,6 +966,7 @@ def ticket_details(request, id):
     seen_history_data = seen_info.get('viewers', [])
 
     context = {
+        "page_title": f"Ticket #{ticket.tracking_code} | Ticketing",
         'ticket': ticket,
         'attachments': attachments,
         'row_number': row_number,
@@ -1015,16 +1021,17 @@ def ticket_update(request, id):
 
         validation_errors = {}
 
+        #
+        # boolean_rules = {
+        #     "send_notification": ["boolean"],
+        #     "send_email": ["boolean"],
+        #     "send_sms": ["boolean"],
+        # }
 
-        boolean_rules = {
-            "send_notification": ["boolean"],
-            "send_email": ["boolean"],
-            "send_sms": ["boolean"],
-        }
-
-        boolean_errors = validate(request.POST, request.FILES, boolean_rules)
-        if boolean_errors:
-            validation_errors.update(boolean_errors)
+        # boolean_errors = validate(request.POST, request.FILES, boolean_rules)
+        boolean_errors = validate(request.POST, request.FILES)
+        # if boolean_errors:
+        #     validation_errors.update(boolean_errors)
 
 
         ticket_rules = {
@@ -1109,6 +1116,7 @@ def ticket_update(request, id):
         form.fields['users'].initial = list(current_assignees)
 
     return render(request, 'ticket_create.html', {
+        "page_title": f"Edit Ticket #{ticket.tracking_code} | Ticketing",
         'form': form,
         'ticket': ticket,
         'attachments': ticket.ticket_attachments.all(),
@@ -1161,7 +1169,10 @@ def ticket_delete(request, id):
 
 def ticket_success(request, id):
     ticket = get_object_or_404(Ticket, id=id)
-    return render(request, 'ticket_success.html', {'ticket': ticket})
+    return render(request, 'ticket_success.html', {
+        'ticket': ticket,
+        "page_title": "Ticket Created Successfully | Ticketing"
+    })
 
 
 @login_required
@@ -1183,6 +1194,7 @@ def search_logs(request):
         page_obj = paginator.get_page(page_number)
 
         context = {
+            "page_title": "Search History | Ticketing",
             'page_obj': page_obj,
             'logs': page_obj.object_list,
             'user_authenticated': request.user.is_authenticated,
@@ -1210,7 +1222,10 @@ def ticket_login(request):
         else:
             messages.error(request, 'Invalid username or password.')
 
-    return render(request, 'registration/login-page.html', {'swipers': swipers})
+    return render(request, 'registration/login-page.html', {
+        'swipers': swipers,
+        "page_title": "Login | Ticketing"
+    })
 
 
 def ticket_attachment_delete(request, id):
@@ -1323,7 +1338,10 @@ def register(request):
             messages.error(request, 'Please correct the errors below.')
     else:
         form = RegisterForm()
-    return render(request, 'registration/register.html', {'form': form})
+    return render(request, 'registration/register.html', {
+        'form': form,
+        "page_title": "Register | Ticketing"
+    })
 
 
 def ticket_logout(request):
@@ -1375,6 +1393,7 @@ def assignee_ticket_list(request):
         print(f"DEBUG: Pagination - Page: {page_number}, Objects on page: {len(page_obj)}")
 
         context = {
+            "page_title": "Assigned Tickets | Ticketing",
             'page_obj': page_obj,
             'user_role': user_role,
             'is_super_admin': user_role == "Super Admin",
@@ -1513,6 +1532,7 @@ def assignee_ticket_detail(request, id):
 
         print(f"DEBUG: Preparing context for template")
         context = {
+            "page_title": f"Task Details - {ticket.tracking_code} | Ticketing",
             'status_choices': STATUS_CHOICES,
             'assignment': assignment,
             'ticket': ticket,
@@ -2222,7 +2242,6 @@ def edit_ticket_note_details(request, note_id):
 @login_required
 @require_POST
 def delete_ticket_note_details(request, note_id):
-
     note = get_object_or_404(TicketNote, id=note_id)
     ticket_id = note.ticket.id
 
@@ -2266,7 +2285,6 @@ def delete_ticket_note_details(request, note_id):
 @login_required
 @csrf_exempt
 def mark_ticket_seen(request, ticket_id):
-
     try:
         ticket = Ticket.objects.get(id=ticket_id)
 
@@ -2314,7 +2332,6 @@ def mark_ticket_seen(request, ticket_id):
 
 
 def mark_as_seen_for_user(self, user):
-
     from .models import TicketSeenHistory, Assignment
 
     try:

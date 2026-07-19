@@ -1,5 +1,5 @@
-{% load ticket_filters %}
-<!-- templates/assignee/assignee_status_form.html -->
+{#{% load ticket_filters %}#}
+{% load ticket-filter %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card border-primary shadow">
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSelectColor();
     statusSelect.addEventListener('change', updateSelectColor);
 
-    // پیش‌بارگیری در صورت وجود توضیحات
+    // پیش‌ بارگیری در صورت وجود توضیحات
     if (document.getElementById('description').value.trim()) {
         previewStatus();
     }
