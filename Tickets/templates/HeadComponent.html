@@ -1,14 +1,19 @@
 {% load static %}
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta content="{{ site_settings.meta_description }}" name="description">
+    <meta content="{{ site_settings.meta_keywords }}" name="keywords">
+
     <title>
-        {% block title %}
-            Ticketing App
-        {% endblock %}
+        {% if page_title %}
+            {{ page_title }}
+        {% else %}
+            {{ site_settings.meta_title }}
+        {% endif %}
     </title>
+
     {% if LANGUAGE_CODE == "fa" %}
     <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.rtl.min.css' %}">
     {% else %}

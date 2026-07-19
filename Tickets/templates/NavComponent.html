@@ -3,7 +3,11 @@
     <div class="container">
         <a href="{% url 'dashboard' %}" class="navbar-brand d-flex align-items-center fw-bold">
             <i class="bi bi-ticket-perforated me-2 fs-4"></i>
-            <span>{% translate "Ticketing" %}</span>
+            <span>
+                {% if site_settings %}
+                    {% translate site_settings.site_name %}
+                {% endif %}
+            </span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -14,7 +18,7 @@
                     <li class="nav-item mx-2">
                         <a href="{% url 'tickets' %}" class="nav-link d-flex align-items-center text-white">
                             <i class="bi bi-list-task me-1"></i>
-{#                            Tickets#}
+                            {#                            Tickets#}
                             {% translate "Tickets" %}
                         </a>
                     </li>
@@ -27,7 +31,7 @@
                             <a href="{% url 'tickets-create' %}" class="nav-link d-flex align-items-center text-white">
                                 <i class="bi bi-plus-circle me-1"></i>
                                 {% translate "New Ticket" %}
-{#                                New Ticket#}
+                                {#                                New Ticket#}
                             </a>
                         </li>
                     {% endif %}
@@ -39,7 +43,7 @@
                             <a href="{% url 'search_logs' %}" class="nav-link text-white">
                                 <i class="bi bi-clock-history"></i>
                                 {% translate "Search History" %}
-{#                                Search History#}
+                                {#                                Search History#}
                             </a>
                         </li>
                     {% endif %}
@@ -55,7 +59,7 @@
                         <a href="{% url 'assignee-list' %}" class="nav-link d-flex align-items-center text-white">
                             <i class="bi bi-list-stars me-1"></i>
                             {% translate "My Tasks" %}
-{#                            My Tasks#}
+                            {#                            My Tasks#}
                         </a>
                     </li>
                 {% endif %}
@@ -79,14 +83,14 @@
                                 <a class="dropdown-item" href="#">
                                     <i class="bi bi-person me-2"></i>
                                     {% translate "Profile" %}
-{#                                    Profile#}
+                                    {#                                    Profile#}
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="#">
                                     <i class="bi bi-gear me-2"></i>
                                     {% translate "Settings" %}
-{#                                    Settings#}
+                                    {#                                    Settings#}
                                 </a>
                             </li>
                             <li>
@@ -98,7 +102,7 @@
                                     <button type="submit" class="dropdown-item text-danger">
                                         <i class="bi bi-box-arrow-right me-2"></i>
                                         {% translate "Logout" %}
-{#                                        Logout#}
+                                        {#                                        Logout#}
                                     </button>
                                 </form>
                             </li>
@@ -109,13 +113,13 @@
                         <a href="{% url 'tickets-login' %}" class="nav-link d-flex align-items-center text-white">
                             <i class="bi bi-person-circle fs-4 me-1"></i>
                             <span>{% translate "Login" %}</span>
-{#                            <span>Login</span>#}
+                            {#                            <span>Login</span>#}
                         </a>
                     </li>
                     <li class="nav-item mx-2">
                         <a href="{% url 'register' %}" class="nav-link d-flex align-items-center text-white">
                             <i class="bi bi-person-plus me-1"></i>
-{#                            <span>Register</span>#}
+                            {#                            <span>Register</span>#}
                             <span>{% translate "Register" %}</span>
                         </a>
                     </li>
